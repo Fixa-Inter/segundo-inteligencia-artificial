@@ -8,7 +8,7 @@ A estrutura de pastas do projeto foi organizada com o objetivo de manter uma sep
 Como o sistema utiliza FastAPI, agentes de IA, LangChain, LangGraph, RAG, memória, MCP, A2A, guardrails e observabilidade, foi necessário dividir o código por domínio e responsabilidade, evitando concentrar toda a lógica em poucos arquivos.
 
 A estrutura principal segue o padrão abaixo:
-``
+```text
 app/
 │
 ├── main.py
@@ -117,4 +117,4 @@ app/
     ├── config.py
     ├── errors.py
     └── security.py
-``
+```
