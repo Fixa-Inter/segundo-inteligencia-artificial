@@ -23,13 +23,37 @@ app/
 │       └── permissions.py
 │
 ├── agents/
-│   ├── supervisor.py
-│   ├── faq_agent.py
-│   ├── ticket_agent.py
-│   ├── analytics_agent.py
-│   ├── visualization_agent.py
-│   ├── feedback_agent.py
-│   └── judge_agent.py
+│   ├── especialistas/
+│   │   └──__init__.py
+│   │   ├── analytics.py
+│   │   ├── faq.py
+│   │   ├── feedback.py
+│   │   └──juiz.py
+│   │   └──solicitacoes.py
+│   │   └──visualizacoes.py
+│   └── reutilizaveis/
+│        └── gerais/
+│   │   │ ├── contexto_temporal.py
+│   │   │ ├──contexto.py
+│   │   │ ├──glossario.py
+│        └── usuarios/
+│   │   │ ├── gestor.py
+│   │   │ ├──solicitante.py
+│   │   │ ├──tecnico.py
+│   │   └──__init__.py
+│   ├── resultadoAgentes/
+│   │   └──__init__.py
+│   │   ├── AnalyticsResultado.py
+│   │   ├── FAQResultado.py
+│   │   ├── FeedbackResultado.py
+│   │   └──JuizResultado.py
+│   │   └──SolicitacaoOcorrenciaResultado.py
+│   │   └──VisualizacoesResultado.py
+│   └──__init__.py
+│   └──agents.py
+│   └──construtor.py
+│
+
 │
 ├── graph/
 │   ├── state.py
