@@ -24,37 +24,37 @@ app/
 │       └── permissions.py
 │
 ├── agents/
-│   ├── especialistas/
-│   │   └──__init__.py
-│   │   ├── analytics.py
-│   │   ├── faq.py
-│   │   ├── feedback.py
-│   │   └──juiz.py
-│   │   └──solicitacoes.py
-│   │   └──visualizacoes.py
-│   └── reutilizaveis/
-│        └── gerais/
-│   │   │ ├── contexto_temporal.py
-│   │   │ ├──contexto.py
-│   │   │ ├──glossario.py
-│        └── usuarios/
-│   │   │ ├── gestor.py
-│   │   │ ├──solicitante.py
-│   │   │ ├──tecnico.py
-│   │   └──__init__.py
+│   ├── prompts/
+│   │   ├── especialistas/
+│   │   │   ├── __init__.py
+│   │   │   ├── analytics.py
+│   │   │   ├── faq.py
+│   │   │   ├── feedback.py
+│   │   │   ├── juiz.py
+│   │   │   ├── solicitacoes.py
+│   │   │   └── visualizacoes.py
+│   │   ├── reutilizaveis/
+│   │   │   ├── gerais/
+│   │   │   │   ├── contexto.py
+│   │   │   │   ├── contexto_temporal.py
+│   │   │   │   └── glossario.py
+│   │   │   ├── usuarios/
+│   │   │   │   ├── gestor.py
+│   │   │   │   ├── solicitante.py
+│   │   │   │   └── tecnico.py
+│   │   │   └── __init__.py
+│   │   └── construtor.py
 │   ├── resultadoAgentes/
-│   │   └──__init__.py
+│   │   ├── __init__.py
 │   │   ├── AnalyticsResultado.py
 │   │   ├── FAQResultado.py
 │   │   ├── FeedbackResultado.py
-│   │   └──JuizResultado.py
-│   │   └──SolicitacaoOcorrenciaResultado.py
-│   │   └──VisualizacoesResultado.py
-│   └──__init__.py
-│   └──agents.py
-│   └──construtor.py
-│
-
+│   │   ├── JuizResultado.py
+│   │   ├── SolicitacaoOcorrenciaResultado.py
+│   │   └── VisualizacaoResultado.py
+│   ├── __init__.py
+│   ├── agents.py
+│   └── llms.py
 │
 ├── graph/
 │   ├── state.py
@@ -101,12 +101,6 @@ app/
 │   ├── ticket_service.py
 │   ├── analytics_service.py
 │   └── user_service.py
-│
-├── llm/
-│   ├── provider.py
-│   ├── gemini.py
-│   ├── groq.py
-│   └── ollama.py
 │
 ├── observability/
 │   ├── logging.py
