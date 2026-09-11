@@ -1,4 +1,4 @@
-from .prompts import construtor
+from .agents import construtor
 from .llms import llm_especialista, llm_rapido
 from langchain.agents import create_agent
 
