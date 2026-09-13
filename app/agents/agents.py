@@ -1,38 +1,64 @@
-from .agents import construtor
+# from .agents import construtor
+from .prompts import construtor
 from .llms import llm_especialista, llm_rapido
 from langchain.agents import create_agent
 
 faq_solicitante = create_agent(
-    system_prompt=construtor.construir_faq_solicitante
+    system_prompt=construtor.construir_faq_solicitante()
     ,model=llm_especialista
 )
 
 faq_tecnico = create_agent(
-    system_prompt=construtor.construir_faq_tecnico
+    system_prompt=construtor.construir_faq_tecnico()
     ,model=llm_especialista
 )
 
 faq_gestor = create_agent(
-    system_prompt=construtor.construir_faq_gestor
+    system_prompt=construtor.construir_faq_gestor()
     ,model=llm_especialista
 )
 
 feedback = create_agent(
-    system_prompt=construtor.construir_feedback
+    system_prompt=construtor.construir_feedback()
     ,model=llm_rapido
 )
 
 juiz_solicitante = create_agent(
-    system_prompt=construtor.construir_faq_tecnico
+    system_prompt=construtor.construir_juiz_solicitante()
     ,model=llm_especialista
 )
 
 juiz_tecnico = create_agent(
-    system_prompt=construtor.construir_juiz_tecnico
+    system_prompt=construtor.construir_juiz_tecnico()
     ,model=llm_especialista
 )
 
 juiz_gestor = create_agent(
-    system_prompt=construtor.construir_juiz_gestor
+    system_prompt=construtor.construir_juiz_gestor()
+    ,model=llm_especialista
+)
+
+solicitacoes_solicitante = create_agent(
+    system_prompt=construtor.construir_solicitacoes_solicitante()
+    ,model=llm_especialista
+)
+
+solicitacoes_tecnico = create_agent(
+    system_prompt=construtor.construir_solicitacoes_tecnico()
+    ,model=llm_especialista
+)
+
+solicitacoes_gestor = create_agent(
+    system_prompt=construtor.construir_solicitacoes_gestor()
+    ,model=llm_especialista
+)
+
+analytics_gestor = create_agent(
+    system_prompt=construtor.construir_analytics_gestor()
+    ,model=llm_especialista
+)
+
+visualizacoes_gestor = create_agent(
+    system_prompt=construtor.construir_visualizacoes_gestor()
     ,model=llm_especialista
 )
