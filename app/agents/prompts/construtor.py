@@ -1,5 +1,12 @@
-from .reutilizaveis import CONTEXTO_PROMPT, CONTEXTO_TEMPORAL, GLOSSARIO_PROMPT, GESTOR_PROMPT, SOLICITANTE_PROMPT, TECNICO_PROMPT
-from .especialistas import JUIZ_PROMPT, FEEDBACK_PROMPT, FAQ_PROMPT
+from app.agents.prompts.reutilizaveis import CONTEXTO_PROMPT, CONTEXTO_TEMPORAL, GLOSSARIO_PROMPT, GESTOR_PROMPT, SOLICITANTE_PROMPT, TECNICO_PROMPT
+from app.agents.prompts.especialistas import (
+    ANALYTICS_PROMPT,
+    FAQ_PROMPT,
+    FEEDBACK_PROMPT,
+    JUIZ_PROMPT,
+    SOLICITACOES_PROMPT,
+    VISUALIZACOES_PROMPT,
+)
 
 def construir_juiz_solicitante() -> str:
     return (
@@ -52,4 +59,54 @@ def construir_faq_gestor() -> str:
         GESTOR_PROMPT +"\n"+
         FAQ_PROMPT
     )
+
+
+def construir_solicitacoes_solicitante() -> str:
+    return "\n".join([
+        CONTEXTO_PROMPT,
+        CONTEXTO_TEMPORAL,
+        GLOSSARIO_PROMPT,
+        SOLICITANTE_PROMPT,
+        SOLICITACOES_PROMPT,
+    ])
+
+
+def construir_solicitacoes_tecnico() -> str:
+    return "\n".join([
+        CONTEXTO_PROMPT,
+        CONTEXTO_TEMPORAL,
+        GLOSSARIO_PROMPT,
+        TECNICO_PROMPT,
+        SOLICITACOES_PROMPT,
+    ])
+
+
+def construir_solicitacoes_gestor() -> str:
+    return "\n".join([
+        CONTEXTO_PROMPT,
+        CONTEXTO_TEMPORAL,
+        GLOSSARIO_PROMPT,
+        GESTOR_PROMPT,
+        SOLICITACOES_PROMPT,
+    ])
+
+
+def construir_analytics_gestor() -> str:
+    return "\n".join([
+        CONTEXTO_PROMPT,
+        CONTEXTO_TEMPORAL,
+        GLOSSARIO_PROMPT,
+        GESTOR_PROMPT,
+        ANALYTICS_PROMPT,
+    ])
+
+
+def construir_visualizacoes_gestor() -> str:
+    return "\n".join([
+        CONTEXTO_PROMPT,
+        CONTEXTO_TEMPORAL,
+        GLOSSARIO_PROMPT,
+        GESTOR_PROMPT,
+        VISUALIZACOES_PROMPT,
+    ])
 
