@@ -1,5 +1,6 @@
 from .reutilizaveis import CONTEXTO_PROMPT, CONTEXTO_TEMPORAL, GLOSSARIO_PROMPT, GESTOR_PROMPT, SOLICITANTE_PROMPT, TECNICO_PROMPT
 from .especialistas import JUIZ_PROMPT, FEEDBACK_PROMPT, FAQ_PROMPT
+from .especialistas import ANALYTICS_PROMPT, VISUALIZACOES_PROMPT, SOLICITACOES_PROMPT
 
 def construir_juiz_solicitante() -> str:
     return (
@@ -43,13 +44,59 @@ def construir_faq_solicitante() -> str:
 
 def construir_faq_tecnico() -> str:
     return (
-        TECNICO_PROMPT +"\n"+
+        TECNICO_PROMPT     +"\n"+
         FAQ_PROMPT
     )
 
 def construir_faq_gestor() -> str:
     return (
-        GESTOR_PROMPT +"\n"+
+        GESTOR_PROMPT      +"\n"+
         FAQ_PROMPT
     )
 
+def construir_solicitacoes_solicitante() -> str:
+    return (
+        CONTEXTO_PROMPT    +"\n"+
+        CONTEXTO_TEMPORAL  +"\n"+
+        GLOSSARIO_PROMPT   +"\n"+
+        SOLICITANTE_PROMPT +"\n"+
+        SOLICITACOES_PROMPT
+    )
+
+
+def construir_solicitacoes_tecnico() -> str:
+    return (
+        CONTEXTO_PROMPT    +"\n"+
+        CONTEXTO_TEMPORAL  +"\n"+
+        GLOSSARIO_PROMPT   +"\n"+
+        TECNICO_PROMPT     +"\n"+
+        SOLICITACOES_PROMPT
+    )
+
+
+def construir_solicitacoes_gestor() -> str:
+    return (
+        CONTEXTO_PROMPT    +"\n"+
+        CONTEXTO_TEMPORAL  +"\n"+
+        GLOSSARIO_PROMPT   +"\n"+
+        GESTOR_PROMPT      +"\n"+
+        SOLICITACOES_PROMPT
+    )
+
+def construir_analytics_gestor() -> str:
+    return (
+        CONTEXTO_PROMPT    +"\n"+
+        CONTEXTO_TEMPORAL  +"\n"+
+        GLOSSARIO_PROMPT   +"\n"+
+        GESTOR_PROMPT      +"\n"+
+        ANALYTICS_PROMPT
+    )
+
+def construir_visualizacoes_gestor() -> str:
+    return (
+        CONTEXTO_PROMPT    +"\n"+
+        CONTEXTO_TEMPORAL  +"\n"+
+        GLOSSARIO_PROMPT   +"\n"+
+        GESTOR_PROMPT      +"\n"+
+        VISUALIZACOES_PROMPT
+    )
