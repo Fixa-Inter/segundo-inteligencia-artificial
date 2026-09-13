@@ -50,13 +50,13 @@ def construir_faq_solicitante() -> str:
 
 def construir_faq_tecnico() -> str:
     return (
-        TECNICO_PROMPT +"\n"+
+        TECNICO_PROMPT     +"\n"+
         FAQ_PROMPT
     )
 
 def construir_faq_gestor() -> str:
     return (
-        GESTOR_PROMPT +"\n"+
+        GESTOR_PROMPT      +"\n"+
         FAQ_PROMPT
     )
 
