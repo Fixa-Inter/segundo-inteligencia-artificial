@@ -5,6 +5,10 @@ from pydantic import field_validator, model_validator
 
 from app.tools.toolsRequest.CriarSolicitacaoRequest import CriarSolicitacaoRequest
 from app.services.solicitacoes.criarSolicitacao import adicionar_solicitacao
+from app.schemas.UsuarioContexto import UsuarioContexto
+from app.memory.vectorSearch import validar_selecao
+from app.memory.vectorSearch.cliente import abrir_cliente_qdrant
+from app.core.config import QDRANT_LOCAL_COLLECTION, QDRANT_CATEGORIA_COLLECTION
 
 
 class _ArgumentosCriarSolicitacao(CriarSolicitacaoRequest):
@@ -34,22 +38,43 @@ async def criar_solicitacao(
     descricao_problema: str,
     runtime: ToolRuntime,
     descricao_local: str | None = None,
-    status: Literal["PENDENTE"] = "PENDENTE",
 ) -> dict:
     """Cadastra uma solicitação diretamente na API usando os IDs consultados.
 
-    O código da aplicação fornece access_token e endereco_id no runtime.context.
+    O código fornece UsuarioContexto em runtime.context["usuario"], com a
+    identidade, a sede e o token autenticados. Não solicite esses dados à IA.
     Esta tool executa o POST imediatamente; não gerencia confirmação ou conversa.
     """
     contexto = runtime.context
-    if not isinstance(contexto, dict):
-        raise ValueError("Forneça access_token e endereco_id no contexto da aplicação.")
+
+    if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
+            raise ValueError("Forneça uma instância de UsuarioContexto em context['usuario'].")
+
+    async with abrir_cliente_qdrant() as client:
+
+        await validar_selecao(
+                QDRANT_CATEGORIA_COLLECTION,
+                categoria_equipamento_id,
+                contexto["usuario"].endereco_id,
+                client
+            )
+
+        await validar_selecao(
+                QDRANT_LOCAL_COLLECTION,
+                local_endereco_id,
+                contexto["usuario"].endereco_id,
+                client
+            )
+    
+    usuario = contexto["usuario"]
+
     entrada = _ArgumentosCriarSolicitacao(
         categoria_equipamento_id=categoria_equipamento_id,
         local_endereco_id=local_endereco_id, categoria_problema=categoria_problema,
         titulo=titulo, descricao_problema=descricao_problema, descricao_local=descricao_local,
-        status=status,
     )
+
     return await adicionar_solicitacao(
-        entrada, contexto.get("access_token"), contexto.get("endereco_id"),
+        entrada, 
+        access_token=usuario.access_token
     )

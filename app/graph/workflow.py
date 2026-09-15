@@ -1,4 +1,5 @@
 from langgraph.graph import END, START, StateGraph
+from langgraph.checkpoint.memory import MemorySaver
 
 from .state import GraphState
 from .nodes import (
@@ -65,7 +66,8 @@ def construir_grafo():
     builder.add_edge("guardrail_saida", END)
     builder.add_edge("fallback", END)
 
-    return builder.compile()
+    memory = MemorySaver()
+    return builder.compile(checkpointer=memory)
 
 
 grafo = construir_grafo()

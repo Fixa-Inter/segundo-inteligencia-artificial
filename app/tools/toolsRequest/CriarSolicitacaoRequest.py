@@ -4,11 +4,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class CriarSolicitacaoRequest(BaseModel):
-    """Dados completos para criação, montados pela tool antes de chamar a API.
+    """Dados da solicitação preenchidos pela IA, base para o args_schema da tool.
 
-    Não usar diretamente como args_schema exposto ao modelo: usuario_id deve
-    ser inserido pelo código a partir do RuntimeContext autenticado.
-    A existência dos IDs e a autorização devem ser verificadas pelo serviço.
+    A tool obtém usuario_id de context['usuario']; o serviço o acrescenta ao
+    JSON enviado à API. Identidade e credenciais não são argumentos da IA.
+    A existência dos IDs e a autorização devem ser verificadas pela API.
     """
 
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
@@ -52,9 +52,4 @@ class CriarSolicitacaoRequest(BaseModel):
         description=(
             "Peculiaridades do local explicitamente citadas pelo usuário, como pontos de referência. Usar null quando não houver detalhes adicionais."
         ),
-    )
-
-    status: Literal["PENDENTE"] = Field(
-        default="PENDENTE",
-        description="Estado inicial da solicitação na criação.",
     )
