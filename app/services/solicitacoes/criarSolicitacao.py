@@ -7,12 +7,17 @@ from app.tools.toolsRequest.CriarSolicitacaoRequest import CriarSolicitacaoReque
 async def adicionar_solicitacao(
     solicitacao: CriarSolicitacaoRequest,
     access_token: str,
+    *, imagens: list[str],
 ) -> dict:
     """Envia o cadastro diretamente. Sem estado de conversa ou repetição de POST.
 
-    Contrato provisório: JSON da solicitação com usuario_id, Bearer token, X-Endereco-Id e
-    resposta 2xx com id. A API deve validar a identidade, sede e os IDs recebidos.
+    Envia os dados da solicitação e as URLs em urlFoto, usando Bearer token.
+    Espera resposta 2xx com titulo. A API valida a identidade, sede e os IDs.
     """
+    if not isinstance(imagens, list) or not imagens or any(
+        not isinstance(url, str) or not url.strip() for url in imagens
+    ):
+        raise ValueError("Forneça pelo menos uma URL de imagem em uma lista de strings.")
     if not FIXA_API_BASE_URL:
         raise ValueError("Configure FIXA_API_BASE_URL.")
 
@@ -27,7 +32,8 @@ async def adicionar_solicitacao(
             resposta = await client.post(
                 f"{FIXA_API_BASE_URL.rstrip('/')}/api/v1/solicitacoes",
                 json={
-                    **solicitacao.model_dump()
+                    **solicitacao.model_dump(),
+                    "urlFoto": imagens,
                 },
                 headers={
                     "Authorization": f"Bearer {access_token}"

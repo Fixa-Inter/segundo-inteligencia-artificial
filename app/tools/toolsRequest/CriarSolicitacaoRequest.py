@@ -29,13 +29,6 @@ class CriarSolicitacaoRequest(BaseModel):
         ),
     )
 
-    categoria_problema: int = Field(
-        strict=True,
-        description=(
-            "Código numérico da categoria de problema correspondente ao relato, conforme o mapeamento definido no prompt e aceito pela API. Os códigos permitidos ainda precisam ser definidos para restringir este campo."
-        ),
-    )
-
     titulo: str = Field(
         min_length=1,
         description="Resumo do problema em no máximo 10 palavras, sem inventar informações.",
