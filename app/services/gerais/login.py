@@ -12,13 +12,19 @@ async def login(email: str, senha: str) -> str:
     try:
         async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
             resposta = await client.post(
-                f"{FIXA_API_BASE_URL.rstrip('/')}/login",
-                json={"email": email, "senha": senha},
+                f"{FIXA_API_BASE_URL.rstrip('/')}/api/v1/auth",
+                json={
+                    "email": email,
+                    "senha": senha
+                },
             )
+
             resposta.raise_for_status()
-            token = resposta.json()["access_token"]
+            token = resposta.json()["token"]
+
             if not isinstance(token, str) or not token.strip():
                 raise ValueError("Token ausente.")
             return token
+        
     except (httpx.HTTPError, ValueError, KeyError, TypeError):
         raise ValueError("Não foi possível autenticar na API FIXA.") from None
