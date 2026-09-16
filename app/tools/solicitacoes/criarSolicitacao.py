@@ -33,7 +33,6 @@ class _ArgumentosCriarSolicitacao(CriarSolicitacaoRequest):
 async def criar_solicitacao(
     categoria_equipamento_id: int,
     local_endereco_id: int,
-    categoria_problema: int,
     titulo: str,
     descricao_problema: str,
     runtime: ToolRuntime,
@@ -43,12 +42,28 @@ async def criar_solicitacao(
 
     O código fornece UsuarioContexto em runtime.context["usuario"], com a
     identidade, a sede e o token autenticados. Não solicite esses dados à IA.
+    As URLs das fotos vêm de runtime.context["imagens"], com pelo menos uma
+    imagem obrigatória. Sem imagens, retorna um pedido de foto sem executar o POST.
     Esta tool executa o POST imediatamente; não gerencia confirmação ou conversa.
     """
     contexto = runtime.context
 
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
             raise ValueError("Forneça uma instância de UsuarioContexto em context['usuario'].")
+
+    imagens = contexto.get("imagens")
+    if imagens is None or imagens == []:
+        return {
+            "status": "AGUARDANDO_INFORMACAO",
+            "mensagem": "Envie pelo menos uma foto do problema para cadastrar a solicitação.",
+        }
+    if not isinstance(imagens, list) or any(
+        not isinstance(url, str) or not url.strip() for url in imagens
+    ):
+        return {
+            "status": "ERRO_VALIDACAO",
+            "mensagem": "As imagens devem ser fornecidas como uma lista de URLs não vazias.",
+        }
 
     async with abrir_cliente_qdrant() as client:
 
@@ -70,11 +85,12 @@ async def criar_solicitacao(
 
     entrada = _ArgumentosCriarSolicitacao(
         categoria_equipamento_id=categoria_equipamento_id,
-        local_endereco_id=local_endereco_id, categoria_problema=categoria_problema,
+        local_endereco_id=local_endereco_id,
         titulo=titulo, descricao_problema=descricao_problema, descricao_local=descricao_local,
     )
 
     return await adicionar_solicitacao(
         entrada, 
-        access_token=usuario.access_token
+        access_token=usuario.access_token,
+        imagens=imagens,
     )
