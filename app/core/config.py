@@ -4,7 +4,10 @@ from dotenv import load_dotenv
 
 BASE_DIR     = Path(__file__).resolve().parents[2]
 DATA_DIR     = BASE_DIR / "data"
-FAQ_PDF_PATH = DATA_DIR / "Questionário_Modelos_classicos.pdf"
+FAQ_PDF_SOLICITANTE_PATH = DATA_DIR / "Questionário_Modelos_classicos.pdf"
+FAQ_PDF_TECNICO_PATH = DATA_DIR / "Questionário_Modelos_classicos.pdf"
+FAQ_PDF_GESTOR_PATH = DATA_DIR / "Questionário_Modelos_classicos.pdf"
+
 
 load_dotenv(BASE_DIR / ".env")
 
