@@ -1,6 +1,9 @@
+import asyncio
+
 from fastapi import FastAPI
 
 from app.api.routes.health import router as health_router
+from app.memory.embedding.popular_banco_vetorial import ingerir_faq
 
 
 app = FastAPI(
@@ -14,3 +17,6 @@ app.include_router(
     prefix="/api/v1",
 )
 
+
+if __name__ == "__main__":
+    asyncio.run(ingerir_faq())

@@ -75,11 +75,13 @@ solicitacoes_solicitante = criar_agente_solicitacoes(
 solicitacoes_tecnico = criar_agente_solicitacoes(
     prompt=construir_solicitacoes_tecnico(),
     model=llm_gemini, fallback=llm_groq,
+    tecnico=True,
 )
 
 solicitacoes_gestor = criar_agente_solicitacoes(
     prompt=construir_solicitacoes_gestor(),
     model=llm_gemini, fallback=llm_groq,
+    gestor=True,
 )
 
 analytics_gestor = create_agent(
