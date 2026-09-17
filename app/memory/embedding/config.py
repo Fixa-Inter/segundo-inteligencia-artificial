@@ -15,23 +15,60 @@ def obter_embeddings() -> GoogleGenerativeAIEmbeddings:
     _embeddings = GoogleGenerativeAIEmbeddings(
         model=config.EMBEDDING_MODEL,
         google_api_key=config.GEMINI_API_KEY,
-        output_dimensionality=config.EMBEDDING_DIMENSIONS,
+        output_dimensionality=config.EMBEDDING_DIMENSIONS_EQUIPAMENTO_LOCAL,
     )
     return _embeddings
 
 
-async def gerar_embedding_consulta(descricao: str) -> list[float]:
+async def gerar_embedding_documento(texto: str) -> list[float]:
     embeddings = obter_embeddings()
     # A integração instalada injeta RETRIEVAL_QUERY automaticamente. Embedding 2
     # não aceita task_type; usar seu cliente Google com instrução textual explícita.
     if "gemini-embedding-2" in config.EMBEDDING_MODEL:
         resultado = await embeddings.client.aio.models.embed_content(
             model=config.EMBEDDING_MODEL,
-            contents=f"task: search result | query: {descricao}",
-            config=types.EmbedContentConfig(output_dimensionality=config.EMBEDDING_DIMENSIONS),
+            contents=f"task: search result | query: {texto}",
+            config=types.EmbedContentConfig(output_dimensionality=config.EMBEDDING_DIMENSIONS_EQUIPAMENTO_LOCAL),
         )
         return list(resultado.embeddings[0].values)
-    return await embeddings.aembed_query(descricao)
+    return await embeddings.aembed_query(texto)
+
+async def gerar_embeddings_documentos(textos: list[str]) -> list[list[float]]:
+    if not textos:
+        return []
+
+    embeddings = obter_embeddings()
+
+    if "gemini-embedding-2" in config.EMBEDDING_MODEL:
+        documentos = [
+            types.Content(
+                parts=[
+                    types.Part.from_text(
+                        text=f"title: none | text: {texto}"
+                    )
+                ]
+            )
+            for texto in textos
+        ]
+
+        resultado = await embeddings.client.aio.models.embed_content(
+            model=config.EMBEDDING_MODEL,
+            contents=documentos,
+            config=types.EmbedContentConfig(
+                output_dimensionality=config.EMBEDDING_DIMENSIONS_EQUIPAMENTO_LOCAL
+            ),
+        )
+
+        vetores = resultado.embeddings or []
+
+        if len(vetores) != len(textos):
+            raise ValueError(
+                "A quantidade de embeddings difere da quantidade de textos."
+            )
+
+        return [list(vetor.values) for vetor in vetores]
+
+    return await embeddings.aembed_documents(textos)
 
 
 def gerar_point_id(endereco_id: int, campo_id: int) -> str:

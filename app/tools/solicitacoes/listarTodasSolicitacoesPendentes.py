@@ -5,7 +5,7 @@ from app.services.solicitacoes.buscarSolicitacao import listar_solicitacoes_pend
 
 
 @tool
-async def buscar_todas_solicitacoes_pendentes(runtime: ToolRuntime) -> dict:
+async def listar_todas_solicitacoes_pendentes(runtime: ToolRuntime) -> dict:
     """Lista as solicitações PENDENTES da organização do gestor autenticado.
 
     Não recebe argumentos da IA. Valida o tipo de acesso no contexto e usa

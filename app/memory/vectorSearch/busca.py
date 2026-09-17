@@ -1,7 +1,7 @@
 from qdrant_client import AsyncQdrantClient, models
 
 from app.core import config
-from app.memory.embedding.config import gerar_embedding_consulta
+from app.memory.embedding.config import gerar_embedding_documento
 
 
 def _id_field(collection: str) -> str:
@@ -67,9 +67,9 @@ async def _buscar(collection: str, texto: str, endereco_id: int, client: AsyncQd
     if not texto.strip() or not 1 <= config.VECTOR_SEARCH_LIMIT <= 20:
         raise ValueError("Informe uma descrição e um limite entre 1 e 20.")
     
-    vetor = await gerar_embedding_consulta(texto.strip())
+    vetor = await gerar_embedding_documento(texto.strip())
 
-    if len(vetor) != config.EMBEDDING_DIMENSIONS:
+    if len(vetor) != config.EMBEDDING_DIMENSIONS_EQUIPAMENTO_LOCAL:
         raise ValueError("Dimensão do embedding incompatível com a collection.")
     
     resultado = await client.query_points(
