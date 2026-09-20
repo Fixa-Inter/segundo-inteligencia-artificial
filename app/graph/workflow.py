@@ -2,6 +2,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.checkpoint.memory import MemorySaver
 
 from .state import GraphState
+from .context import GraphContext
 from .nodes import (
     validar_entrada,
     supervisionar,
@@ -18,8 +19,11 @@ from .edges import (
 
 
 def construir_grafo():
-    builder = StateGraph(GraphState)
-
+    builder = StateGraph(
+        state_schema=GraphState,
+        context_schema=GraphContext,
+    )  
+ 
 # sem () pq o langgraph vai chamar a função quando for executar o nó, e não na hora de construir o grafo
     builder.add_node("guardrail_entrada", validar_entrada)
     builder.add_node("supervisor", supervisionar)
