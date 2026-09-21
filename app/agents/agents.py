@@ -1,4 +1,5 @@
 from langchain.agents import create_agent
+from app.agents.faq import criar_agente_faq
 
 from app.agents.llms import llm_especialista, llm_rapido, llm_gemini, llm_groq
 from app.agents.solicitacoes import criar_agente_solicitacoes
@@ -25,22 +26,22 @@ from app.agents.agentsResult import (
     VisualizacaoResultado,
 )
 
-faq_solicitante = create_agent(
-    system_prompt=construir_faq_solicitante(),
-    model=llm_especialista,
-    response_format=FAQResultado,
+faq_solicitante = criar_agente_faq(
+    model=llm_gemini,
+    prompt=construir_faq_solicitante(),
+    fallback=llm_groq,
 )
 
-faq_tecnico = create_agent(
-    system_prompt=construir_faq_tecnico(),
-    model=llm_especialista,
-    response_format=FAQResultado,
+faq_tecnico = criar_agente_faq(
+    model=llm_gemini,
+    prompt=construir_faq_tecnico(),
+    fallback=llm_groq,
 )
 
-faq_gestor = create_agent(
-    system_prompt=construir_faq_gestor(),
-    model=llm_especialista,
-    response_format=FAQResultado,
+faq_gestor = criar_agente_faq(
+    model=llm_gemini,
+    prompt=construir_faq_gestor(),
+    fallback=llm_groq,
 )
 
 feedback = create_agent(

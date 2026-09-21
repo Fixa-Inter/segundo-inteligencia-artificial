@@ -10,5 +10,13 @@ class PeriodoRequest(BaseModel):
     @model_validator(mode="after")
     def validar_periodo(self):
         if self.inicio > self.fim:
-            raise ValueError("A data inicial não pode ser posterior à final.")
+            raise ValueError(
+                "A data inicial não pode ser posterior à final."
+            )
+
         return self
+
+
+class ComparacaoPeriodosRequest(BaseModel):
+    periodo_atual: PeriodoRequest
+    periodo_anterior: PeriodoRequest
