@@ -2,12 +2,24 @@ from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
+from langgraph.runtime import Runtime
+
 
 from app.agents.agents import (
     faq_gestor,
     faq_solicitante,
     faq_tecnico,
+    solicitacoes_gestor,
+    solicitacoes_solicitante,
+    solicitacoes_tecnico,
+    FAQResultado,
 )
+
+from app.agents.agentsResult import (
+    SolicitacaoOcorrenciaResultado,
+)
+from app.graph.context import GraphContext
+
 from app.agents.llms import (
     llm_gemini,
     llm_groq,
@@ -121,7 +133,10 @@ Não responda à solicitação. Apenas classifique.
             "erro": f"Erro no supervisor: {erro}",
         }
 
-def executar_faq(state: GraphState) -> dict:
+async def executar_faq(
+    state: GraphState,
+    runtime: Runtime[GraphContext],
+) -> dict:
     agentes_por_perfil = {
         "solicitante": faq_solicitante,
         "tecnico": faq_tecnico,
@@ -134,28 +149,106 @@ def executar_faq(state: GraphState) -> dict:
     if agente is None:
         return {
             "resposta_especialista": "",
-            "erro": f"Não existe agente FAQ para o perfil: {perfil}",
+            "erro": (
+                "Não existe agente FAQ "
+                f"para o perfil: {perfil}"
+            ),
         }
 
     try:
-        resultado = agente.invoke(
+        resultado = await agente.ainvoke(
             {
                 "messages": state.get("messages", []),
-            }
+            },
+            context=runtime.context,
         )
 
-        resposta = resultado["messages"][-1].content
+        resposta_estruturada = resultado.get(
+            "structured_response"
+        )
+
+        if not isinstance(
+            resposta_estruturada,
+            FAQResultado,
+        ):
+            raise ValueError(
+                "O agente FAQ retornou uma resposta incompatível."
+            )
 
         return {
-            "resposta_especialista": str(resposta),
+            "resposta_especialista": (
+                resposta_estruturada.resposta
+            ),
             "erro": None,
         }
 
     except Exception as erro:
         return {
             "resposta_especialista": "",
-            "erro": f"Erro durante a execução do FAQ: {erro}",
+            "erro": (
+                "Erro durante a execução do FAQ: "
+                f"{erro}"
+            ),
         }
+    
+async def executar_solicitacao(
+    state: GraphState,
+    runtime: Runtime[GraphContext],
+) -> dict:
+    agentes_por_perfil = {
+        "solicitante": solicitacoes_solicitante,
+        "tecnico": solicitacoes_tecnico,
+        "gestor": solicitacoes_gestor,
+    }
+
+    perfil = state.get("perfil")
+    agente = agentes_por_perfil.get(perfil)
+
+    if agente is None:
+        return {
+            "resposta_especialista": "",
+            "erro": (
+                "Não existe agente de solicitações "
+                f"para o perfil: {perfil}"
+            ),
+        }
+
+    try:
+        resultado = await agente.ainvoke(
+            {
+                "messages": state.get("messages", []),
+            },
+            context=runtime.context,
+        )
+
+        resposta_estruturada = resultado.get(
+            "structured_response"
+        )
+
+        if not isinstance(
+            resposta_estruturada,
+            SolicitacaoOcorrenciaResultado,
+        ):
+            raise ValueError(
+                "O agente retornou uma resposta incompatível."
+            )
+
+        return {
+            "resposta_especialista": (
+                resposta_estruturada.resposta
+            ),
+            "erro": None,
+        }
+
+    except Exception as erro:
+        return {
+            "resposta_especialista": "",
+            "erro": (
+                "Erro durante a execução do agente "
+                f"de solicitações: {erro}"
+            ),
+        }
+    
 def obter_prompt_juiz(perfil: str) -> str:
     construtores_por_perfil = {
         "solicitante": construtor.construir_juiz_solicitante,

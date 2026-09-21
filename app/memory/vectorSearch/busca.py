@@ -21,12 +21,12 @@ def _campo(payload: dict, caminho: str):
 
     return valor
 
-def _filtro(endereco_id: int, registro_id: int | None = None, collection: str = ""):
-    if type(endereco_id) is not int or endereco_id <= 0:
-        raise ValueError("Sede autenticada obrigatória para todas as consultas.")
-    
+def _filtro(cnpj_endereco: str, registro_id: int | None = None, collection: str = ""):
+    if type(cnpj_endereco) is not str or not cnpj_endereco.strip():
+        raise ValueError("CNPJ da sede autenticada obrigatório para todas as consultas.")
+
     condicoes = [models.FieldCondition(
-        key=config.QDRANT_TENANT_FIELD, match=models.MatchValue(value=endereco_id)
+        key=config.QDRANT_TENANT_FIELD, match=models.MatchValue(value=cnpj_endereco)
     )]
 
     if registro_id is not None:
@@ -37,7 +37,7 @@ def _filtro(endereco_id: int, registro_id: int | None = None, collection: str = 
 
     return models.Filter(must=condicoes)
 
-def _registro(ponto, endereco_id: int, collection: str) -> tuple[int, str]:
+def _registro(ponto, cnpj_endereco: str, collection: str) -> tuple[int, str]:
     payload = ponto.payload or {}
 
     try:
@@ -50,7 +50,7 @@ def _registro(ponto, endereco_id: int, collection: str) -> tuple[int, str]:
     except (KeyError, TypeError):
         raise ValueError("Payload Qdrant incompatível com os campos configurados.") from None
     
-    if type(sede) is not int or sede != endereco_id:
+    if type(sede) is not str or sede != cnpj_endereco:
         raise ValueError("Resultado fora da sede autenticada.")
     
     if type(registro_id) is not int or registro_id <= 0:
@@ -61,8 +61,8 @@ def _registro(ponto, endereco_id: int, collection: str) -> tuple[int, str]:
     
     return registro_id, descricao.strip()
 
-async def _buscar(collection: str, texto: str, endereco_id: int, client: AsyncQdrantClient) -> dict[int, str]:
-    filtro = _filtro(endereco_id)
+async def _buscar(collection: str, texto: str, cnpj_endereco: str, client: AsyncQdrantClient) -> dict[int, str]:
+    filtro = _filtro(cnpj_endereco)
 
     if not texto.strip() or not 1 <= config.VECTOR_SEARCH_LIMIT <= 20:
         raise ValueError("Informe uma descrição e um limite entre 1 e 20.")
@@ -85,7 +85,7 @@ async def _buscar(collection: str, texto: str, endereco_id: int, client: AsyncQd
     registros = {}
 
     for ponto in resultado.points:
-        registro_id, descricao = _registro(ponto, endereco_id, collection)
+        registro_id, descricao = _registro(ponto, cnpj_endereco, collection)
 
         if registro_id in registros and registros[registro_id] != descricao:
             raise ValueError("ID operacional duplicado com descrições diferentes.")
@@ -94,16 +94,16 @@ async def _buscar(collection: str, texto: str, endereco_id: int, client: AsyncQd
 
     return registros
 
-async def buscar_categoria_equipamento(descricao: str, endereco_id: int, client: AsyncQdrantClient) -> dict[int, str]:
-    return await _buscar(config.QDRANT_CATEGORIA_COLLECTION, descricao, endereco_id, client)
+async def buscar_categoria_equipamento(descricao: str, cnpj_endereco: str, client: AsyncQdrantClient) -> dict[int, str]:
+    return await _buscar(config.QDRANT_CATEGORIA_COLLECTION, descricao, cnpj_endereco, client)
 
-async def buscar_local_endereco(descricao: str, endereco_id: int, client: AsyncQdrantClient) -> dict[int, str]:
-    return await _buscar(config.QDRANT_LOCAL_COLLECTION, descricao, endereco_id, client)
+async def buscar_local_endereco(descricao: str, cnpj_endereco: str, client: AsyncQdrantClient) -> dict[int, str]:
+    return await _buscar(config.QDRANT_LOCAL_COLLECTION, descricao, cnpj_endereco, client)
 
 async def validar_selecao(
         collection: str,
         registro_id: int,
-        endereco_id: int,
+        cnpj_endereco: str,
         client: AsyncQdrantClient) -> None:
     
     if collection not in (config.QDRANT_CATEGORIA_COLLECTION, config.QDRANT_LOCAL_COLLECTION):
@@ -111,7 +111,7 @@ async def validar_selecao(
     
     pontos, _ = await client.scroll(
         collection_name=collection,
-        scroll_filter=_filtro(endereco_id, registro_id, collection),
+        scroll_filter=_filtro(cnpj_endereco, registro_id, collection),
         limit=2,
         with_payload=True,
         with_vectors=False,

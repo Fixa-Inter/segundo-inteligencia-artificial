@@ -7,6 +7,7 @@ from .nodes import (
     validar_entrada,
     supervisionar,
     executar_faq,
+    executar_solicitacao,
     julgar_resposta,
     validar_saida,
     tratar_erro,
@@ -28,6 +29,7 @@ def construir_grafo():
     builder.add_node("guardrail_entrada", validar_entrada)
     builder.add_node("supervisor", supervisionar)
     builder.add_node("agente_faq", executar_faq)
+    builder.add_node("agente_solicitacao", executar_solicitacao)
     builder.add_node("juiz", julgar_resposta)
     builder.add_node("guardrail_saida", validar_saida)
     builder.add_node("fallback", tratar_erro)
@@ -48,7 +50,7 @@ def construir_grafo():
         {
             "faq": "agente_faq",
             "fora_de_escopo": "fallback",
-            "solicitacao": "fallback",
+            "solicitacao": "agente_solicitacao",
             "analytics": "fallback",
             "visualizacao": "fallback",
             "feedback": "fallback",
@@ -57,6 +59,7 @@ def construir_grafo():
     )
 
     builder.add_edge("agente_faq", "juiz")
+    builder.add_edge("agente_solicitacao", "juiz")
 
     builder.add_conditional_edges(
         "juiz",

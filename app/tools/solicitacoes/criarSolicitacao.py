@@ -70,14 +70,14 @@ async def criar_solicitacao(
         await validar_selecao(
                 QDRANT_CATEGORIA_COLLECTION,
                 categoria_equipamento_id,
-                contexto["usuario"].endereco_id,
+                contexto["usuario"].cnpj_endereco,
                 client
             )
 
         await validar_selecao(
                 QDRANT_LOCAL_COLLECTION,
                 local_endereco_id,
-                contexto["usuario"].endereco_id,
+                contexto["usuario"].cnpj_endereco,
                 client
             )
     

@@ -7,6 +7,7 @@ from app.tools.solicitacoes.listarMinhasSolicitacoes import listar_minhas_solici
 from app.tools.solicitacoes.criarSolicitacao import criar_solicitacao
 from app.tools.solicitacoes.listarTodasSolicitacoesPendentes import listar_todas_solicitacoes_pendentes
 from app.tools.ordensServico.listarMinhasOrdensServico import listar_minhas_ordens_servico
+from app.graph.context import GraphContext
 
 
 def criar_agente_solicitacoes(model, prompt: str, fallback=None, *, gestor: bool = False, tecnico: bool = False):
@@ -19,5 +20,6 @@ def criar_agente_solicitacoes(model, prompt: str, fallback=None, *, gestor: bool
         model=model, system_prompt=prompt,
         tools=ferramentas,
         response_format=SolicitacaoOcorrenciaResultado,
+        context_schema=GraphContext,
         middleware=[ModelFallbackMiddleware(fallback)] if fallback is not None else [],
     )

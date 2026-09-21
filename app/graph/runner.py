@@ -30,9 +30,6 @@ def criar_estado_inicial(
     if not mensagem:
         raise ValueError("A mensagem não pode estar vazia.")
 
-    if not usuario.esta_ativo:
-        raise ValueError("O usuário está inativo.")
-
     perfil_normalizado = usuario.tipo_acesso.strip().lower()
 
     if perfil_normalizado not in PERFIS_VALIDOS:

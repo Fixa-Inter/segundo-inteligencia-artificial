@@ -11,13 +11,12 @@ def criar_usuario() -> UsuarioContexto:
     return UsuarioContexto(
         access_token="token-teste",
         usuario_id=10,
-        gerente_id=1,
-        endereco_id=5,
         nome_completo="Usuário Teste",
+        email="usuario@teste.com",
         tipo_acesso="solicitante",
         cargo="Solicitante",
         data_nascimento=date(2000, 1, 1),
-        esta_ativo=True,
+        cnpj_endereco="12345678000190",
     )
 
 
