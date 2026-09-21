@@ -12,10 +12,10 @@ from app.agents.agents import (
     solicitacoes_gestor,
     solicitacoes_solicitante,
     solicitacoes_tecnico,
-    FAQResultado,
 )
 
 from app.agents.agentsResult import (
+    FAQResultado,
     SolicitacaoOcorrenciaResultado,
 )
 from app.graph.context import GraphContext
