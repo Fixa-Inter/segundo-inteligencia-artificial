@@ -71,12 +71,12 @@ async def gerar_embeddings_documentos(textos: list[str]) -> list[list[float]]:
     return await embeddings.aembed_documents(textos)
 
 
-def gerar_point_id(endereco_id: int, campo_id: int) -> str:
+def gerar_point_id(cnpj_endereco: str, campo_id: int) -> str:
     """Contrato para o indexador: UUID5(NAMESPACE_URL, 'sede:id_operacional').
 
     O separador impede que (1, 23) e (12, 3) gerem a mesma entrada. O mesmo UUID
     pode existir nas duas collections, pois elas são independentes.
     """
-    if any(type(valor) is not int or valor <= 0 for valor in (endereco_id, campo_id)):
-        raise ValueError("Sede e ID operacional devem ser inteiros positivos.")
-    return str(uuid5(UUID(config.QDRANT_POINT_NAMESPACE), f"{endereco_id}:{campo_id}"))
+    if any(type(valor) is not int or valor <= 0 for valor in (campo_id,)):
+        raise ValueError("ID operacional deve ser um inteiro positivo.")
+    return str(uuid5(UUID(config.QDRANT_POINT_NAMESPACE), f"{cnpj_endereco}:{campo_id}"))

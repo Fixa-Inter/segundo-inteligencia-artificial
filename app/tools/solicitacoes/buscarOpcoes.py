@@ -22,10 +22,10 @@ async def buscar_opcoes_solicitacao(
     async with abrir_cliente_qdrant() as cliente:
         async with asyncio.TaskGroup() as tarefas:
             categorias = tarefas.create_task(
-                buscar_categoria_equipamento(equipamento, usuario.endereco_id, cliente)
+                buscar_categoria_equipamento(equipamento, usuario.cnpj_endereco, cliente)
             )
             locais = tarefas.create_task(
-                buscar_local_endereco(local, usuario.endereco_id, cliente)
+                buscar_local_endereco(local, usuario.cnpj_endereco, cliente)
             )
     return {
         "categoria_equipamento": {str(k): v for k, v in categorias.result().items()},
