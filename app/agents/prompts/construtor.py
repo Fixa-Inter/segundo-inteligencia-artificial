@@ -1,4 +1,5 @@
 from app.agents.prompts.reutilizaveis import CONTEXTO_PROMPT, CONTEXTO_TEMPORAL, GLOSSARIO_PROMPT, GESTOR_PROMPT, SOLICITANTE_PROMPT, TECNICO_PROMPT
+from app.agents.prompts.reutilizaveis import MAPEAMENTO_CATEGORIA_PROBLEMA_PROMPT
 from app.agents.prompts.especialistas import (
     ANALYTICS_PROMPT,
     FAQ_PROMPT,
@@ -68,6 +69,7 @@ def construir_solicitacoes_solicitante() -> str:
         GLOSSARIO_PROMPT,
         SOLICITANTE_PROMPT,
         SOLICITACOES_PROMPT,
+        MAPEAMENTO_CATEGORIA_PROBLEMA_PROMPT,
     ])
 
 
@@ -78,6 +80,7 @@ def construir_solicitacoes_tecnico() -> str:
         GLOSSARIO_PROMPT,
         TECNICO_PROMPT,
         SOLICITACOES_PROMPT,
+        MAPEAMENTO_CATEGORIA_PROBLEMA_PROMPT,
     ])
 
 
@@ -88,6 +91,7 @@ def construir_solicitacoes_gestor() -> str:
         GLOSSARIO_PROMPT,
         GESTOR_PROMPT,
         SOLICITACOES_PROMPT,
+        MAPEAMENTO_CATEGORIA_PROBLEMA_PROMPT,
     ])
 
 

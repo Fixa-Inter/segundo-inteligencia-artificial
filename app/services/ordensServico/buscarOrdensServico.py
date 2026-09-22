@@ -1,5 +1,5 @@
 from calendar import monthrange
-from datetime import date, datetime
+from datetime import date
 
 import httpx
 
@@ -7,6 +7,7 @@ from app.core.config import FIXA_API_BASE_URL
 
 
 ORDEM_STATUS = ("ATRASADA", "PENDENTE", "EM ANDAMENTO", "CONCLUIDA")
+ORDEM_PRIORIDADE = ("ALTO", "MÉDIO", "BAIXO")
 
 
 def inicio_periodo(hoje: date) -> date:
@@ -19,10 +20,10 @@ def inicio_periodo(hoje: date) -> date:
 
 def ler_data(valor: str) -> date:
     if not isinstance(valor, str):
-        raise ValueError("Data deve ser uma string DD-MM-AAAA.")
-    resultado = datetime.strptime(valor, "%d-%m-%Y").date()
-    if resultado.strftime("%d-%m-%Y") != valor:
-        raise ValueError("Data deve usar DD-MM-AAAA.")
+        raise ValueError("Data deve ser uma string AAAA-MM-DD.")
+    resultado = date.fromisoformat(valor)
+    if resultado.isoformat() != valor:
+        raise ValueError("Data deve usar AAAA-MM-DD.")
     return resultado
 
 
@@ -43,7 +44,7 @@ def filtrar_e_ordenar_ordens(dados: list, hoje: date) -> list[dict]:
         if not inicio <= criacao <= hoje:
             continue
 
-        problema = item.get("problema")
+        problema = item.get("problemaDetalhesOutputDTO")
 
         if not isinstance(problema, dict) or any(
             not isinstance(problema.get(campo), str)
@@ -57,8 +58,8 @@ def filtrar_e_ordenar_ordens(dados: list, hoje: date) -> list[dict]:
         if status not in ORDEM_STATUS:
             raise ValueError("Status da ordem de serviço inválido.")
         
-        if type(prioridade) is not int or prioridade not in (0, 1, 2):
-            raise ValueError("Prioridade deve ser 0, 1 ou 2.")
+        if not isinstance(prioridade, str) or prioridade not in ORDEM_PRIORIDADE:
+            raise ValueError("Prioridade deve ser ALTO, MÉDIO ou BAIXO.")
         
         if not isinstance(item.get("categoriaProblema"), str):
             raise ValueError("Categoria do problema inválida.")
@@ -81,12 +82,22 @@ def filtrar_e_ordenar_ordens(dados: list, hoje: date) -> list[dict]:
         })
 
     return sorted(ordens, key=lambda ordem: (
-        ORDEM_STATUS.index(ordem["statusOrdemServico"]), ordem["prioridade"],
+        ORDEM_STATUS.index(ordem["statusOrdemServico"]),
+        ORDEM_PRIORIDADE.index(ordem["prioridade"]),
     ))
 
 
 async def consultar_minhas_ordens_servico(access_token: str) -> dict:
     """Consulta as OSs do usuário e seleciona os últimos três meses até hoje."""
+    return await _consultar_ordens_servico(access_token, "/api/v1/os/minhas")
+
+
+async def consultar_todas_ordens_servico(access_token: str) -> dict:
+    """Consulta as OSs do escopo autorizado pela API nos últimos três meses."""
+    return await _consultar_ordens_servico(access_token, "/api/v1/os")
+
+
+async def _consultar_ordens_servico(access_token: str, caminho: str) -> dict:
     if not FIXA_API_BASE_URL:
         raise ValueError("Configure FIXA_API_BASE_URL.")
     
@@ -98,7 +109,7 @@ async def consultar_minhas_ordens_servico(access_token: str) -> dict:
     try:
         async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
             resposta = await client.get(
-                f"{FIXA_API_BASE_URL.rstrip('/')}/api/v1/os/minhas",
+                f"{FIXA_API_BASE_URL.rstrip('/')}{caminho}",
                 headers={"Authorization": f"Bearer {access_token}"},
             )
 
