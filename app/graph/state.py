@@ -26,7 +26,9 @@ class GraphState(TypedDict, total=False):
 
     entrada_valida: bool
     justificativa_roteamento: str
-
+    mensagem_anonimizada: str
+    mapa_pii: dict[str, str]
+    motivo_bloqueio: str | None
     evidencias: list[str]
     resposta_especialista: str
 
@@ -41,3 +43,5 @@ class GraphState(TypedDict, total=False):
 
     resposta_final: str
     erro: str | None
+
+    

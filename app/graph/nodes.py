@@ -81,17 +81,30 @@ def validar_entrada(state: GraphState) -> dict:
     if not pergunta:
         return {
             "entrada_valida": False,
+            "motivo_bloqueio": "mensagem_vazia",
             "erro": "A mensagem está vazia.",
         }
 
     if perfil not in {"solicitante", "tecnico", "gestor"}:
         return {
             "entrada_valida": False,
+            "motivo_bloqueio": "perfil_invalido",
             "erro": "Perfil inválido ou não autenticado.",
+        }
+
+    resultado = guardrail_entrada(pergunta)
+
+    if resultado["bloqueado"]:
+        return {
+            "entrada_valida": False,
+            "motivo_bloqueio": resultado["motivo"],
+            "resposta_final": resultado["mensagem"],
+            "erro": None,
         }
 
     return {
         "entrada_valida": True,
+        "motivo_bloqueio": None,
         "erro": None,
     }
 
@@ -376,10 +389,7 @@ def validar_saida(state: GraphState) -> dict:
 def tratar_erro(state: GraphState) -> dict:
     if state.get("erro"):
         return {
-            "resposta_final": (
-                "Não foi possível processar sua solicitação neste momento. "
-                "Tente novamente mais tarde."
-            )
+            "resposta_final": state["resposta_final"],
         }
 
     if state.get("intencao") == "fora_de_escopo":

@@ -7,6 +7,8 @@ from app.graph.state import GraphState
 from app.graph.workflow import grafo
 from app.schemas.UsuarioContexto import UsuarioContexto
 
+from app.guardrails import anonimizar_entrada
+
 
 Perfil = Literal[
     "solicitante",
