@@ -2,7 +2,7 @@ import asyncio
 
 from langchain.tools import ToolRuntime, tool
 from app.memory.vectorSearch import buscar_categoria_equipamento, buscar_local_endereco
-from app.memory.vectorSearch.cliente import abrir_cliente_qdrant
+from app.core.clients.qdrant import abrir_cliente_qdrant
 from app.schemas.UsuarioContexto import UsuarioContexto
 
 

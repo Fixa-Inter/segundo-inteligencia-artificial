@@ -2,7 +2,7 @@ from langchain.tools import ToolRuntime, tool
 from qdrant_client import models
 from app.schemas.UsuarioContexto import UsuarioContexto
 from app.memory.embedding.config import gerar_embedding_documento
-from app.memory.vectorSearch.cliente import abrir_cliente_qdrant
+from app.core.clients.qdrant import abrir_cliente_qdrant
 from app.core.config import QDRANT_FAQ_COLLECTION
 
 

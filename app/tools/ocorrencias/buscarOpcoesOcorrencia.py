@@ -2,13 +2,15 @@ from langchain.tools import ToolRuntime, tool
 
 from app.schemas.UsuarioContexto import UsuarioContexto
 from app.memory.vectorSearch.busca import buscar_local_endereco
-from app.memory.vectorSearch.cliente import abrir_cliente_qdrant
+from app.core.clients.qdrant import abrir_cliente_qdrant
 from app.services.ocorrencias.buscarOcorrencias import buscar_equipamento_por_codigo
 
 
 @tool
 async def buscar_opcoes_ocorrencia(
-    local: str, runtime: ToolRuntime, equipamento_codigo: str | None = None,
+    local: str,
+    runtime: ToolRuntime,
+    equipamento_codigo: str | None = None,
 ) -> dict:
     """Busca locais da sede e, se informado, resolve o código de um equipamento ativo.
 
