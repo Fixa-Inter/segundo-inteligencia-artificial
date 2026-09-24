@@ -7,7 +7,7 @@ from app.tools.toolsRequest.CriarSolicitacaoRequest import CriarSolicitacaoReque
 from app.services.solicitacoes.criarSolicitacao import adicionar_solicitacao
 from app.schemas.UsuarioContexto import UsuarioContexto
 from app.memory.vectorSearch import validar_selecao
-from app.memory.vectorSearch.cliente import abrir_cliente_qdrant
+from app.core.clients.qdrant import abrir_cliente_qdrant
 from app.core.config import QDRANT_LOCAL_COLLECTION, QDRANT_CATEGORIA_COLLECTION
 
 

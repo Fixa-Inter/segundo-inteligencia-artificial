@@ -14,7 +14,6 @@ load_dotenv(BASE_DIR / ".env")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GROQ_API_KEY   = os.getenv("GROQ_API_KEY")
 DATABASE_URL   = os.getenv("DATABASE_URL")
-MONGODB_URI    = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
 
 FIXA_API_BASE_URL = os.getenv("FIXA_API_BASE_URL")
 
@@ -24,6 +23,7 @@ QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_CATEGORIA_COLLECTION = "categoria_equipamento"
 QDRANT_LOCAL_COLLECTION = "local_endereco"
 QDRANT_FAQ_COLLECTION = "faq_fixa"
+QDRANT_HISTORICO_COLLECTION = "resumo_historico"
 QDRANT_TENANT_FIELD = "cnpj_endereco"
 QDRANT_CATEGORIA_ID_FIELD = "categoria_equipamento_id"
 QDRANT_LOCAL_ID_FIELD = "local_endereco_id"
@@ -36,6 +36,13 @@ EMBEDDING_DIMENSIONS_FAQ = 768
 VECTOR_SEARCH_LIMIT = 3
 VECTOR_SCORE_THRESHOLD = 0.80
 # ================== FIM DAS CONFIGURAÇÕES DO QDRANT ==================
+
+# ==================== CONFIGURAÇÕES DO MONGO ====================
+MONGODB_URI = os.getenv("MONGO_URI")
+MONGO_COLLECTION_SESSOES = "sessoes"
+MONGO_BANCO_DADOS = "fixa_inteligencia_artificial"
+# ================== FIM DAS CONFIGURAÇÕES DO MONGO ==================
+
 
 OBRIGATORIAS = {
     "GEMINI_API_KEY": GEMINI_API_KEY,

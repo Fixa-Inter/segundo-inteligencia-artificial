@@ -4,7 +4,7 @@ from pydantic import model_validator
 from app.core.config import QDRANT_LOCAL_COLLECTION
 from app.schemas.UsuarioContexto import UsuarioContexto
 from app.memory.vectorSearch.busca import validar_selecao
-from app.memory.vectorSearch.cliente import abrir_cliente_qdrant
+from app.core.clients.qdrant import abrir_cliente_qdrant
 from app.services.ocorrencias.buscarOcorrencias import buscar_equipamento_por_codigo
 from app.services.ocorrencias.criarOcorrencia import adicionar_ocorrencia
 from app.tools.toolsRequest.CriarOcorrenciaRequest import CriarOcorrenciaRequest

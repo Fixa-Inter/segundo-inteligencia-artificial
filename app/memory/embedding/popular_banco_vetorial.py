@@ -16,7 +16,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from qdrant_client import models
 
 from app.memory.embedding.config import gerar_embeddings_documentos
-from app.memory.vectorSearch.cliente import abrir_cliente_qdrant
+from app.core.clients.qdrant import abrir_cliente_qdrant
 from app.core.config import QDRANT_FAQ_COLLECTION
 
 CHUNK_SIZE    = 700
