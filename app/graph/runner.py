@@ -10,6 +10,8 @@ from app.memory.persistencia.salvar_mensagem import salvar_mensagem
 from app.memory.persistencia.recuperar_mensagens import recuperar_mensagens
 from app.memory.persistencia.utilitarios import documento_id_da_sessao
 
+from app.guardrails import anonimizar_entrada
+
 
 Perfil = Literal[
     "solicitante",
@@ -41,7 +43,7 @@ def criar_estado_inicial(
 
     return {
         "messages": mensagens,
-        "user_id": usuario.usuario_id,
+        "user_id": str(usuario.usuario_id),
         "perfil": perfil,
         "tentativas": 0,
         "erro": None,
@@ -64,7 +66,9 @@ async def executar_grafo(
     )
     
     # ANONIMIZAR A ENTRADA E SALVAR A MENSAGEM COM O MÉTODO SALVAR MENSAGEM
-    mensagem_anonimizada = ""
+    mensagem_anonimizada, mapa_pii = anonimizar_entrada(
+        mensagem
+    )
 
     config = {
         "configurable": {
@@ -92,6 +96,8 @@ async def executar_grafo(
         mensagens=mensagens,
         usuario=usuario,
     )
+    estado_inicial["mensagem_anonimizada"] = mensagem_anonimizada
+    estado_inicial["mapa_pii"] = mapa_pii
 
     contexto: GraphContext = {
         "usuario": usuario,

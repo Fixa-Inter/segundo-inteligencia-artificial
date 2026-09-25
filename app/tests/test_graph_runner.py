@@ -31,6 +31,7 @@ def test_executar_grafo_inicializa_estado_e_contexto(
 
     grafo_mock = SimpleNamespace(
         ainvoke=ainvoke,
+        get_state=lambda _: SimpleNamespace(values={}),
     )
 
     monkeypatch.setattr(
@@ -39,11 +40,29 @@ def test_executar_grafo_inicializa_estado_e_contexto(
         grafo_mock,
     )
 
+    monkeypatch.setattr(
+        runner,
+        "documento_id_da_sessao",
+        AsyncMock(return_value="documento-123"),
+    )
+    monkeypatch.setattr(
+        runner,
+        "recuperar_mensagens",
+        AsyncMock(return_value=[]),
+    )
+    salvar_mensagem = AsyncMock()
+    monkeypatch.setattr(
+        runner,
+        "salvar_mensagem",
+        salvar_mensagem,
+    )
+
     usuario = criar_usuario()
+    mensagem = "Como acompanho uma solicitacao?"
 
     resultado = asyncio.run(
         runner.executar_grafo(
-            mensagem="Como acompanho uma solicitação?",
+            mensagem=mensagem,
             usuario=usuario,
             thread_id="conversa-123",
             imagens=["https://exemplo.com/imagem.jpg"],
@@ -59,9 +78,9 @@ def test_executar_grafo_inicializa_estado_e_contexto(
     assert estado["user_id"] == "10"
     assert estado["perfil"] == "solicitante"
     assert estado["tentativas"] == 0
-    assert estado["messages"][0].content == (
-        "Como acompanho uma solicitação?"
-    )
+    assert estado["mensagem_anonimizada"] == mensagem
+    assert estado["mapa_pii"] == {}
+    assert estado["messages"][0].content == mensagem
 
     assert nomeados["config"] == {
         "configurable": {
@@ -73,3 +92,5 @@ def test_executar_grafo_inicializa_estado_e_contexto(
     assert nomeados["context"]["imagens"] == [
         "https://exemplo.com/imagem.jpg"
     ]
+
+    assert salvar_mensagem.await_count == 2
