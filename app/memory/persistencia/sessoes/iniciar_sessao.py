@@ -14,19 +14,15 @@ async def iniciar_sessao(
     agora_val  = agora()
 
     async with abrir_cliente_mongo() as cliente:
-        if not MONGO_BANCO_DADOS or not MONGO_COLLECTION_SESSOES:
-            print("Informações de conexão com o MongoDB ausentes!")
-            return
-        else:
-            db = cliente[MONGO_BANCO_DADOS]
-            collection_sessoes = db[MONGO_COLLECTION_SESSOES]
-            await collection_sessoes.insert_one({
-                "_id":           doc_id,
-                "session_id":    session_id,
-                "user_id":       user_id,
-                "iniciada_em":   agora_val,
-                "atualizada_em": agora_val,
-                "resumo":        "",
-                "mensagens":     [],
-            })
-            sessoes_ativas[(user_id, session_id)] = doc_id
+        db = cliente[MONGO_BANCO_DADOS]
+        collection_sessoes = db[MONGO_COLLECTION_SESSOES]
+        await collection_sessoes.insert_one({
+            "_id":           doc_id,
+            "session_id":    session_id,
+            "user_id":       user_id,
+            "iniciada_em":   agora_val,
+            "atualizada_em": agora_val,
+            "resumo":        "",
+            "mensagens":     [],
+        })
+        sessoes_ativas[(user_id, session_id)] = doc_id

@@ -8,7 +8,7 @@ from langchain_core.messages import BaseMessage
 class GraphState(TypedDict, total=False):
     messages: Annotated[list[BaseMessage], add_messages]
 
-    user_id: str
+    user_id: int
     perfil: Literal[
         "solicitante",
         "tecnico",

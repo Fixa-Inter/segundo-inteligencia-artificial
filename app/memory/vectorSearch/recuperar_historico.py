@@ -44,21 +44,18 @@ async def recuperar_historico(
                 ]
 
         async with abrir_cliente_mongo() as cliente:
-            if not MONGO_BANCO_DADOS or not MONGO_COLLECTION_SESSOES:
-                print("Informações de conexão com o MongoDB ausentes!")
-            else:
-                db = cliente[MONGO_BANCO_DADOS]
-                collection_sessoes = db[MONGO_COLLECTION_SESSOES]
-                filtro = {"user_id": user_id, "resumo": {"$nin": ["", None]}}
-                docs = (
-                    collection_sessoes
-                    .find(filtro, {"resumo": 1, "iniciada_em": 1})
-                    .sort("iniciada_em", -1)
-                    .limit(limite)
-                )
+            db = cliente[MONGO_BANCO_DADOS]
+            collection_sessoes = db[MONGO_COLLECTION_SESSOES]
+            filtro = {"user_id": user_id}
+            docs = (
+                collection_sessoes
+                .find(filtro, {"resumo": 1, "iniciada_em": 1})
+                .sort("iniciada_em", -1)
+                .limit(limite)
+            )
 
-                return [
-                    {"doc_id": d["_id"], "iniciada_em": d["iniciada_em"], "resumo": d["resumo"]}
-                    async for d in docs
-                ]
+            return [
+                {"doc_id": d["_id"], "iniciada_em": d["iniciada_em"], "resumo": d["resumo"]}
+                async for d in docs
+            ]
 

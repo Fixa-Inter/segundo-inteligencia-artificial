@@ -3,6 +3,7 @@ from typing import Literal
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 from langgraph.runtime import Runtime
+from langchain_core.messages import AIMessage
 
 
 from app.agents.agents import (
@@ -352,46 +353,43 @@ def validar_saida(state: GraphState) -> dict:
     resposta = state.get("resposta_especialista", "").strip()
 
     if state.get("veredito") != "aprovado":
+        resposta = "A resposta não foi aprovada para envio."
         return {
-            "resposta_final": (
-                "A resposta não foi aprovada para envio."
-            ),
+            "resposta_final": resposta,
+            "messages": [AIMessage(content=resposta)],
             "erro": state.get("erro"),
         }
 
     if not resposta:
+        resposta = "Não foi possível produzir uma resposta válida."
         return {
-            "resposta_final": (
-                "Não foi possível produzir uma resposta válida."
-            ),
+            "resposta_final": resposta,
+            "messages": [AIMessage(content=resposta)],
             "erro": "Resposta final vazia.",
         }
 
     return {
         "resposta_final": resposta,
+        "messages": [AIMessage(content=resposta)],
         "erro": None,
     }
 
 
 def tratar_erro(state: GraphState) -> dict:
     if state.get("erro"):
-        return {
-            "resposta_final": (
-                "Não foi possível processar sua solicitação neste momento. "
-                "Tente novamente mais tarde."
-            )
-        }
-
-    if state.get("intencao") == "fora_de_escopo":
-        return {
-            "resposta_final": (
-                "Posso ajudar com dúvidas sobre o aplicativo, chamados "
-                "de manutenção, indicadores, visualizações e feedback."
-            )
-        }
+        resposta = (
+            "Não foi possível processar sua solicitação neste momento. "
+            "Tente novamente mais tarde."
+        )
+    elif state.get("intencao") == "fora_de_escopo":
+        resposta = (
+            "Posso ajudar com dúvidas sobre o aplicativo, chamados "
+            "de manutenção, indicadores, visualizações e feedback."
+        )
+    else:
+        resposta = "Essa funcionalidade ainda não está disponível."
 
     return {
-        "resposta_final": (
-            "Essa funcionalidade ainda não está disponível."
-        )
+        "resposta_final": resposta,
+        "messages": [AIMessage(content=resposta)],
     }
