@@ -9,16 +9,22 @@ from langgraph.runtime import Runtime
 from pydantic import BaseModel, Field
 
 from app.agents.agents import (
+    analytics_gestor,
     faq_gestor,
     faq_solicitante,
     faq_tecnico,
+    feedback,
     solicitacoes_gestor,
     solicitacoes_solicitante,
     solicitacoes_tecnico,
+    visualizacoes_gestor,
 )
 from app.agents.agentsResult import (
+    AnalyticsResultado,
     FAQResultado,
+    FeedbackResultado,
     SolicitacaoOcorrenciaResultado,
+    VisualizacaoResultado,
 )
 from app.agents.llms import (
     llm_gemini,
@@ -347,6 +353,159 @@ async def executar_solicitacao(
             "erro": (
                 "Erro durante a execução do agente "
                 f"de solicitações: {erro}"
+            ),
+        }
+
+
+async def executar_analytics(
+    state: GraphState,
+    runtime: Runtime[GraphContext],
+) -> dict:
+    if state.get("perfil") != "gestor":
+        return {
+            "resposta_especialista": (
+                "Seu perfil nao possui permissao para "
+                "consultar indicadores gerenciais."
+            ),
+            "erro": None,
+        }
+
+    try:
+        resultado = await analytics_gestor.ainvoke(
+            {
+                "messages": state.get(
+                    "messages",
+                    [],
+                ),
+            },
+            context=runtime.context,
+        )
+
+        resposta_estruturada = resultado.get(
+            "structured_response"
+        )
+
+        if not isinstance(
+            resposta_estruturada,
+            AnalyticsResultado,
+        ):
+            raise ValueError(
+                "O agente de analytics retornou uma "
+                "resposta incompativel."
+            )
+
+        return {
+            "resposta_especialista": (
+                resposta_estruturada.resposta
+            ),
+            "erro": None,
+        }
+
+    except Exception as erro:
+        return {
+            "resposta_especialista": "",
+            "erro": (
+                "Erro durante a execucao do agente "
+                f"de analytics: {erro}"
+            ),
+        }
+
+
+async def executar_visualizacao(
+    state: GraphState,
+    runtime: Runtime[GraphContext],
+) -> dict:
+    if state.get("perfil") != "gestor":
+        return {
+            "resposta_especialista": (
+                "Seu perfil nao possui permissao para "
+                "gerar visualizacoes gerenciais."
+            ),
+            "erro": None,
+        }
+
+    try:
+        resultado = await visualizacoes_gestor.ainvoke(
+            {
+                "messages": state.get(
+                    "messages",
+                    [],
+                ),
+            },
+            context=runtime.context,
+        )
+
+        resposta_estruturada = resultado.get(
+            "structured_response"
+        )
+
+        if not isinstance(
+            resposta_estruturada,
+            VisualizacaoResultado,
+        ):
+            raise ValueError(
+                "O agente de visualizacoes retornou uma "
+                "resposta incompativel."
+            )
+
+        return {
+            "resposta_especialista": (
+                resposta_estruturada.resposta
+            ),
+            "erro": None,
+        }
+
+    except Exception as erro:
+        return {
+            "resposta_especialista": "",
+            "erro": (
+                "Erro durante a execucao do agente "
+                f"de visualizacoes: {erro}"
+            ),
+        }
+
+
+async def executar_feedback(
+    state: GraphState,
+    runtime: Runtime[GraphContext],
+) -> dict:
+    try:
+        resultado = await feedback.ainvoke(
+            {
+                "messages": state.get(
+                    "messages",
+                    [],
+                ),
+            },
+            context=runtime.context,
+        )
+
+        resposta_estruturada = resultado.get(
+            "structured_response"
+        )
+
+        if not isinstance(
+            resposta_estruturada,
+            FeedbackResultado,
+        ):
+            raise ValueError(
+                "O agente de feedback retornou uma "
+                "resposta incompativel."
+            )
+
+        return {
+            "resposta_especialista": (
+                resposta_estruturada.resposta
+            ),
+            "erro": None,
+        }
+
+    except Exception as erro:
+        return {
+            "resposta_especialista": "",
+            "erro": (
+                "Erro durante a execucao do agente "
+                f"de feedback: {erro}"
             ),
         }
 

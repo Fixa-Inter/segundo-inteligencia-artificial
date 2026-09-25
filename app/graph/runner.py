@@ -43,7 +43,7 @@ def criar_estado_inicial(
 
     return {
         "messages": mensagens,
-        "user_id": usuario.usuario_id,
+        "user_id": str(usuario.usuario_id),
         "perfil": perfil,
         "tentativas": 0,
         "erro": None,
@@ -66,7 +66,9 @@ async def executar_grafo(
     )
     
     # ANONIMIZAR A ENTRADA E SALVAR A MENSAGEM COM O MÉTODO SALVAR MENSAGEM
-    mensagem_anonimizada = ""
+    mensagem_anonimizada, mapa_pii = anonimizar_entrada(
+        mensagem
+    )
 
     config = {
         "configurable": {
@@ -94,6 +96,8 @@ async def executar_grafo(
         mensagens=mensagens,
         usuario=usuario,
     )
+    estado_inicial["mensagem_anonimizada"] = mensagem_anonimizada
+    estado_inicial["mapa_pii"] = mapa_pii
 
     contexto: GraphContext = {
         "usuario": usuario,
