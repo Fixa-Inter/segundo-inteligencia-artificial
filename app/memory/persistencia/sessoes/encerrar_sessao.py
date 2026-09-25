@@ -15,41 +15,38 @@ async def encerrar_sessao(session_id: str, user_id: int) -> str:
         return ""
 
     async with abrir_cliente_mongo() as cliente:
-        if not MONGO_BANCO_DADOS or not MONGO_COLLECTION_SESSOES:
-            print("Informações de conexão com o MongoDB ausentes!")
-        else:
-            db = cliente[MONGO_BANCO_DADOS]
-            collection_sessoes = db[MONGO_COLLECTION_SESSOES]
+        db = cliente[MONGO_BANCO_DADOS]
+        collection_sessoes = db[MONGO_COLLECTION_SESSOES]
 
-            doc = await collection_sessoes.find_one({"_id": doc_id, "user_id": user_id})
+        doc = await collection_sessoes.find_one({"_id": doc_id, "user_id": user_id})
 
-            if not doc or not doc.get("mensagens"):
-                sessoes_ativas.pop(chave, None)
-                return ""
-            
-            resumo = await gerar_resumo(doc["mensagens"])
-
-            await collection_sessoes.update_one(
-                {"_id": doc_id, "user_id": user_id},
-                {"$set": {"resumo": resumo, "atualizada_em": agora()}},
-            )
-
+        if not doc or not doc.get("mensagens"):
             sessoes_ativas.pop(chave, None)
-            vetor = await gerar_embedding_documento(resumo)
-            async with abrir_cliente_qdrant() as cliente_qdrant:
-                await cliente_qdrant.upsert(
-                    collection_name=QDRANT_HISTORICO_COLLECTION,points=[
-                        models.PointStruct(
-                            id=doc_id,
-                            vector=vetor,
-                            payload={
-                                "user_id":     user_id,
-                                "session_id":  session_id,
-                                "resumo":      resumo,
-                                "iniciada_em": doc["iniciada_em"].isoformat(),
-                            },
-                        )
-                    ],
-                )
+            return ""
+
+        resumo = await gerar_resumo(doc["mensagens"])
+
+        await collection_sessoes.update_one(
+            {"_id": doc_id, "user_id": user_id},
+            {"$set": {"resumo": resumo, "atualizada_em": agora()}},
+        )
+
+        sessoes_ativas.pop(chave, None)
+        vetor = await gerar_embedding_documento(resumo)
+        async with abrir_cliente_qdrant() as cliente_qdrant:
+            await cliente_qdrant.upsert(
+                collection_name=QDRANT_HISTORICO_COLLECTION,points=[
+                    models.PointStruct(
+                        id=doc_id,
+                        vector=vetor,
+                        payload={
+                            "user_id":     user_id,
+                            "session_id":  session_id,
+                            "resumo":      resumo,
+                            "iniciada_em": doc["iniciada_em"].isoformat(),
+                        },
+                    )
+                ],
+            )
 
     return resumo

@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ChatRequest(BaseModel):
@@ -9,7 +9,8 @@ class ChatRequest(BaseModel):
         max_length=4000,
     )
 
-    thread_id: str = Field(
+    thread_id: str | None = Field(
+        default=None,
         min_length=1,
         max_length=100,
     )
@@ -17,6 +18,13 @@ class ChatRequest(BaseModel):
     imagens: list[str] = Field(
         default_factory=list,
     )
+
+    @field_validator("mensagem", "thread_id", mode="before")
+    @classmethod
+    def normalizar_texto(cls, valor):
+        if isinstance(valor, str):
+            return valor.strip()
+        return valor
 
 
 class ChatResponse(BaseModel):

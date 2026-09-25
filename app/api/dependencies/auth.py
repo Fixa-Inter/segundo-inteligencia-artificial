@@ -72,7 +72,6 @@ async def obter_usuario_atual(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=(
-                "A API FIXA retornou dados de perfil "
-                "incompatíveis."
+                "A API FIXA retornou dados de perfil incompatíveis."
             ),
         ) from None
