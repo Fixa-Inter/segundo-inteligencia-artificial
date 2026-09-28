@@ -19,6 +19,7 @@ async def buscar_opcoes_solicitacao(
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
         raise ValueError("Forneça uma instância de UsuarioContexto em context['usuario'].")
     usuario = contexto["usuario"]
+
     async with abrir_cliente_qdrant() as cliente:
         async with asyncio.TaskGroup() as tarefas:
             categorias = tarefas.create_task(
@@ -27,6 +28,7 @@ async def buscar_opcoes_solicitacao(
             locais = tarefas.create_task(
                 buscar_local_endereco(local, usuario.cnpj_endereco, cliente)
             )
+            
     return {
         "categoria_equipamento": {str(k): v for k, v in categorias.result().items()},
         "local_endereco": {str(k): v for k, v in locais.result().items()},

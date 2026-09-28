@@ -10,7 +10,7 @@ class GraphState(TypedDict, total=False):
         add_messages,
     ]
 
-    user_id: str
+    user_id: int
 
     perfil: Literal[
         "solicitante",

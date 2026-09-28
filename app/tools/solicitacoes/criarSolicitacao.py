@@ -47,9 +47,14 @@ async def criar_solicitacao(
     Esta tool executa o POST imediatamente; não gerencia confirmação ou conversa.
     """
     contexto = runtime.context
-
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
-            raise ValueError("Forneça uma instância de UsuarioContexto em context['usuario'].")
+        raise ValueError("Forneça uma instância de UsuarioContexto em context['usuario'].")
+    usuario = contexto["usuario"]
+    if usuario.tipo_acesso.lower() not in ("tecnico", "solicitante"):
+        return {
+            "status": "ACESSO_NEGADO",
+            "mensagem": "Somente técnicos e solicitantes podem realizar uma solicitação.",
+        }
 
     imagens = contexto.get("imagens")
     if imagens is None or imagens == []:

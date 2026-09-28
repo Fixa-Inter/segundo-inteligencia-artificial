@@ -43,7 +43,7 @@ def criar_estado_inicial(
 
     return {
         "messages": mensagens,
-        "user_id": str(usuario.usuario_id),
+        "user_id": usuario.usuario_id,
         "perfil": perfil,
         "tentativas": 0,
         "erro": None,
