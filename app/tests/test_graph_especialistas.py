@@ -49,6 +49,7 @@ def test_executar_analytics_gestor(monkeypatch) -> None:
     )
 
     assert resultado == {
+        "evidencias": [],
         "resposta_especialista": resposta.resposta,
         "erro": None,
     }
@@ -94,6 +95,7 @@ def test_executar_visualizacao_gestor(monkeypatch) -> None:
     )
 
     assert resultado == {
+        "evidencias": [],
         "resposta_especialista": resposta.resposta,
         "erro": None,
     }
@@ -139,6 +141,7 @@ def test_executar_feedback(monkeypatch) -> None:
     )
 
     assert resultado == {
+        "evidencias": [],
         "resposta_especialista": resposta.resposta,
         "erro": None,
     }

@@ -14,8 +14,8 @@ from app.tools.ocorrencias.criarOcorrencia import criar_ocorrencia
 from app.graph.context import GraphContext
 
 
-def criar_agente_solicitacoes(model, prompt: str, fallback=None, *, gestor: bool = False, tecnico: bool = False):
-    ferramentas = [buscar_opcoes_solicitacao, criar_solicitacao, listar_minhas_solicitacoes]
+def criar_agente_solicitacoes(model, prompt: str, fallback=None, *, gestor: bool = False, tecnico: bool = False, solicitante:bool = False):
+    ferramentas = [buscar_opcoes_solicitacao]
     if gestor:
         ferramentas.append(listar_todas_solicitacoes_pendentes)
         ferramentas.append(listar_todas_ordens_servico)
@@ -23,6 +23,9 @@ def criar_agente_solicitacoes(model, prompt: str, fallback=None, *, gestor: bool
         ferramentas.append(listar_minhas_ordens_servico)
         ferramentas.append(listar_minhas_ocorrencias)
         ferramentas.extend([buscar_opcoes_ocorrencia, criar_ocorrencia])
+    if tecnico or solicitante:
+        ferramentas.append(criar_solicitacao)
+        ferramentas.append(listar_minhas_solicitacoes)
     return create_agent(
         model=model, system_prompt=prompt,
         tools=ferramentas,

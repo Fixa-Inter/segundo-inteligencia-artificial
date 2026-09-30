@@ -46,6 +46,7 @@ def criar_estado_inicial(
         "user_id": usuario.usuario_id,
         "perfil": perfil,
         "tentativas": 0,
+        "evidencias": [],
         "erro": None,
     }
 

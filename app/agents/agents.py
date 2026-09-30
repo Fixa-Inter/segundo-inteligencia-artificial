@@ -29,19 +29,19 @@ from app.agents.agentsResult import (
 faq_solicitante = criar_agente_faq(
     model=llm_gemini,
     prompt=construir_faq_solicitante(),
-    fallback=llm_groq,
+    ##fallback=llm_groq,
 )
 
 faq_tecnico = criar_agente_faq(
     model=llm_gemini,
     prompt=construir_faq_tecnico(),
-    fallback=llm_groq,
+    ##fallback=llm_groq,
 )
 
 faq_gestor = criar_agente_faq(
     model=llm_gemini,
     prompt=construir_faq_gestor(),
-    fallback=llm_groq,
+    ##fallback=llm_groq,
 )
 
 feedback = create_agent(
@@ -70,18 +70,22 @@ juiz_gestor = create_agent(
 
 solicitacoes_solicitante = criar_agente_solicitacoes(
     prompt=construir_solicitacoes_solicitante(),
-    model=llm_gemini, fallback=llm_groq,
+    model=llm_gemini, 
+    ##fallback=llm_groq,
+    solicitante=True
 )
 
 solicitacoes_tecnico = criar_agente_solicitacoes(
     prompt=construir_solicitacoes_tecnico(),
-    model=llm_gemini, fallback=llm_groq,
+    model=llm_gemini,
+    ##fallback=llm_groq,
     tecnico=True,
 )
 
 solicitacoes_gestor = criar_agente_solicitacoes(
     prompt=construir_solicitacoes_gestor(),
-    model=llm_gemini, fallback=llm_groq,
+    model=llm_gemini,
+    ##fallback=llm_groq,
     gestor=True,
 )
 

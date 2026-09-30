@@ -5,7 +5,11 @@ from fastapi import FastAPI
 from app.api.router import api_router
 from app.core.clients.mongo import validar_config_mongo
 from app.memory.persistencia.garantir_indice import garantir_indice_persistencia
-from app.memory.vectorSearch.garantir_indice import garantir_indice_historico
+from app.memory.vectorSearch.garantir_indice import (
+    garantir_indice_categoria_equipamento,
+    garantir_indice_historico,
+    garantir_indice_local_endereco,
+)
 
 
 @asynccontextmanager
@@ -13,6 +17,8 @@ async def lifespan(app: FastAPI):
     validar_config_mongo()
     await garantir_indice_persistencia()
     await garantir_indice_historico()
+    await garantir_indice_categoria_equipamento()
+    await garantir_indice_local_endereco()
     yield
 
 app = FastAPI(

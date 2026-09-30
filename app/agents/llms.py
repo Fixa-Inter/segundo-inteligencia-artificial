@@ -20,4 +20,5 @@ llm_rapido = ChatGroq(
     api_key=GROQ_API_KEY,
 )
 
-llm_especialista = llm_gemini.with_fallbacks([llm_groq])
+# llm_especialista = llm_gemini.with_fallbacks([llm_groq])
+llm_especialista = llm_gemini
