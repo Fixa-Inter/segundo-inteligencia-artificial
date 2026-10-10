@@ -27,7 +27,8 @@ def criar_agente_solicitacoes(model, prompt: str, fallback=None, *, gestor: bool
         ferramentas.append(criar_solicitacao)
         ferramentas.append(listar_minhas_solicitacoes)
     return create_agent(
-        model=model, system_prompt=prompt,
+        model=model,
+        system_prompt=prompt,
         tools=ferramentas,
         response_format=SolicitacaoOcorrenciaResultado,
         context_schema=GraphContext,
