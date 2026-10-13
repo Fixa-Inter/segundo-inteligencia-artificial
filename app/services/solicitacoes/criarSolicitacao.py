@@ -11,7 +11,7 @@ async def adicionar_solicitacao(
 ) -> dict:
     """Envia o cadastro diretamente. Sem estado de conversa ou repetição de POST.
 
-    Envia os dados da solicitação e as URLs em urlFoto, usando Bearer token.
+    Envia os dados da solicitação e as URLs em urlsFoto, usando Bearer token.
     Espera resposta 2xx com titulo. A API valida a identidade, sede e os IDs.
     """
     if not isinstance(imagens, list) or not imagens or any(
@@ -32,8 +32,12 @@ async def adicionar_solicitacao(
             resposta = await client.post(
                 f"{FIXA_API_BASE_URL.rstrip('/')}/api/v1/solicitacoes",
                 json={
-                    **solicitacao.model_dump(),
-                    "urlFoto": imagens,
+                    "titulo": solicitacao.titulo,
+                    "descricaoProblema": solicitacao.descricao_problema,
+                    "localEnderecoID": solicitacao.local_endereco_id,
+                    "descricaoLocal": solicitacao.descricao_local,
+                    "categoriaEquipamentoId": solicitacao.categoria_equipamento_id,
+                    "urlsFoto": imagens,
                 },
                 headers={
                     "Authorization": f"Bearer {access_token}"
@@ -41,18 +45,32 @@ async def adicionar_solicitacao(
             )
         if 400 <= resposta.status_code < 500:
             return {"status": "ERRO_API", "http_status": resposta.status_code,
+                    "detalhes_api": resposta.text.replace(access_token, "[TOKEN]")[:4000],
                     "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."}
         
-        resposta.raise_for_status()
-        dados = resposta.json()
+        if not 200 <= resposta.status_code < 300 or resposta.status_code == 202:
+            return {**indeterminado, "http_status": resposta.status_code,
+                    "detalhes_api": resposta.text.replace(access_token, "[TOKEN]")[:4000]}
+        if resposta.status_code == 204:
+            return {"status": "SUCESSO", "http_status": 204, "titulo": solicitacao.titulo,
+                    "mensagem": "Solicitação cadastrada com sucesso."}
+        try:
+            dados = resposta.json()
+        except ValueError:
+            return {**indeterminado, "http_status": resposta.status_code}
         titulo_registro = dados.get("titulo") if isinstance(dados, dict) else None
+        problema_id = dados.get("id") if isinstance(dados, dict) else None
+        status_backend = dados.get("status") if isinstance(dados, dict) else None
 
-        if type(titulo_registro) not in (str, int) or not titulo_registro:
-            return indeterminado
+        if not isinstance(titulo_registro, str) or not titulo_registro.strip():
+            return {**indeterminado, "http_status": resposta.status_code}
         
         return {
             "status": "SUCESSO",
+            "http_status": resposta.status_code,
             "titulo": titulo_registro,
+            "problema_id": problema_id,
+            "status_backend": status_backend,
             "mensagem": "Solicitação cadastrada com sucesso."
         }
     

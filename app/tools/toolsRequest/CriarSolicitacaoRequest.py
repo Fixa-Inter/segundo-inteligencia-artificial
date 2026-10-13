@@ -1,13 +1,11 @@
-from typing import Literal
-
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CriarSolicitacaoRequest(BaseModel):
     """Dados da solicitação preenchidos pela IA, base para o args_schema da tool.
 
-    A tool obtém usuario_id de context['usuario']; o serviço o acrescenta ao
-    JSON enviado à API. Identidade e credenciais não são argumentos da IA.
+    A API obtém a identidade pelo Bearer token enviado pelo serviço.
+    Identidade e credenciais não são argumentos da IA.
     A existência dos IDs e a autorização devem ser verificadas pela API.
     """
 
@@ -30,19 +28,18 @@ class CriarSolicitacaoRequest(BaseModel):
     )
 
     titulo: str = Field(
-        min_length=1,
+        min_length=1, max_length=100,
         description="Resumo do problema em no máximo 10 palavras, sem inventar informações.",
     )
 
     descricao_problema: str = Field(
-        min_length=1,
+        min_length=1, max_length=255,
         description="Resumo detalhado do problema baseado apenas nas informações do usuário.",
     )
 
-    descricao_local: str | None = Field(
-        default=None,
-        min_length=1,
+    descricao_local: str = Field(
+        min_length=1, max_length=255,
         description=(
-            "Peculiaridades do local explicitamente citadas pelo usuário, como pontos de referência. Usar null quando não houver detalhes adicionais."
+            "Detalhes do local informados pelo usuário, como pontos de referência. Campo obrigatório; perguntar quando faltar."
         ),
     )

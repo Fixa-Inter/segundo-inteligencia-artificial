@@ -6,12 +6,10 @@ from app.services.solicitacoes.buscarSolicitacao import listar_solicitacoes_pend
 
 @tool
 async def listar_todas_solicitacoes_pendentes(runtime: ToolRuntime) -> dict:
-    """Lista as solicitações PENDENTES da organização do gestor autenticado.
+    """Lista problemas pendentes no endereco do gestor autenticado.
 
-    Não recebe argumentos da IA. Valida o tipo de acesso no contexto e usa
-    o Bearer token para a API restringir a consulta ao endereço do usuário.
-    Retorna título, data de criação, nome do usuário e status de cada solicitação.
-    """
+Nao recebe argumentos da IA. O SELECT filtra status pendente e CNPJ do
+endereco associado ao gestor."""
     contexto = runtime.context
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
         raise ValueError("Forneça uma instância de UsuarioContexto em context['usuario'].")
@@ -21,4 +19,4 @@ async def listar_todas_solicitacoes_pendentes(runtime: ToolRuntime) -> dict:
             "status": "ACESSO_NEGADO",
             "mensagem": "Somente gestores podem consultar as solicitações pendentes da organização.",
         }
-    return await listar_solicitacoes_pendentes(usuario.access_token)
+    return await listar_solicitacoes_pendentes(usuario)

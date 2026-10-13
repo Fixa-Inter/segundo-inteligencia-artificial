@@ -12,12 +12,10 @@ logger = logging.getLogger(__name__)
 
 @tool
 async def listar_minhas_solicitacoes(runtime: ToolRuntime) -> dict:
-    """Lista as solicitações criadas pelo usuário autenticado.
+    """Lista solicitacoes do usuario autenticado.
 
-    Não recebe filtros nem identificação fornecida pela IA. Usa o token de
-    context['usuario'] e retorna título, data de criação e nome do usuário.
-    Uma lista vazia significa que não foram encontradas solicitações.
-    """
+Nao recebe filtros da IA. O SELECT usa o ID autenticado e restringe os
+registros ao CNPJ do endereco do usuario."""
     try:
         contexto = runtime.context
         if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
@@ -29,7 +27,7 @@ async def listar_minhas_solicitacoes(runtime: ToolRuntime) -> dict:
                 "mensagem": "Somente técnicos e solicitantes podem realizar uma solicitação.",
             }
 
-        return await consultar_minhas_solicitacoes(contexto["usuario"].access_token)
+        return await consultar_minhas_solicitacoes(usuario)
     except Exception:
         logger.exception("Falha na tool listar_minhas_solicitacoes")
         raise

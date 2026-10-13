@@ -1,116 +1,149 @@
-from datetime import date
+import logging
+from datetime import date, datetime, timedelta
 
-import httpx
+from app.core.clients.postgres import executar_select
+from app.schemas.UsuarioContexto import UsuarioContexto
+from app.services.ordensServico.buscarOrdensServico import (
+    CATEGORIA_PROBLEMA_POR_ID,
+    PRIORIDADE_POR_ID,
+    inicio_periodo,
+)
 
-from app.core.config import FIXA_API_BASE_URL
+
+logger = logging.getLogger(__name__)
 
 
-async def buscar_equipamento_por_codigo(codigo: str, access_token: str) -> dict:
-    """Resolve um código para um único equipamento ativo. Endpoint provisório."""
-    if not FIXA_API_BASE_URL:
-        raise ValueError("Configure FIXA_API_BASE_URL.")
-    if not isinstance(access_token, str) or not access_token.strip():
-        raise ValueError("Token autenticado obrigatório.")
+def _data_iso(valor) -> str:
+    if isinstance(valor, datetime):
+        return valor.date().isoformat()
+    if isinstance(valor, date):
+        return valor.isoformat()
+    raise ValueError("Data retornada pelo banco em formato invalido.")
+
+
+async def buscar_equipamento_por_codigo(codigo: str, usuario: UsuarioContexto) -> dict:
+    """Resolve codigo de equipamento ativo no endereco do usuario autenticado."""
     if not isinstance(codigo, str) or not codigo.strip():
-        return {"status": "ERRO_VALIDACAO", "mensagem": "Informe o código do equipamento."}
-    codigo = codigo.strip()
+        return {"status": "ERRO_VALIDACAO", "mensagem": "Informe o codigo do equipamento."}
+
+    sql = """
+        SELECT equipamento.id, equipamento.codigo,
+               modelo.nome AS "nomeModelo",
+               local_registro.nome AS "nomeLocalEndereco",
+               equipamento.esta_ativo AS "estaAtivo"
+        FROM equipamento
+        JOIN modelo_equipamento AS modelo
+            ON modelo.id = equipamento.modelo_equipamento_id
+        JOIN local_endereco AS local_registro
+            ON local_registro.id = equipamento.local_endereco_id
+        JOIN endereco AS endereco_registro
+            ON endereco_registro.id = local_registro.endereco_id
+        JOIN usuario AS usuario_autenticado
+            ON usuario_autenticado.id = :usuario_id
+        JOIN endereco AS endereco_autenticado
+            ON endereco_autenticado.id = usuario_autenticado.endereco_id
+        WHERE equipamento.codigo = :codigo
+          AND equipamento.esta_ativo IS TRUE
+          AND endereco_registro.cnpj = endereco_autenticado.cnpj
+        ORDER BY equipamento.id
+        LIMIT 2
+    """
     try:
-        async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
-            resposta = await client.get(
-                f"{FIXA_API_BASE_URL.rstrip('/')}/api/v1/ocorrencias",
-                params={"filter": f"codigo eq {codigo}"},
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
-    except httpx.TimeoutException:
-        return {"status": "TIMEOUT", "mensagem": "A consulta do equipamento excedeu o tempo limite."}
-    except httpx.HTTPError:
-        return {"status": "ERRO_FERRAMENTA", "mensagem": "Não foi possível consultar o equipamento na API FIXA."}
-    if resposta.status_code != 200:
-        return {"status": "ERRO_API", "http_status": resposta.status_code,
-                "mensagem": "A API recusou a consulta do equipamento. Confira a autenticação e as permissões."}
-    try:
-        dados = resposta.json()
-        if not isinstance(dados, list) or any(not isinstance(item, dict) for item in dados):
-            raise ValueError("Resposta incompatível.")
-        encontrados = [item for item in dados if item.get("codigo") == codigo]
-        if not encontrados:
-            return {"status": "AGUARDANDO_INFORMACAO", "mensagem": "Equipamento não encontrado pelo código informado. Peça ao usuário para conferir o código."}
-        if len(encontrados) != 1:
-            return {"status": "AGUARDANDO_INFORMACAO", "mensagem": "O código corresponde a mais de um equipamento. Esclareça o cadastro antes de continuar."}
-        item = encontrados[0]
-        if type(item.get("id")) is not int or item["id"] <= 0 or type(item.get("estaAtivo")) is not bool:
-            raise ValueError("Identificação ou estado do equipamento inválido.")
-        if any(not isinstance(item.get(campo), str) for campo in ("nomeModelo", "nomeLocalEndereco")):
-            raise ValueError("Descrição do equipamento inválida.")
-        if not item["estaAtivo"]:
-            return {"status": "ERRO_VALIDACAO", "mensagem": "O equipamento informado está inativo e não pode ser usado no cadastro."}
-        return {"status": "SUCESSO", "equipamento": {
-            campo: item[campo] for campo in ("id", "codigo", "nomeModelo", "nomeLocalEndereco", "estaAtivo")
-        }}
-    except ValueError:
-        return {"status": "ERRO_VALIDACAO", "mensagem": "A API retornou um equipamento em formato incompatível."}
-
-
-async def consultar_minhas_ocorrencias(access_token: str) -> dict:
-    """Consulta ocorrências do usuário; o filtro de três meses é aplicado pela API."""
-    if not FIXA_API_BASE_URL:
-        raise ValueError("Configure FIXA_API_BASE_URL.")
-    if not isinstance(access_token, str) or not access_token.strip():
-        raise ValueError("Token autenticado obrigatório.")
-
-    try:
-        async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
-            resposta = await client.get(
-                f"{FIXA_API_BASE_URL.rstrip('/')}/api/v1/ocorrencias/minhas",
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
-    except httpx.TimeoutException:
-        return {"status": "TIMEOUT", "mensagem": "A consulta das ocorrências excedeu o tempo limite."}
-    except httpx.HTTPError:
-        return {"status": "ERRO_FERRAMENTA", "mensagem": "Não foi possível conectar à API FIXA."}
-
-    if resposta.status_code != 200:
-        mensagens = {
-            401: "A autenticação não foi aceita. É necessário autenticar-se novamente.",
-            403: "O usuário não possui permissão para consultar essas ocorrências.",
-        }
+        encontrados = await executar_select(
+            usuario.tipo_acesso,
+            sql,
+            {"usuario_id": usuario.usuario_id, "codigo": codigo.strip()},
+        )
+    except Exception:
+        logger.exception("Falha ao consultar equipamento por codigo no PostgreSQL")
         return {
-            "status": "ERRO_API",
-            "http_status": resposta.status_code,
-            "mensagem": mensagens.get(resposta.status_code, "A API não concluiu a consulta das ocorrências."),
+            "status": "ERRO_FERRAMENTA",
+            "mensagem": "Nao foi possivel consultar o equipamento no banco.",
         }
 
-    campos = (
-        "titulo", "descricaoOcorrencia", "categoriaProblema", "prioridade",
-        "localEndereco", "descricaoLocal", "dataCriacao",
-    )
+    if not encontrados:
+        return {
+            "status": "AGUARDANDO_INFORMACAO",
+            "mensagem": "Equipamento nao encontrado pelo codigo informado. Peça ao usuario para conferir o codigo.",
+        }
+    if len(encontrados) != 1:
+        return {
+            "status": "AGUARDANDO_INFORMACAO",
+            "mensagem": "O codigo corresponde a mais de um equipamento neste endereco. Esclareca o cadastro antes de continuar.",
+        }
+    return {"status": "SUCESSO", "equipamento": encontrados[0]}
+
+
+async def consultar_minhas_ocorrencias(usuario: UsuarioContexto) -> dict:
+    """Consulta ocorrencias do usuario no endereco dele nos ultimos tres meses."""
+    hoje = date.today()
+    inicio = inicio_periodo(hoje)
+    sql = """
+        SELECT ocorrencia.titulo,
+               ocorrencia.descricao_ocorrencia AS "descricaoOcorrencia",
+               ocorrencia.categoria_problema AS categoria_id,
+               ocorrencia.prioridade AS prioridade_id,
+               local_registro.nome AS "localEndereco",
+               ocorrencia.descricao_local AS "descricaoLocal",
+               ocorrencia.data_criacao::date AS "dataCriacao",
+               equipamento.codigo AS "equipamentoCodigo"
+        FROM ocorrencia
+        JOIN local_endereco AS local_registro
+            ON local_registro.id = ocorrencia.local_endereco_id
+        JOIN endereco AS endereco_registro
+            ON endereco_registro.id = local_registro.endereco_id
+        JOIN usuario AS usuario_autenticado
+            ON usuario_autenticado.id = :usuario_id
+        JOIN endereco AS endereco_autenticado
+            ON endereco_autenticado.id = usuario_autenticado.endereco_id
+        LEFT JOIN equipamento
+            ON equipamento.id = ocorrencia.equipamento_id
+        WHERE ocorrencia.usuario_id = :usuario_id
+          AND ocorrencia.esta_ativo IS TRUE
+          AND endereco_registro.cnpj = endereco_autenticado.cnpj
+          AND ocorrencia.data_criacao >= :inicio
+          AND ocorrencia.data_criacao < :fim_exclusivo
+        ORDER BY ocorrencia.data_criacao DESC
+    """
     try:
-        dados = resposta.json()
-        if not isinstance(dados, list):
-            raise ValueError("Resposta deve ser uma lista.")
+        rows = await executar_select(
+            usuario.tipo_acesso,
+            sql,
+            {
+                "usuario_id": usuario.usuario_id,
+                "inicio": inicio,
+                "fim_exclusivo": hoje + timedelta(days=1),
+            },
+        )
         ocorrencias = []
-        for item in dados:
-            if not isinstance(item, dict) or any(
-                not isinstance(item.get(campo), str) for campo in campos
-            ):
-                raise ValueError("Campos da ocorrência inválidos.")
-            criacao = date.fromisoformat(item["dataCriacao"])
-            if criacao.isoformat() != item["dataCriacao"]:
-                raise ValueError("Data de criação deve usar AAAA-MM-DD.")
-            if "equipamentoCodigo" not in item or (
-                item["equipamentoCodigo"] is not None
-                and not isinstance(item["equipamentoCodigo"], str)
-            ):
-                raise ValueError("Código do equipamento inválido.")
+        for row in rows:
+            categoria = CATEGORIA_PROBLEMA_POR_ID.get(row["categoria_id"])
+            prioridade = PRIORIDADE_POR_ID.get(row["prioridade_id"])
+            if categoria is None or prioridade is None:
+                raise ValueError("Categoria ou prioridade de ocorrencia desconhecida.")
             ocorrencias.append({
-                **{campo: item[campo] for campo in campos},
-                "equipamentoCodigo": item["equipamentoCodigo"],
+                "titulo": row["titulo"],
+                "descricaoOcorrencia": row["descricaoOcorrencia"],
+                "categoriaProblema": categoria,
+                "prioridade": prioridade,
+                "localEndereco": row["localEndereco"],
+                "descricaoLocal": row["descricaoLocal"],
+                "dataCriacao": _data_iso(row["dataCriacao"]),
+                "equipamentoCodigo": row["equipamentoCodigo"],
             })
-    except ValueError:
-        return {"status": "ERRO_VALIDACAO", "mensagem": "A API retornou ocorrências em formato incompatível."}
+    except Exception:
+        logger.exception("Falha ao consultar ocorrencias no PostgreSQL")
+        return {
+            "status": "ERRO_FERRAMENTA",
+            "mensagem": "Nao foi possivel consultar as ocorrencias no banco.",
+        }
 
     return {
         "status": "SUCESSO" if ocorrencias else "SEM_RESULTADO",
         "ocorrencias": ocorrencias,
-        "mensagem": "Ocorrências consultadas com sucesso." if ocorrencias else "Nenhuma ocorrência encontrada no período retornado pela API.",
+        "mensagem": (
+            "Ocorrencias consultadas com sucesso."
+            if ocorrencias
+            else "Nenhuma ocorrencia encontrada neste endereco nos ultimos tres meses."
+        ),
     }

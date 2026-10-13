@@ -33,6 +33,7 @@ class ChatResponse(BaseModel):
     intencao: Literal[
         "faq",
         "solicitacao",
+        "ocorrencia",
         "analytics",
         "visualizacao",
         "feedback",

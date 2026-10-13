@@ -24,5 +24,10 @@ async def iniciar_sessao(
             "atualizada_em": agora_val,
             "resumo":        "",
             "mensagens":     [],
+            "anexos_pendentes": [],
+            "solicitacao_pendente": None,
+            "ocorrencia_pendente": None,
+            "solicitacoes": [],
+            "ocorrencias": [],
         })
         sessoes_ativas[(user_id, session_id)] = doc_id

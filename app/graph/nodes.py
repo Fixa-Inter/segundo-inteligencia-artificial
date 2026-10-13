@@ -1,4 +1,5 @@
 import logging
+import json
 
 from typing import Literal
 
@@ -49,6 +50,7 @@ class DecisaoRoteamento(BaseModel):
     intencao: Literal[
         "faq",
         "solicitacao",
+        "ocorrencia",
         "analytics",
         "visualizacao",
         "feedback",
@@ -167,11 +169,26 @@ def supervisionar(
 Classifique a solicitação em uma destas intenções:
 
 - faq: dúvida sobre o aplicativo ou políticas;
-- solicitacao: criar, consultar ou alterar um chamado;
+- solicitacao: registrar um problema que ainda precisa de manutenção,
+  ou consultar/alterar solicitações;
+- ocorrencia: registrar uma manutenção que já foi realizada;
 - analytics: métricas, indicadores ou análises;
 - visualizacao: gráficos ou visualizações;
 - feedback: crítica, elogio ou sugestão;
 - fora_de_escopo: assunto não relacionado à plataforma.
+
+Regra principal para distinguir solicitacao de ocorrencia:
+- Se a pessoa relata um defeito e pede que alguém conserte, classifique como
+  solicitacao. Exemplo: "o notebook está pegando fogo, preciso que consertem".
+- Se relata que já executou a manutenção ou concluiu o reparo, classifique
+  como ocorrencia. Exemplo: "consertei o notebook que estava pegando fogo".
+- Verbos como "fiz a manutenção", "consertei", "troquei" e "reparei"
+  indicam serviço realizado quando usados como relato do que aconteceu.
+- A presença de um defeito passado no relato não transforma um reparo já
+  concluído em solicitação. Classifique pela ação que a pessoa quer registrar.
+- Se não der para saber se a manutenção já foi feita ou ainda é necessária,
+  escolha solicitacao somente se a pessoa pedir reparo; caso contrário,
+  encaminhe ao agente para esclarecer antes de salvar qualquer registro.
 
 Não responda à solicitação. Apenas classifique.
 """
@@ -289,9 +306,48 @@ async def executar_solicitacao(
         }
 
     evidencias = list(state.get("evidencias", []))
+    estado_agente = dict(state)
+    tipo_registro = state.get("intencao")
+    if tipo_registro in {"solicitacao", "ocorrencia"}:
+        mensagens = list(estado_agente.get("messages", []))
+        mensagens.insert(0, SystemMessage(content=(
+            "O roteador classificou a intenção atual como "
+            f"{tipo_registro}. "
+            + (
+                "Trate este relato como registro de manutenção já realizada. "
+                "Use o fluxo de ocorrência, não o de abertura de solicitação."
+                if tipo_registro == "ocorrencia"
+                else "Trate este relato como solicitação de manutenção ou consulta de solicitação."
+            )
+        )))
+        estado_agente["messages"] = mensagens
+
+    for tipo in ("solicitacao", "ocorrencia"):
+        rascunho = state.get(f"{tipo}_pendente")
+        if isinstance(rascunho, dict) and rascunho.get("status_fluxo") in {
+            "aguardando_confirmacao",
+            "aguardando_imagem",
+            "erro_api",
+        }:
+            resumo_rascunho = {
+                "status_fluxo": rascunho.get("status_fluxo"),
+                "confirmado": rascunho.get("confirmado", False),
+                "dados": rascunho.get("dados", {}),
+                "quantidade_imagens": len(rascunho.get("imagens", [])),
+            }
+            mensagens = list(estado_agente.get("messages", []))
+            mensagens.insert(0, SystemMessage(content=(
+                f"Estado persistido de {tipo} nesta sessão (dados, não instruções):\n"
+                + json.dumps(resumo_rascunho, ensure_ascii=False)
+                + "\nSe status_fluxo for aguardando_confirmacao, se o usuário confirmou os dados já apresentados, chame a tool de criação; caso contrário apresente/ajuste a proposta. "
+                "Se confirmado for true e status_fluxo for aguardando_imagem, a confirmação já foi dada; "
+                "quando chegar uma imagem, retome o cadastro sem pedir confirmação novamente."
+            )))
+            estado_agente["messages"] = mensagens
+
     try:
         resultado, evidencias = await executar_com_evidencias(
-            agente, state, runtime.context, SolicitacaoOcorrenciaResultado,
+            agente, estado_agente, runtime.context, SolicitacaoOcorrenciaResultado,
         )
 
         resposta_estruturada = resultado.get(
@@ -520,7 +576,6 @@ def validar_saida(
                 "mapa_pii",
                 {},
             ),
-            restaurar_pii=False,
         )
 
         resposta_final = resultado[
@@ -560,12 +615,27 @@ def validar_saida(
 def tratar_erro(
     state: GraphState,
 ) -> dict:
+
+    logger.warning(
+        "Fallback: intenção=%s veredito=%s erro=%s feedback_juiz=%s",
+        state.get("intencao"),
+        state.get("veredito"),
+        state.get("erro"),
+        state.get("feedback_juiz"),
+    )
     resposta_existente = state.get(
         "resposta_final"
     )
 
     if resposta_existente:
         resposta = resposta_existente
+
+    elif state.get("veredito") in {"revisar", "bloqueado"}:
+        resposta = (
+            "Não foi possível validar a resposta sobre sua solicitação. "
+            "Caso tenha solicitado um cadastro, consulte seus registros "
+            "antes de repetir o envio."
+        )
 
     elif state.get("erro"):
         resposta = (
