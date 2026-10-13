@@ -1,0 +1,6 @@
+SALA_AULA("Sala de Aula", 1),
+LABORATORIO("Laboratório", 2),
+DEPTO_ADMINISTRATIVO("Depto. Administrativo", 3),
+AUDITORIO("Auditório", 4),
+ALMOXAFIRADO("Almoxarifado", 5),
+AREA_COMUM("Área Comum", 6);

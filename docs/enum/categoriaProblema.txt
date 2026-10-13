@@ -1,0 +1,10 @@
+ELETRICA("Elétrica", 1),
+HIDRAULICA("Hidráulica", 2),
+MECANICA("Mecânica", 3),
+INFORMATICA("Informática", 4),
+MOBILIARIO("Mobiliário", 5),
+CLIMATIZACAO("Climatização", 6),
+REDE_CONECTIVIDADE("Rede e Conectividade", 7),
+SEGURANCA("Segurança", 8),
+ILUMINACAO("Iluminação", 9),
+LIMPEZA_CONSERVACAO("Limpeza e Conservação", 10);

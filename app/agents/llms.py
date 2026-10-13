@@ -1,24 +1,20 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
-from app.core.config import GEMINI_API_KEY, GROQ_API_KEY
+from langchain_openai import ChatOpenAI
+from app.core.config import GROQ_API_KEY, OPENAI_API_KEY
 
-llm_gemini = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    temperature=0.7,
-    top_p=0.95,
-    api_key=GEMINI_API_KEY,
+llm_luna = ChatOpenAI(
+    model="gpt-6-luna",
+    api_key=OPENAI_API_KEY,
+    use_responses_api=True,
+    reasoning={"effort": "medium"},
 )
+
 llm_groq = ChatGroq(
     model="openai/gpt-oss-120b",
     temperature=0.7,
     api_key=GROQ_API_KEY,
 )
 
-llm_rapido = ChatGroq(
-    model="openai/gpt-oss-20b",
-    temperature=0.0,
-    api_key=GROQ_API_KEY,
-)
+llm_rapido = llm_luna
 
-# llm_especialista = llm_gemini.with_fallbacks([llm_groq])
-llm_especialista = llm_gemini
+llm_especialista = llm_luna

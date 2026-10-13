@@ -7,14 +7,10 @@ from app.tools.ocorrencias.utilitarios import montar_tabela
 
 @tool
 async def listar_minhas_ocorrencias(runtime: ToolRuntime) -> dict:
-    """Lista as ocorrências do técnico ou gestor autenticado.
+    """Lista ocorrencias do tecnico ou gestor autenticado nos ultimos tres meses.
 
-    Não recebe argumentos da IA. Usa o token de context['usuario']; a API
-    aplica o período padrão de três meses. Apresente integralmente o campo
-    tabela_markdown, preservando as oito colunas e a ordem dos registros.
-    Datas são exibidas em DD-MM-AAAA; código de equipamento nulo aparece
-    como Não informado. Não invente ocorrências em caso de erro ou lista vazia.
-    """
+Nao recebe argumentos da IA. O SELECT filtra usuario, CNPJ e periodo.
+Apresente integralmente a tabela retornada."""
     contexto = runtime.context
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
         raise ValueError("Forneça uma instância de UsuarioContexto em context['usuario'].")
@@ -24,7 +20,7 @@ async def listar_minhas_ocorrencias(runtime: ToolRuntime) -> dict:
             "status": "ACESSO_NEGADO",
             "mensagem": "Somente técnicos e gestores podem consultar suas ocorrências.",
         }
-    resultado = await consultar_minhas_ocorrencias(usuario.access_token)
+    resultado = await consultar_minhas_ocorrencias(usuario)
     if resultado["status"] == "SUCESSO":
         resultado["tabela_markdown"] = montar_tabela(resultado["ocorrencias"])
     return resultado

@@ -3,6 +3,7 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from .state import GraphState
 from .context import GraphContext
+from app.agents.juiz import revisar_resposta
 from .nodes import (
     validar_entrada,
     supervisionar,
@@ -37,6 +38,7 @@ def construir_grafo():
     builder.add_node("agente_visualizacao", executar_visualizacao)
     builder.add_node("agente_feedback", executar_feedback)
     builder.add_node("juiz", julgar_resposta)
+    builder.add_node("revisar_resposta", revisar_resposta)
     builder.add_node("guardrail_saida", validar_saida)
     builder.add_node("fallback", tratar_erro)
 
@@ -57,6 +59,7 @@ def construir_grafo():
             "faq": "agente_faq",
             "fora_de_escopo": "fallback",
             "solicitacao": "agente_solicitacao",
+            "ocorrencia": "agente_solicitacao",
             "analytics": "agente_analytics",
             "visualizacao": "agente_visualizacao",
             "feedback": "agente_feedback",
@@ -75,11 +78,13 @@ def construir_grafo():
         decidir_apos_julgamento,
         {
             "guardrail_saida": "guardrail_saida",
+            "revisar_resposta": "revisar_resposta",
             "fallback": "fallback",
         },
     )
 
     builder.add_edge("guardrail_saida", END)
+    builder.add_edge("revisar_resposta", "juiz")
     builder.add_edge("fallback", END)
 
     memory = MemorySaver()

@@ -19,4 +19,7 @@ def decidir_apos_julgamento(state: GraphState) -> str:
     if veredito == "aprovado":
         return "guardrail_saida"
 
+    if veredito == "revisar" and state.get("tentativas", 0) == 1 and not state.get("erro"):
+        return "revisar_resposta"
+
     return "fallback"

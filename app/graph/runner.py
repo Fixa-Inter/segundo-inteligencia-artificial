@@ -9,6 +9,9 @@ from app.schemas.UsuarioContexto import UsuarioContexto
 from app.memory.persistencia.salvar_mensagem import salvar_mensagem
 from app.memory.persistencia.recuperar_mensagens import recuperar_mensagens
 from app.memory.persistencia.utilitarios import documento_id_da_sessao
+from app.memory.persistencia.rascunho_solicitacao import (
+    obter_rascunho_solicitacao,
+)
 
 from app.guardrails import anonimizar_entrada
 
@@ -46,6 +49,9 @@ def criar_estado_inicial(
         "user_id": usuario.usuario_id,
         "perfil": perfil,
         "tentativas": 0,
+        "resposta_final": "",
+        "resposta_especialista": "",
+        "feedback_juiz": "",
         "evidencias": [],
         "erro": None,
     }
@@ -91,7 +97,18 @@ async def executar_grafo(
 
     mensagens.append(HumanMessage(content=mensagem_anonimizada))
 
-    await salvar_mensagem(thread_id,"human",mensagem_anonimizada,usuario.usuario_id)
+    await salvar_mensagem(
+        thread_id,
+        "human",
+        mensagem_anonimizada,
+        usuario.usuario_id,
+        imagens=imagens,
+    )
+
+    rascunho_solicitacao = await obter_rascunho_solicitacao(
+        session_id=thread_id,
+        user_id=usuario_id,
+    )
     
     estado_inicial = criar_estado_inicial(
         mensagens=mensagens,
@@ -99,10 +116,16 @@ async def executar_grafo(
     )
     estado_inicial["mensagem_anonimizada"] = mensagem_anonimizada
     estado_inicial["mapa_pii"] = mapa_pii
+    estado_inicial["solicitacao_pendente"] = rascunho_solicitacao
+    estado_inicial["ocorrencia_pendente"] = await obter_rascunho_solicitacao(
+        thread_id, usuario_id, tipo="ocorrencia",
+    )
 
     contexto: GraphContext = {
         "usuario": usuario,
         "imagens": list(imagens or []),
+        "session_id": thread_id,
+        "mensagem_atual": mensagem_anonimizada,
     }
 
     resultado = await grafo.ainvoke(

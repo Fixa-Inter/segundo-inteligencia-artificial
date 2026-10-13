@@ -6,16 +6,11 @@ from app.memory.vectorSearch.recuperar_historico import recuperar_historico
 
 @tool
 async def buscar_historico(busca: str, runtime: ToolRuntime) -> str:
-    """Consulta conversas ANTERIORES do usuário (sessões já encerradas).
+    """Consulta relatos anteriores do usuário, incluindo conversas ainda abertas.
 
-    Use SOMENTE quando a resposta depende de algo dito numa conversa passada
-    — preferências, decisões ou planos que o usuário mencionou antes.
-    NÃO use para dados que estão no banco (gastos, saldos, eventos): para isso
-    já existem as tools de consulta específicas como query_transactions,
-    total_balance, daily_balance.
-
-    Args:
-        busca: assunto a procurar nos resumos das conversas anteriores.
+    Use para recordar informações ou decisões mencionadas pelo usuário.
+    Resumos históricos não comprovam o estado atual de cadastros; para isso,
+    consulte as tools de solicitações, ordens de serviço e ocorrências.
     """
     contexto = runtime.context
     

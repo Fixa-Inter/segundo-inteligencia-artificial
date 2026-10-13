@@ -1,0 +1,4 @@
+1 = Não iniciada
+2 = Em andamento
+3 = Pausadas
+4 = Finalizadas

@@ -1,0 +1,3 @@
+FACIL("Fácil", 1),
+MEDIO("Médio", 2),
+DIFICIL("Difícil", 3);

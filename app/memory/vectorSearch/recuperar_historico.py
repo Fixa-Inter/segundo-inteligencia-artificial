@@ -43,19 +43,24 @@ async def recuperar_historico(
                     for ponto in resultados.points
                 ]
 
-        async with abrir_cliente_mongo() as cliente:
-            db = cliente[MONGO_BANCO_DADOS]
-            collection_sessoes = db[MONGO_COLLECTION_SESSOES]
-            filtro = {"user_id": user_id}
-            docs = (
-                collection_sessoes
-                .find(filtro, {"resumo": 1, "iniciada_em": 1})
-                .sort("iniciada_em", -1)
-                .limit(limite)
+    async with abrir_cliente_mongo() as cliente:
+        db = cliente[MONGO_BANCO_DADOS]
+        collection_sessoes = db[MONGO_COLLECTION_SESSOES]
+        filtro = {"user_id": user_id}
+        docs = (
+            collection_sessoes
+            .find(filtro, {"resumo": 1, "iniciada_em": 1, "mensagens": 1})
+            .sort("iniciada_em", -1)
+            .limit(limite)
+        )
+
+        historico = []
+        async for d in docs:
+            # Conversas abertas podem ainda não ter resumo. Use os relatos humanos.
+            resumo = d.get("resumo") or "\n".join(
+                str(m.get("content", "")) for m in d.get("mensagens", [])
+                if m.get("role") == "human"
             )
-
-            return [
-                {"doc_id": d["_id"], "iniciada_em": d["iniciada_em"], "resumo": d["resumo"]}
-                async for d in docs
-            ]
-
+            if resumo:
+                historico.append({"doc_id": d["_id"], "iniciada_em": d["iniciada_em"], "resumo": resumo})
+        return historico

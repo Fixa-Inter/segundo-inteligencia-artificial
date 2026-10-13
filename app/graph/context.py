@@ -6,3 +6,5 @@ from app.schemas.UsuarioContexto import UsuarioContexto
 class GraphContext(TypedDict):
     usuario: UsuarioContexto
     imagens: list[str]
+    session_id: str
+    mensagem_atual: str

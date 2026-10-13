@@ -21,6 +21,7 @@ class GraphState(TypedDict, total=False):
     intencao: Literal[
         "faq",
         "solicitacao",
+        "ocorrencia",
         "analytics",
         "visualizacao",
         "feedback",
@@ -48,3 +49,6 @@ class GraphState(TypedDict, total=False):
 
     resposta_final: str
     erro: str | None
+    solicitacao_pendente: dict | None
+
+    ocorrencia_pendente: dict | None

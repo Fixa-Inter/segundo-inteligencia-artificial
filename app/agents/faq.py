@@ -6,6 +6,7 @@ from app.agents.agentsResult.FAQResultado import (
 )
 from app.graph.context import GraphContext
 from app.tools.faq.buscar import buscar_faq
+from app.tools.memoria.buscar_historico import buscar_historico
 
 def criar_agente_faq(
     model,
@@ -21,7 +22,7 @@ def criar_agente_faq(
     return create_agent(
         model=model,
         system_prompt=prompt,
-        tools=[buscar_faq],
+        tools=[buscar_faq, buscar_historico],
         response_format=FAQResultado,
         context_schema=GraphContext,
         middleware=middleware,
