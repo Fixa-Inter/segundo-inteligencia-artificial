@@ -14,6 +14,11 @@ from app.memory.persistencia.rascunho_solicitacao import (
 )
 
 from app.guardrails import anonimizar_entrada
+from app.observability.metrics import (
+    MetricsCallbackHandler,
+    finalize_resolutions,
+    mark_request_failed,
+)
 
 
 Perfil = Literal[
@@ -80,7 +85,8 @@ async def executar_grafo(
     config = {
         "configurable": {
             "thread_id": thread_id_interno
-        }
+        },
+        "callbacks": [MetricsCallbackHandler()] if MetricsCallbackHandler else [],
     }
     state = grafo.get_state(config)
 
@@ -128,11 +134,17 @@ async def executar_grafo(
         "mensagem_atual": mensagem_anonimizada,
     }
 
-    resultado = await grafo.ainvoke(
-        estado_inicial,
-        config=config,
-        context=contexto,
-    )
+    try:
+        resultado = await grafo.ainvoke(
+            estado_inicial,
+            config=config,
+            context=contexto,
+        )
+    finally:
+        finalize_resolutions()
+
+    if resultado.get("erro"):
+        mark_request_failed()
 
     await salvar_mensagem(thread_id,"assistant",resultado["resposta_final"],usuario_id)
 

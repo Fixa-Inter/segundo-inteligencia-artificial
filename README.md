@@ -3,6 +3,9 @@
 O fluxo de criação com Qdrant, confirmação persistente e API provisória está
 documentado em [docs/solicitacoes.md](docs/solicitacoes.md).
 
+Para subir Prometheus e Grafana locais e consultar as métricas do fluxo, veja
+[docs/observabilidade.md](docs/observabilidade.md).
+
 Repositório responsável por armazenar o template inicial padrão dentro dos repositórios da organização.
 
 ## Estrutura de Pastas

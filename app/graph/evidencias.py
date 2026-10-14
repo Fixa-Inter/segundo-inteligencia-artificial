@@ -1,6 +1,7 @@
 """Evidencias extraidas dos resultados reais das tools, sem chamadas ao LLM."""
 
 import json
+from app.observability.metrics import record_operation
 
 from langchain_core.messages import AIMessage, ToolMessage
 
@@ -40,6 +41,19 @@ def extrair_evidencias(mensagens, ids_anteriores: set[str], formato_saida: str) 
                 pass
         # O status de transporte nao equivale ao sucesso da operacao de negocio.
         status = resultado.get("status") if isinstance(resultado, dict) else None
+        if chamadas[chamada_id] in {"criar_solicitacao", "criar_ocorrencia"}:
+            status_text = str(status or "").upper()
+            outcome = (
+                "success" if status_text == "SUCESSO"
+                else "indeterminate" if "INDETERMINADO" in status_text
+                else "pending" if status_text.startswith(("AGUARDANDO", "CONFIRMACAO", "RASCUNHO"))
+                else "denied" if "ACESSO_NEGADO" in status_text
+                else "error"
+            )
+            record_operation(
+                "solicitacao" if chamadas[chamada_id] == "criar_solicitacao" else "ocorrencia",
+                outcome,
+            )
         evidencias.append(json.dumps({
             "ferramenta": chamadas[chamada_id],
             "chamada_id": chamada_id,
