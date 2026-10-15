@@ -36,15 +36,15 @@ async def buscar_equipamento_por_codigo(codigo: str, usuario: UsuarioContexto) -
             ON modelo.id = equipamento.modelo_equipamento_id
         JOIN local_endereco AS local_registro
             ON local_registro.id = equipamento.local_endereco_id
-        JOIN endereco AS endereco_registro
-            ON endereco_registro.id = local_registro.endereco_id
+        JOIN unidade AS unidade_registro
+            ON unidade_registro.id = local_registro.unidade_id
         JOIN usuario AS usuario_autenticado
             ON usuario_autenticado.id = :usuario_id
-        JOIN endereco AS endereco_autenticado
-            ON endereco_autenticado.id = usuario_autenticado.endereco_id
+        JOIN unidade AS unidade_autenticada
+            ON unidade_autenticada.id = usuario_autenticado.unidade_id
         WHERE equipamento.codigo = :codigo
           AND equipamento.esta_ativo IS TRUE
-          AND endereco_registro.cnpj = endereco_autenticado.cnpj
+          AND unidade_registro.cnpj = unidade_autenticada.cnpj
         ORDER BY equipamento.id
         LIMIT 2
     """
@@ -86,21 +86,19 @@ async def consultar_minhas_ocorrencias(usuario: UsuarioContexto) -> dict:
                local_registro.nome AS "localEndereco",
                ocorrencia.descricao_local AS "descricaoLocal",
                ocorrencia.data_criacao::date AS "dataCriacao",
-               equipamento.codigo AS "equipamentoCodigo"
+               NULL::varchar AS "equipamentoCodigo"
         FROM ocorrencia
         JOIN local_endereco AS local_registro
             ON local_registro.id = ocorrencia.local_endereco_id
-        JOIN endereco AS endereco_registro
-            ON endereco_registro.id = local_registro.endereco_id
+        JOIN unidade AS unidade_registro
+            ON unidade_registro.id = local_registro.unidade_id
         JOIN usuario AS usuario_autenticado
             ON usuario_autenticado.id = :usuario_id
-        JOIN endereco AS endereco_autenticado
-            ON endereco_autenticado.id = usuario_autenticado.endereco_id
-        LEFT JOIN equipamento
-            ON equipamento.id = ocorrencia.equipamento_id
+        JOIN unidade AS unidade_autenticada
+            ON unidade_autenticada.id = usuario_autenticado.unidade_id
         WHERE ocorrencia.usuario_id = :usuario_id
           AND ocorrencia.esta_ativo IS TRUE
-          AND endereco_registro.cnpj = endereco_autenticado.cnpj
+          AND unidade_registro.cnpj = unidade_autenticada.cnpj
           AND ocorrencia.data_criacao >= :inicio
           AND ocorrencia.data_criacao < :fim_exclusivo
         ORDER BY ocorrencia.data_criacao DESC

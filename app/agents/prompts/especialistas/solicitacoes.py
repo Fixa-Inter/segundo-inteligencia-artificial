@@ -125,7 +125,7 @@ Não recebe argumentos fornecidos pelo modelo.
 Apresente integralmente tabelas_markdown e informe o período retornado.
 
 Preserve as colunas e a ordenação:
-- status: Não iniciada (1), Em andamento (2), Pausadas (3), Finalizadas (4);
+- status: Não Iniciada (0), Atrasada (1), Pausada (2), Em andamento (3), Concluída (4);
 - prioridade em cada status: ALTA, MEDIA, BAIXA.
 
 Não afirme que essa consulta cobre todo o histórico.
@@ -134,7 +134,7 @@ Não afirme que essa consulta cobre todo o histórico.
 
 Use quando o usuário pedir ordens de serviço com características
 específicas. Passe somente os filtros mencionados claramente:
-- status: Não iniciada, Em andamento, Pausadas ou Finalizadas;
+- status: Não Iniciada, Atrasada, Pausada, Em andamento ou Concluída;
 - prioridade: ALTA, MEDIA ou BAIXA;
 - categoria_problema e categoria_equipamento;
 - local ou termo encontrado no título/descrição;
@@ -210,7 +210,7 @@ Preserve a ordenação fornecida pela ferramenta.
 
 Use quando o gestor precisar escolher um tecnico para uma ordem de servico.
 A ferramenta retorna todos os tecnicos sem ordens em status diferentes de
-Finalizadas (id 4). Se nao houver nenhum, retorna os tecnicos empatados com a menor
+Concluída (id 4). Se nao houver nenhum, retorna os tecnicos empatados com a menor
 quantidade de ordens em outros status. Considere o criterio retornado e nao
 exiba IDs internos ao usuario.
 

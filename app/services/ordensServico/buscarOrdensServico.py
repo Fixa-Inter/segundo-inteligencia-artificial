@@ -11,7 +11,13 @@ logger = logging.getLogger(__name__)
 
 ORDEM_PRIORIDADE = ("ALTA", "MEDIA", "BAIXA")
 PRIORIDADE_POR_ID = {0: "ALTA", 1: "MEDIA", 2: "BAIXA"}
-STATUS_ORDEM_SERVICO_POR_ID = {1: "Não iniciada", 2: "Em andamento", 3: "Pausadas", 4: "Finalizadas"}
+STATUS_ORDEM_SERVICO_POR_ID = {
+    0: "Não Iniciada",
+    1: "Atrasada",
+    2: "Pausada",
+    3: "Em andamento",
+    4: "Concluída",
+}
 
 CATEGORIA_PROBLEMA_POR_ID = {
     1: "Elétrica",
@@ -64,7 +70,7 @@ _ID_POR_STATUS = {_normalizar_filtro(nome): codigo for codigo, nome in STATUS_OR
 
 
 def chave_ordenacao_status(status: str) -> tuple[int, str]:
-    """Ordena pelos quatro status fixos cadastrados na tabela."""
+    """Ordena pelos status definidos no enum da ordem de serviço."""
     nome = _normalizar_filtro(status)
     return (_ID_POR_STATUS.get(nome, 5), nome)
 
@@ -121,7 +127,7 @@ async def buscar_ordens_servico(
         }
 
     where = [
-        "endereco_registro.cnpj = endereco_autenticado.cnpj",
+        "unidade_registro.cnpj = unidade_autenticada.cnpj",
     ]
     parametros = {"usuario_id": usuario.usuario_id}
     filtros_legiveis = {}
@@ -132,8 +138,11 @@ async def buscar_ordens_servico(
     if status is not None:
         status_id = _ID_POR_STATUS.get(_normalizar_filtro(status))
         if status_id is None:
-            return {"status": "ERRO_VALIDACAO", "mensagem": "Use Não iniciada, Em andamento, Pausadas ou Finalizadas."}
-        where.append("os.status_ordem_servico_id = :status_id")
+            return {
+                "status": "ERRO_VALIDACAO",
+                "mensagem": "Use Não Iniciada, Atrasada, Pausada, Em andamento ou Concluída.",
+            }
+        where.append("os.status_ordem_servico = :status_id")
         parametros["status_id"] = status_id
         filtros_legiveis["status"] = STATUS_ORDEM_SERVICO_POR_ID[status_id]
 
@@ -221,7 +230,7 @@ async def buscar_ordens_servico(
             problema.descricao_problema AS "descricaoProblema",
             local_registro.nome AS local,
             problema.descricao_local AS "descricaoLocal",
-            status_os.nome AS "statusOrdemServico",
+            os.status_ordem_servico AS "statusOrdemServico",
             os.categoria_problema AS categoria_id,
             categoria_eq.nome AS "categoriaEquipamento",
             os.data_prevista::date AS "dataPrevista",
@@ -231,16 +240,14 @@ async def buscar_ordens_servico(
         JOIN problema ON problema.id = os.problema_id
         JOIN categoria_equipamento AS categoria_eq
             ON categoria_eq.id = problema.categoria_equipamento_id
-        JOIN status_ordem_servico AS status_os
-            ON status_os.id = os.status_ordem_servico_id
         JOIN local_endereco AS local_registro
             ON local_registro.id = problema.local_endereco_id
-        JOIN endereco AS endereco_registro
-            ON endereco_registro.id = local_registro.endereco_id
+        JOIN unidade AS unidade_registro
+            ON unidade_registro.id = local_registro.unidade_id
         JOIN usuario AS usuario_autenticado
             ON usuario_autenticado.id = :usuario_id
-        JOIN endereco AS endereco_autenticado
-            ON endereco_autenticado.id = usuario_autenticado.endereco_id
+        JOIN unidade AS unidade_autenticada
+            ON unidade_autenticada.id = usuario_autenticado.unidade_id
         WHERE {' AND '.join(where)}
         ORDER BY os.data_criacao DESC
     """
@@ -251,7 +258,7 @@ async def buscar_ordens_servico(
         for row in rows:
             prioridade_formatada = PRIORIDADE_POR_ID.get(row["prioridade_id"])
             categoria = CATEGORIA_PROBLEMA_POR_ID.get(row["categoria_id"])
-            status_formatado = str(row["statusOrdemServico"]).strip()
+            status_formatado = STATUS_ORDEM_SERVICO_POR_ID.get(row["statusOrdemServico"])
             if (
                 prioridade_formatada is None
                 or categoria is None
@@ -319,24 +326,22 @@ async def _consultar_ordens_servico(
             problema.descricao_problema AS "descricaoProblema",
             local_registro.nome AS local,
             problema.descricao_local AS "descricaoLocal",
-            status_os.nome AS "statusOrdemServico",
+            os.status_ordem_servico AS "statusOrdemServico",
             os.categoria_problema AS categoria_id,
             os.data_prevista::date AS "dataPrevista",
             os.prioridade AS prioridade_id,
             os.data_criacao::date AS "dataCriacao"
         FROM ordem_servico AS os
         JOIN problema ON problema.id = os.problema_id
-        JOIN status_ordem_servico AS status_os
-            ON status_os.id = os.status_ordem_servico_id
         JOIN local_endereco AS local_registro
             ON local_registro.id = problema.local_endereco_id
-        JOIN endereco AS endereco_registro
-            ON endereco_registro.id = local_registro.endereco_id
+        JOIN unidade AS unidade_registro
+            ON unidade_registro.id = local_registro.unidade_id
         JOIN usuario AS usuario_autenticado
             ON usuario_autenticado.id = :usuario_id
-        JOIN endereco AS endereco_autenticado
-            ON endereco_autenticado.id = usuario_autenticado.endereco_id
-        WHERE endereco_registro.cnpj = endereco_autenticado.cnpj
+        JOIN unidade AS unidade_autenticada
+            ON unidade_autenticada.id = usuario_autenticado.unidade_id
+        WHERE unidade_registro.cnpj = unidade_autenticada.cnpj
           AND os.data_criacao >= :inicio
           AND os.data_criacao < :fim_exclusivo
           {filtro_usuario}
@@ -354,7 +359,7 @@ async def _consultar_ordens_servico(
         for row in rows:
             prioridade = PRIORIDADE_POR_ID.get(row["prioridade_id"])
             categoria = CATEGORIA_PROBLEMA_POR_ID.get(row["categoria_id"])
-            status = str(row["statusOrdemServico"]).strip()
+            status = STATUS_ORDEM_SERVICO_POR_ID.get(row["statusOrdemServico"])
             if prioridade is None or categoria is None or not status:
                 raise ValueError("Status, categoria ou prioridade de OS desconhecido.")
             ordens.append({

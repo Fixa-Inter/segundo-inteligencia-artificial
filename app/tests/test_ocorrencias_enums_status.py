@@ -61,11 +61,11 @@ def test_prioridade_e_status_fixos(monkeypatch, prioridade, identificador):
     select = AsyncMock(return_value=[])
     monkeypatch.setattr(os_service, "executar_select", select)
     result = asyncio.run(os_service.buscar_ordens_servico(
-        SimpleNamespace(tipo_acesso="gestor", usuario_id=7), prioridade=prioridade, status="Finalizadas"))
+        SimpleNamespace(tipo_acesso="gestor", usuario_id=7), prioridade=prioridade, status="Concluída"))
     assert result["status"] == "SEM_RESULTADO"
     assert select.call_args.args[2]["prioridade"] == identificador
     assert select.call_args.args[2]["status_id"] == 4
-    assert "os.status_ordem_servico_id = :status_id" in select.call_args.args[1]
+    assert "os.status_ordem_servico = :status_id" in select.call_args.args[1]
 
 
 def test_enums_documentados():
@@ -84,7 +84,7 @@ def test_tecnicos_contam_status_por_id(monkeypatch):
     monkeypatch.setattr(tecnicos_service, "executar_select", select)
     r=asyncio.run(tecnicos_service.buscar_tecnicos_disponiveis(SimpleNamespace(tipo_acesso="gestor",usuario_id=7)))
     assert [t["id"] for t in r["tecnicos"]] == [1]
-    assert "os.status_ordem_servico_id <> 4" in select.call_args.args[1]
+    assert "os.status_ordem_servico <> 4" in select.call_args.args[1]
 
 
 @pytest.mark.parametrize("foto_inicial", [True,False])
