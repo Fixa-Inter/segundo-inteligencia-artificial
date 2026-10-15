@@ -11,7 +11,7 @@ from app.tools.ordensServico.utilitarios import montar_tabelas
 class _ArgumentosBuscarOrdensServico(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-    status: str | None = Field(default=None, min_length=1, max_length=100, description="Status: Não iniciada, Em andamento, Pausadas ou Finalizadas.")
+    status: str | None = Field(default=None, min_length=1, max_length=100, description="Status: Não Iniciada, Atrasada, Pausada, Em andamento ou Concluída.")
     prioridade: str | None = Field(default=None, min_length=1, max_length=20, description="Prioridade: ALTA, MEDIA ou BAIXA.")
     categoria_problema: str | None = Field(default=None, min_length=1, max_length=50, description="Categoria do problema mencionada pelo usuario.")
     categoria_equipamento: str | None = Field(default=None, min_length=1, max_length=100, description="Categoria do equipamento mencionada pelo usuario.")

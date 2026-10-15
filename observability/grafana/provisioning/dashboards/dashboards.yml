@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: FIXA
+    orgId: 1
+    folder: FIXA
+    type: file
+    disableDeletion: true
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

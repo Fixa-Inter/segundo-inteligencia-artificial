@@ -16,12 +16,12 @@ _SQL_BASE = """
     JOIN usuario AS solicitante ON solicitante.id = p.usuario_id
     JOIN local_endereco AS local_registro
         ON local_registro.id = p.local_endereco_id
-    JOIN endereco AS endereco_registro
-        ON endereco_registro.id = local_registro.endereco_id
+    JOIN unidade AS unidade_registro
+        ON unidade_registro.id = local_registro.unidade_id
     JOIN usuario AS usuario_autenticado ON usuario_autenticado.id = :usuario_id
-    JOIN endereco AS endereco_autenticado
-        ON endereco_autenticado.id = usuario_autenticado.endereco_id
-    WHERE endereco_registro.cnpj = endereco_autenticado.cnpj
+    JOIN unidade AS unidade_autenticada
+        ON unidade_autenticada.id = usuario_autenticado.unidade_id
+    WHERE unidade_registro.cnpj = unidade_autenticada.cnpj
 """
 
 

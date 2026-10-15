@@ -1,4 +1,5 @@
-1 = Não iniciada
-2 = Em andamento
-3 = Pausadas
-4 = Finalizadas
+NAO_INICIADA("Não Iniciada", 0),
+ATRASADA("Atrasada", 1),
+PAUSADA("Pausada", 2),
+EM_ANDAMENTO("Em andamento", 3),
+CONCLUIDA("Concluída", 4);

@@ -10,6 +10,7 @@ from app.memory.persistencia.rascunho_solicitacao import (
 from app.services.ocorrencias.criarOcorrencia import adicionar_ocorrencia
 from app.tools.toolsRequest.CriarOcorrenciaRequest import CriarOcorrenciaRequest, CategoriaProblema, Prioridade
 from app.tools.solicitacoes.criarSolicitacao import _contexto, _confirmacao_explicita
+from app.observability.metrics import stage_resolution
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +95,15 @@ async def criar_ocorrencia(runtime: ToolRuntime) -> dict:
     except Exception:
         logger.exception("Falha ao enviar ocorrência")
         resultado = {"status": "RESULTADO_INDETERMINADO", "mensagem": "Consulte os registros antes de repetir o envio."}
-    proximo = {"SUCESSO": "cadastrada", "RESULTADO_INDETERMINADO": "resultado_indeterminado"}.get(resultado["status"], "erro_api")
+    status_resultado = resultado.get("status", "ERRO_FERRAMENTA")
+    outcome = (
+        "success" if status_resultado == "SUCESSO"
+        else "indeterminate" if status_resultado == "RESULTADO_INDETERMINADO"
+        else "error"
+    )
+    if outcome == "success":
+        stage_resolution()
+    proximo = {"SUCESSO": "cadastrada", "RESULTADO_INDETERMINADO": "resultado_indeterminado"}.get(status_resultado, "erro_api")
     await atualizar_rascunho_solicitacao(session_id, usuario.usuario_id,
         {"status_fluxo": proximo, "ocorrencia_id_api": resultado.get("ocorrencia_id")},
         status_esperados={"enviando"}, tipo="ocorrencia")
