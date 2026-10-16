@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 
-class ChatRequest(BaseModel):
+class ConversaEntrada(BaseModel):
     mensagem: str = Field(
         min_length=1,
         max_length=4000,
@@ -27,10 +27,11 @@ class ChatRequest(BaseModel):
         return valor
 
 
-class ChatResponse(BaseModel):
+class ConversaSaida(BaseModel):
     thread_id: str
 
     intencao: Literal[
+        "ajuda_geral",
         "faq",
         "solicitacao",
         "ocorrencia",

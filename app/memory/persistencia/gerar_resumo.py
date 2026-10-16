@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from app.agents.llms import llm_rapido
+from app.agents.modelos import llm_rapido
 
 _PROMPT_RESUMO = """\
 Você resume conversas de usuários do FIXA, um sistema de gestão de manutenção.
@@ -25,8 +25,8 @@ Conversa:
 def _formatar_conversa(mensagens: list[dict]) -> str:
     """Formata o array de mensagens em texto para o prompt de resumo."""
     linhas = []
-    for msg in mensagens:
-        linhas.append(f"{msg['role']}: {msg['content']}")
+    for mensagem in mensagens:
+        linhas.append(f"{mensagem['role']}: {mensagem['content']}")
     return "\n".join(linhas)
 
 

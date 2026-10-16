@@ -5,11 +5,11 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies.auth import obter_usuario_atual
 from app.main import app
-from app.schemas.UsuarioContexto import UsuarioContexto
-from app.schemas.chat import ChatResponse
+from app.schemas import UsuarioContexto
+from app.schemas.chat import ConversaSaida
 
 
-client = TestClient(app)
+cliente = TestClient(app)
 
 
 def usuario_teste() -> UsuarioContexto:
@@ -30,7 +30,7 @@ def test_chat(monkeypatch) -> None:
         return usuario_teste()
 
     processar = AsyncMock(
-        return_value=ChatResponse(
+        return_value=ConversaSaida(
             thread_id="conversa-1",
             intencao="faq",
             resposta="Resposta de teste.",
@@ -47,7 +47,7 @@ def test_chat(monkeypatch) -> None:
     ] = substituir_usuario
 
     try:
-        resposta = client.post(
+        resposta = cliente.post(
             "/api/v1/chat",
             json={
                 "mensagem": "Como uso o aplicativo?",

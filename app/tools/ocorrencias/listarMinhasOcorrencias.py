@@ -1,7 +1,7 @@
 from langchain.tools import ToolRuntime, tool
 
-from app.schemas.UsuarioContexto import UsuarioContexto
-from app.services.ocorrencias.buscarOcorrencias import consultar_minhas_ocorrencias
+from app.schemas import UsuarioContexto
+from app.services.ocorrencias import consultar_minhas_ocorrencias
 from app.tools.ocorrencias.utilitarios import montar_tabela
 
 

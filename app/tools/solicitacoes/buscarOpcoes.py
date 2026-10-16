@@ -3,7 +3,8 @@ import asyncio
 from langchain.tools import ToolRuntime, tool
 from app.memory.vectorSearch import buscar_categoria_equipamento, buscar_local_endereco
 from app.core.clients.qdrant import abrir_cliente_qdrant
-from app.schemas.UsuarioContexto import UsuarioContexto
+from app.schemas import UsuarioContexto
+from app.services.gerais import obter_unidade_id
 
 
 @tool
@@ -19,14 +20,15 @@ async def buscar_opcoes_solicitacao(
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
         raise ValueError("Forneça uma instância de UsuarioContexto em context['usuario'].")
     usuario = contexto["usuario"]
+    unidade_id = await obter_unidade_id(usuario)
 
     async with abrir_cliente_qdrant() as cliente:
         async with asyncio.TaskGroup() as tarefas:
             categorias = tarefas.create_task(
-                buscar_categoria_equipamento(equipamento, usuario.cnpj_endereco, cliente)
+                buscar_categoria_equipamento(equipamento, unidade_id, cliente)
             )
             locais = tarefas.create_task(
-                buscar_local_endereco(local, usuario.cnpj_endereco, cliente)
+                buscar_local_endereco(local, unidade_id, cliente)
             )
             
     return {

@@ -1,4 +1,4 @@
-CONTEXTO_PROMPT = """
+CONTEXTO_INSTRUCAO = """
 ## Contexto da aplicação
 
 A aplicação FIXA organiza o fluxo do time de manutenção de uma instituição, incluindo solicitações, ocorrências, problemas, ordens de serviço, tarefas, equipamentos e revisões.

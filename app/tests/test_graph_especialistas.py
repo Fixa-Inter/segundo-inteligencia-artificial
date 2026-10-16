@@ -5,11 +5,11 @@ from unittest.mock import AsyncMock
 from langchain_core.messages import HumanMessage
 
 from app.agents.agentsResult import (
-    AnalyticsResultado,
-    FeedbackResultado,
+    IndicadoresResultado,
+    RetornoUsuarioResultado,
     VisualizacaoResultado,
 )
-from app.graph import nodes
+from app.graph import nos
 
 
 def criar_runtime():
@@ -29,7 +29,7 @@ def criar_estado(perfil: str = "gestor") -> dict:
 
 
 def test_executar_analytics_gestor(monkeypatch) -> None:
-    resposta = AnalyticsResultado(
+    resposta = IndicadoresResultado(
         agente="analytics",
         resposta="Foram encontrados 10 chamados.",
         status="SUCESSO",
@@ -39,10 +39,10 @@ def test_executar_analytics_gestor(monkeypatch) -> None:
             return_value={"structured_response": resposta}
         )
     )
-    monkeypatch.setattr(nodes, "analytics_gestor", agente)
+    monkeypatch.setattr(nos, "indicadores_gestor", agente)
 
     resultado = asyncio.run(
-        nodes.executar_analytics(
+        nos.executar_indicadores(
             criar_estado(),
             criar_runtime(),
         )
@@ -60,10 +60,10 @@ def test_analytics_bloqueia_perfil_sem_permissao(
     monkeypatch,
 ) -> None:
     agente = SimpleNamespace(ainvoke=AsyncMock())
-    monkeypatch.setattr(nodes, "analytics_gestor", agente)
+    monkeypatch.setattr(nos, "indicadores_gestor", agente)
 
     resultado = asyncio.run(
-        nodes.executar_analytics(
+        nos.executar_indicadores(
             criar_estado("solicitante"),
             criar_runtime(),
         )
@@ -85,10 +85,10 @@ def test_executar_visualizacao_gestor(monkeypatch) -> None:
             return_value={"structured_response": resposta}
         )
     )
-    monkeypatch.setattr(nodes, "visualizacoes_gestor", agente)
+    monkeypatch.setattr(nos, "visualizacoes_gestor", agente)
 
     resultado = asyncio.run(
-        nodes.executar_visualizacao(
+        nos.executar_visualizacao(
             criar_estado(),
             criar_runtime(),
         )
@@ -106,10 +106,10 @@ def test_visualizacao_bloqueia_perfil_sem_permissao(
     monkeypatch,
 ) -> None:
     agente = SimpleNamespace(ainvoke=AsyncMock())
-    monkeypatch.setattr(nodes, "visualizacoes_gestor", agente)
+    monkeypatch.setattr(nos, "visualizacoes_gestor", agente)
 
     resultado = asyncio.run(
-        nodes.executar_visualizacao(
+        nos.executar_visualizacao(
             criar_estado("tecnico"),
             criar_runtime(),
         )
@@ -121,7 +121,7 @@ def test_visualizacao_bloqueia_perfil_sem_permissao(
 
 
 def test_executar_feedback(monkeypatch) -> None:
-    resposta = FeedbackResultado(
+    resposta = RetornoUsuarioResultado(
         agente="feedback",
         resposta="Feedback recebido.",
         status="SUCESSO",
@@ -131,10 +131,10 @@ def test_executar_feedback(monkeypatch) -> None:
             return_value={"structured_response": resposta}
         )
     )
-    monkeypatch.setattr(nodes, "feedback", agente)
+    monkeypatch.setattr(nos, "feedback", agente)
 
     resultado = asyncio.run(
-        nodes.executar_feedback(
+        nos.executar_retorno_usuario(
             criar_estado("solicitante"),
             criar_runtime(),
         )
@@ -156,10 +156,10 @@ def test_especialista_rejeita_resposta_incompativel(
             return_value={"structured_response": {}}
         )
     )
-    monkeypatch.setattr(nodes, "feedback", agente)
+    monkeypatch.setattr(nos, "feedback", agente)
 
     resultado = asyncio.run(
-        nodes.executar_feedback(
+        nos.executar_retorno_usuario(
             criar_estado(),
             criar_runtime(),
         )
@@ -170,7 +170,7 @@ def test_especialista_rejeita_resposta_incompativel(
 
 
 def test_workflow_possui_todos_os_especialistas() -> None:
-    from app.graph.workflow import grafo
+    from app.graph.fluxo import grafo
 
     nomes = set(grafo.get_graph().nodes)
 

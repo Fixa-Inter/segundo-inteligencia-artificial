@@ -1,29 +1,29 @@
 from langchain.agents import create_agent
 from langchain.agents.middleware import ModelFallbackMiddleware
 
-from app.agents.agentsResult.FAQResultado import (
+from app.agents.agentsResult import (
     FAQResultado,
 )
-from app.graph.context import GraphContext
-from app.tools.faq.buscar import buscar_faq
-from app.tools.memoria.buscar_historico import buscar_historico
+from app.graph import ContextoGrafo
+from app.tools.faq import buscar_faq
+from app.tools.memoria import buscar_historico
 
 def criar_agente_faq(
-    model,
-    prompt: str,
-    fallback=None,
+    modelo,
+    instrucao: str,
+    modelo_alternativo=None,
 ):
     middleware = (
-        [ModelFallbackMiddleware(fallback)]
-        if fallback is not None
+        [ModelFallbackMiddleware(modelo_alternativo)]
+        if modelo_alternativo is not None
         else []
     )
 
     return create_agent(
-        model=model,
-        system_prompt=prompt,
+        model=modelo,
+        system_prompt=instrucao,
         tools=[buscar_faq, buscar_historico],
         response_format=FAQResultado,
-        context_schema=GraphContext,
+        context_schema=ContextoGrafo,
         middleware=middleware,
     )

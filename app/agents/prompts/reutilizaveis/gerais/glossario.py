@@ -1,4 +1,4 @@
-GLOSSARIO_PROMPT = """
+GLOSSARIO_INSTRUCAO = """
 ## Glossário de termos importantes
 
 - solicitação: pedido do usuário solicitante para concertar algo da instituição;

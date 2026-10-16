@@ -1,17 +1,17 @@
 import asyncio
 
 from app.memory.embedding.popular_banco_vetorial import ingerir_faq
-from app.core.config import (
-    FAQ_PDF_SOLICITANTE_PATH,
-    FAQ_PDF_TECNICO_PATH,
-    FAQ_PDF_GESTOR_PATH,
+from app.core.configuracao import (
+    CAMINHO_PDF_FAQ_SOLICITANTE,
+    CAMINHO_PDF_FAQ_TECNICO,
+    CAMINHO_PDF_FAQ_GESTOR,
 )
 
 async def main():
     for perfil, caminho in (
-        ("solicitante", FAQ_PDF_SOLICITANTE_PATH),
-        ("tecnico", FAQ_PDF_TECNICO_PATH),
-        ("gestor", FAQ_PDF_GESTOR_PATH),
+        ("solicitante", CAMINHO_PDF_FAQ_SOLICITANTE),
+        ("tecnico", CAMINHO_PDF_FAQ_TECNICO),
+        ("gestor", CAMINHO_PDF_FAQ_GESTOR),
     ):
         await ingerir_faq(caminho, perfil)
 

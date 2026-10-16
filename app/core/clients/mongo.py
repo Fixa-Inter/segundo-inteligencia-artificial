@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
-from app.core.config import MONGODB_URI, MONGO_BANCO_DADOS, MONGO_COLLECTION_SESSOES
+from app.core.configuracao import MONGODB_URI, MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
 from pymongo import AsyncMongoClient
 
 
@@ -10,7 +10,7 @@ def validar_config_mongo() -> None:
     configuracoes = {
         "MONGO_URI": MONGODB_URI,
         "MONGO_BANCO_DADOS": MONGO_BANCO_DADOS,
-        "MONGO_COLLECTION_SESSOES": MONGO_COLLECTION_SESSOES,
+        "MONGO_COLECAO_SESSOES": MONGO_COLECAO_SESSOES,
     }
     ausentes = [
         nome for nome, valor in configuracoes.items()

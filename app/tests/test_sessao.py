@@ -4,11 +4,11 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies.auth import obter_usuario_atual
 from app.main import app
-from app.schemas.UsuarioContexto import UsuarioContexto
-from app.schemas.sessao import EncerrarSessaoResponse
+from app.schemas import UsuarioContexto
+from app.schemas import EncerrarSessaoSaida
 
 
-client = TestClient(app)
+cliente = TestClient(app)
 
 
 def criar_usuario_teste() -> UsuarioContexto:
@@ -31,7 +31,7 @@ def test_encerrar_sessao_com_sucesso(monkeypatch):
         return usuario
 
     finalizar_sessao_mock = AsyncMock(
-        return_value=EncerrarSessaoResponse(
+        return_value=EncerrarSessaoSaida(
             thread_id="conversa-123",
             status="ENCERRADA",
             mensagem="Sessão encerrada com sucesso.",
@@ -49,14 +49,14 @@ def test_encerrar_sessao_com_sucesso(monkeypatch):
     )
 
     try:
-        response = client.delete(
+        resposta = cliente.delete(
             "/api/v1/chat/sessions/conversa-123"
         )
     finally:
         app.dependency_overrides.clear()
 
-    assert response.status_code == 200
-    assert response.json() == {
+    assert resposta.status_code == 200
+    assert resposta.json() == {
         "thread_id": "conversa-123",
         "status": "ENCERRADA",
         "mensagem": "Sessão encerrada com sucesso.",
@@ -72,11 +72,11 @@ def test_encerrar_sessao_com_sucesso(monkeypatch):
 def test_encerrar_sessao_sem_autenticacao():
     app.dependency_overrides.clear()
 
-    response = client.delete(
+    resposta = cliente.delete(
         "/api/v1/chat/sessions/conversa-123"
     )
 
-    assert response.status_code == 401
+    assert resposta.status_code == 401
 
 
 def test_encerrar_sessao_com_thread_id_muito_longo():
@@ -90,10 +90,10 @@ def test_encerrar_sessao_com_thread_id_muito_longo():
     try:
         thread_id_invalido = "a" * 101
 
-        response = client.delete(
+        resposta = cliente.delete(
             f"/api/v1/chat/sessions/{thread_id_invalido}"
         )
     finally:
         app.dependency_overrides.clear()
 
-    assert response.status_code == 422
+    assert resposta.status_code == 422

@@ -1,121 +1,106 @@
 from qdrant_client import AsyncQdrantClient, models
 
-from app.core import config
-from app.memory.embedding.config import gerar_embedding_documento
+from app.core import configuracao
+from app.memory.embedding import gerar_vetor_operacional
 
 
-def _id_field(collection: str) -> str:
-    if collection == config.QDRANT_CATEGORIA_COLLECTION:
-        return config.QDRANT_CATEGORIA_ID_FIELD
-    
-    if collection == config.QDRANT_LOCAL_COLLECTION:
-        return config.QDRANT_LOCAL_ID_FIELD
-    
-    raise ValueError("Collection não permitida.")
+_COLECOES_CADASTRO = {
+    configuracao.QDRANT_COLECAO_CATEGORIA,
+    configuracao.QDRANT_COLECAO_LOCAL,
+}
 
-def _campo(payload: dict, caminho: str):
-    valor = payload
 
-    for parte in caminho.split("."):
-        valor = valor[parte]
-
-    return valor
-
-def _filtro(cnpj_endereco: str, registro_id: int | None = None, collection: str = ""):
-    if type(cnpj_endereco) is not str or not cnpj_endereco.strip():
-        raise ValueError("CNPJ da sede autenticada obrigatório para todas as consultas.")
-
-    condicoes = [models.FieldCondition(
-        key=config.QDRANT_TENANT_FIELD, match=models.MatchValue(value=cnpj_endereco)
-    )]
-
+def _filtro(unidade_id: int, registro_id: int | None = None) -> models.Filter:
+    if type(unidade_id) is not int or unidade_id <= 0:
+        raise ValueError("Unidade autenticada inválida.")
+    condicoes = [
+        models.FieldCondition(
+            key=configuracao.QDRANT_CAMPO_UNIDADE,
+            match=models.MatchValue(value=unidade_id),
+        ),
+        models.FieldCondition(
+            key=configuracao.QDRANT_CAMPO_ATIVO,
+            match=models.MatchValue(value=True),
+        ),
+    ]
     if registro_id is not None:
+        if type(registro_id) is not int or registro_id <= 0:
+            raise ValueError("ID operacional inválido.")
         condicoes.append(models.FieldCondition(
-            key=_id_field(collection),
-            match=models.MatchValue(value=registro_id)
+            key=configuracao.QDRANT_CAMPO_ENTIDADE_ID,
+            match=models.MatchValue(value=registro_id),
         ))
-
     return models.Filter(must=condicoes)
 
-def _registro(ponto, cnpj_endereco: str, collection: str) -> tuple[int, str]:
-    payload = ponto.payload or {}
 
-    try:
-        sede = _campo(payload, config.QDRANT_TENANT_FIELD)
-
-        registro_id = _campo(payload, _id_field(collection))
-
-        descricao = _campo(payload, config.QDRANT_DESCRIPTION_FIELD)
-
-    except (KeyError, TypeError):
-        raise ValueError("Payload Qdrant incompatível com os campos configurados.") from None
-    
-    if type(sede) is not str or sede != cnpj_endereco:
-        raise ValueError("Resultado fora da sede autenticada.")
-    
+def _registro(ponto, unidade_id: int) -> tuple[int, str]:
+    conteudo = ponto.payload or {}
+    valor_unidade = conteudo.get(configuracao.QDRANT_CAMPO_UNIDADE)
+    if type(valor_unidade) is not int or valor_unidade != unidade_id:
+        raise ValueError("Resultado fora da unidade autenticada.")
+    if conteudo.get(configuracao.QDRANT_CAMPO_ATIVO) is not True:
+        raise ValueError("Resultado inativo.")
+    registro_id = conteudo.get(configuracao.QDRANT_CAMPO_ENTIDADE_ID)
+    texto = conteudo.get(configuracao.QDRANT_CAMPO_TEXTO)
     if type(registro_id) is not int or registro_id <= 0:
-        raise ValueError("O payload deve conter o ID operacional inteiro positivo.")
-    
-    if not isinstance(descricao, str) or not descricao.strip():
-        raise ValueError("Descrição ausente no payload.")
-    
-    return registro_id, descricao.strip()
+        raise ValueError("O payload deve conter entidade_id inteiro positivo.")
+    if not isinstance(texto, str) or not texto.strip():
+        raise ValueError("Texto ausente no payload.")
+    return registro_id, texto.strip()
 
-async def _buscar(collection: str, texto: str, cnpj_endereco: str, client: AsyncQdrantClient) -> dict[int, str]:
-    filtro = _filtro(cnpj_endereco)
 
-    if not texto.strip() or not 1 <= config.VECTOR_SEARCH_LIMIT <= 20:
+async def _buscar(
+    colecao: str, texto: str, unidade_id: int, cliente: AsyncQdrantClient,
+) -> dict[int, str]:
+    if colecao not in _COLECOES_CADASTRO:
+        raise ValueError("Collection não permitida.")
+    if not isinstance(texto, str) or not texto.strip() or not 1 <= configuracao.LIMITE_BUSCA_VETORIAL <= 20:
         raise ValueError("Informe uma descrição e um limite entre 1 e 20.")
-    
-    vetor = await gerar_embedding_documento(texto.strip())
-
-    if len(vetor) != config.EMBEDDING_DIMENSIONS_EQUIPAMENTO_LOCAL:
-        raise ValueError("Dimensão do embedding incompatível com a collection.")
-    
-    resultado = await client.query_points(
-        collection_name=collection,
+    filtro = _filtro(unidade_id)
+    vetor = await gerar_vetor_operacional(texto.strip())
+    resultado = await cliente.query_points(
+        collection_name=colecao,
         query=vetor,
-        using=config.QDRANT_VECTOR_NAME,
+        using=configuracao.QDRANT_NOME_VETOR,
         query_filter=filtro,
-        limit=config.VECTOR_SEARCH_LIMIT, score_threshold=config.VECTOR_SCORE_THRESHOLD,
+        limit=configuracao.LIMITE_BUSCA_VETORIAL,
+        score_threshold=configuracao.LIMIAR_PONTUACAO_VETORIAL,
         with_payload=True,
         with_vectors=False,
     )
-
     registros = {}
-
     for ponto in resultado.points:
-        registro_id, descricao = _registro(ponto, cnpj_endereco, collection)
-
+        registro_id, descricao = _registro(ponto, unidade_id)
         if registro_id in registros and registros[registro_id] != descricao:
-            raise ValueError("ID operacional duplicado com descrições diferentes.")
-        
+            raise ValueError("ID operacional duplicado com textos diferentes.")
         registros[registro_id] = descricao
-
     return registros
 
-async def buscar_categoria_equipamento(descricao: str, cnpj_endereco: str, client: AsyncQdrantClient) -> dict[int, str]:
-    return await _buscar(config.QDRANT_CATEGORIA_COLLECTION, descricao, cnpj_endereco, client)
 
-async def buscar_local_endereco(descricao: str, cnpj_endereco: str, client: AsyncQdrantClient) -> dict[int, str]:
-    return await _buscar(config.QDRANT_LOCAL_COLLECTION, descricao, cnpj_endereco, client)
+async def buscar_categoria_equipamento(
+    descricao: str, unidade_id: int, cliente: AsyncQdrantClient,
+) -> dict[int, str]:
+    return await _buscar(configuracao.QDRANT_COLECAO_CATEGORIA, descricao, unidade_id, cliente)
+
+
+async def buscar_local_endereco(
+    descricao: str, unidade_id: int, cliente: AsyncQdrantClient,
+) -> dict[int, str]:
+    return await _buscar(configuracao.QDRANT_COLECAO_LOCAL, descricao, unidade_id, cliente)
+
 
 async def validar_selecao(
-        collection: str,
-        registro_id: int,
-        cnpj_endereco: str,
-        client: AsyncQdrantClient) -> None:
-    
-    if collection not in (config.QDRANT_CATEGORIA_COLLECTION, config.QDRANT_LOCAL_COLLECTION):
+    colecao: str, registro_id: int, unidade_id: int, cliente: AsyncQdrantClient,
+) -> str:
+    if colecao not in _COLECOES_CADASTRO:
         raise ValueError("Collection não permitida.")
-    
-    pontos, _ = await client.scroll(
-        collection_name=collection,
-        scroll_filter=_filtro(cnpj_endereco, registro_id, collection),
+    pontos, _ = await cliente.scroll(
+        collection_name=colecao,
+        scroll_filter=_filtro(unidade_id, registro_id),
         limit=2,
         with_payload=True,
         with_vectors=False,
     )
-
     if len(pontos) != 1:
         raise ValueError("Cadastro indisponível. Consulte e confirme novamente.")
+    return _registro(pontos[0], unidade_id)[1]

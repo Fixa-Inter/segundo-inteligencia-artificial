@@ -1,8 +1,9 @@
 import asyncio
 from langchain.tools import ToolRuntime, tool
-from app.schemas.UsuarioContexto import UsuarioContexto
+from app.schemas import UsuarioContexto
 from app.memory.vectorSearch.busca import buscar_local_endereco, buscar_categoria_equipamento
 from app.core.clients.qdrant import abrir_cliente_qdrant
+from app.services.gerais import obter_unidade_id
 
 
 @tool
@@ -18,10 +19,11 @@ async def buscar_opcoes_ocorrencia(equipamento: str, local: str, runtime: ToolRu
     usuario = contexto["usuario"]
     if usuario.tipo_acesso not in {"tecnico", "gestor"}:
         return {"status": "ACESSO_NEGADO", "mensagem": "Somente técnicos e gestores podem preparar ocorrências."}
+    unidade_id = await obter_unidade_id(usuario)
     async with abrir_cliente_qdrant() as cliente:
         categorias, locais = await asyncio.gather(
-            buscar_categoria_equipamento(equipamento, usuario.cnpj_endereco, cliente),
-            buscar_local_endereco(local, usuario.cnpj_endereco, cliente),
+            buscar_categoria_equipamento(equipamento, unidade_id, cliente),
+            buscar_local_endereco(local, unidade_id, cliente),
         )
     return {
         "status": "SUCESSO" if categorias and locais else "AGUARDANDO_INFORMACAO",

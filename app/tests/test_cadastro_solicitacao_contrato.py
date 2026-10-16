@@ -11,9 +11,9 @@ from langchain_core.messages import HumanMessage
 from pydantic import ValidationError
 
 from app.agents.juiz import AvaliacaoJuiz, RespostaRevisada, julgar_resposta, revisar_resposta
-from app.graph.edges import decidir_apos_julgamento
-from app.services.solicitacoes import criarSolicitacao as service
-from app.tools.toolsRequest.CriarSolicitacaoRequest import CriarSolicitacaoRequest
+from app.graph.transicoes import decidir_apos_julgamento
+from app.services.solicitacoes import criarSolicitacao as servico
+from app.tools.toolsRequest import CriarSolicitacaoEntrada
 
 
 def dados():
@@ -29,24 +29,24 @@ def cliente_simulado(monkeypatch, status, corpo):
     cliente = SimpleNamespace(post=post)
     contexto = AsyncMock()
     contexto.__aenter__.return_value = cliente
-    monkeypatch.setattr(service.httpx, "AsyncClient", Mock(return_value=contexto))
-    monkeypatch.setattr(service, "FIXA_API_BASE_URL", "https://example.com")
+    monkeypatch.setattr(servico.httpx, "AsyncClient", Mock(return_value=contexto))
+    monkeypatch.setattr(servico, "FIXA_URL_BASE_API", "https://example.com")
     return post
 
 
 def test_payload_segue_swagger_e_interpreta_sucesso(monkeypatch):
     post = cliente_simulado(monkeypatch, 200, {"id": 15, "titulo": "Notebook", "status": "PENDENTE"})
-    resultado = asyncio.run(service.adicionar_solicitacao(
-        CriarSolicitacaoRequest(**dados()), "token-teste", imagens=["https://example.com/foto.jpg"]))
+    resultado = asyncio.run(servico.adicionar_solicitacao(
+        CriarSolicitacaoEntrada(**dados()), "token-teste", imagens=["https://example.com/foto.jpg"]))
     spec = json.loads((Path(__file__).resolve().parents[2] / "docs/api/swagger.json").read_text(encoding="utf-8"))
     contrato = spec["components"]["schemas"]["ProblemaCriarInputDTO"]
-    payload = post.call_args.kwargs["json"]
-    assert set(payload) == set(contrato["required"])
-    assert payload["localEnderecoID"] == 6
-    assert payload["categoriaEquipamentoId"] == 2
-    assert payload["descricaoProblema"] == dados()["descricao_problema"]
-    assert payload["descricaoLocal"] == dados()["descricao_local"]
-    assert payload["urlsFoto"] == ["https://example.com/foto.jpg"]
+    conteudo = post.call_args.kwargs["json"]
+    assert set(conteudo) == set(contrato["required"])
+    assert conteudo["localUnidadeID"] == 6
+    assert conteudo["categoriaEquipamentoId"] == 2
+    assert conteudo["descricaoProblema"] == dados()["descricao_problema"]
+    assert conteudo["descricaoLocal"] == dados()["descricao_local"]
+    assert conteudo["urlsFoto"] == ["https://example.com/foto.jpg"]
     assert post.call_args.kwargs["headers"]["Authorization"] == "Bearer token-teste"
     assert resultado["status"] == "SUCESSO"
     assert resultado["problema_id"] == 15
@@ -56,13 +56,13 @@ def test_payload_segue_swagger_e_interpreta_sucesso(monkeypatch):
 @pytest.mark.parametrize("descricao", [None, "", "   "])
 def test_descricao_local_obrigatoria(descricao):
     with pytest.raises(ValidationError):
-        CriarSolicitacaoRequest(**{**dados(), "descricao_local": descricao})
+        CriarSolicitacaoEntrada(**{**dados(), "descricao_local": descricao})
 
 
 def test_recusa_preserva_detalhe_sem_repetir_post(monkeypatch):
     post = cliente_simulado(monkeypatch, 400, {"message": "Local inválido", "token": "token-teste"})
-    resultado = asyncio.run(service.adicionar_solicitacao(
-        CriarSolicitacaoRequest(**dados()), "token-teste", imagens=["https://example.com/foto.jpg"]))
+    resultado = asyncio.run(servico.adicionar_solicitacao(
+        CriarSolicitacaoEntrada(**dados()), "token-teste", imagens=["https://example.com/foto.jpg"]))
     assert resultado["status"] == "ERRO_API"
     assert resultado["http_status"] == 400
     assert "Local inválido" in resultado["detalhes_api"]
@@ -73,7 +73,7 @@ def test_recusa_preserva_detalhe_sem_repetir_post(monkeypatch):
 def test_juiz_recebe_relato_anterior_e_confirmacao(monkeypatch):
     juiz = Mock()
     juiz.invoke.return_value = AvaliacaoJuiz(veredito="aprovado", feedback="OK")
-    monkeypatch.setitem(sys.modules, "app.agents.agents", SimpleNamespace(juiz=juiz))
+    monkeypatch.setitem(sys.modules, "app.agents.registro", SimpleNamespace(juiz=juiz))
     estado = {"perfil": "solicitante", "messages": [
         HumanMessage(content="Um notebook está pegando fogo"),
         HumanMessage(content="Pode registrar a solicitação"),
@@ -88,7 +88,7 @@ def test_revisao_somente_texto_limitada_a_uma_tentativa(monkeypatch):
     modelo = Mock()
     modelo.with_structured_output.return_value.ainvoke = AsyncMock(
         return_value=RespostaRevisada(resposta="A API recusou o cadastro."))
-    monkeypatch.setitem(sys.modules, "app.agents.llms", SimpleNamespace(llm_especialista=modelo))
+    monkeypatch.setitem(sys.modules, "app.agents.modelos", SimpleNamespace(llm_especialista=modelo))
     estado = {"veredito": "revisar", "tentativas": 1, "perfil": "solicitante",
               "evidencias": ['{"status":"ERRO_API"}'], "feedback_juiz": "Corrigir o texto"}
     assert decidir_apos_julgamento(estado) == "revisar_resposta"
@@ -97,4 +97,4 @@ def test_revisao_somente_texto_limitada_a_uma_tentativa(monkeypatch):
     modelo.bind_tools.assert_not_called()
     assert "evidencias" not in revisado
     assert decidir_apos_julgamento({**estado, "tentativas": 2}) == "fallback"
-    assert decidir_apos_julgamento({**estado, "veredito": "aprovado"}) == "guardrail_saida"
+    assert decidir_apos_julgamento({**estado, "veredito": "aprovado"}) == "proteger_saida"

@@ -2,12 +2,12 @@ import logging
 
 from langchain.tools import ToolRuntime, tool
 
-from app.schemas.UsuarioContexto import UsuarioContexto
-from app.services.solicitacoes.buscarSolicitacao import (
+from app.schemas import UsuarioContexto
+from app.services.solicitacoes import (
     listar_minhas_solicitacoes as consultar_minhas_solicitacoes,
 )
 
-logger = logging.getLogger(__name__)
+registrador = logging.getLogger(__name__)
 
 
 @tool
@@ -29,5 +29,5 @@ registros ao CNPJ do endereco do usuario."""
 
         return await consultar_minhas_solicitacoes(usuario)
     except Exception:
-        logger.exception("Falha na tool listar_minhas_solicitacoes")
+        registrador.exception("Falha na tool listar_minhas_solicitacoes")
         raise

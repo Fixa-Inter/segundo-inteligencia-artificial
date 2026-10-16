@@ -1,7 +1,7 @@
 from langchain.tools import ToolRuntime, tool
 
-from app.schemas.UsuarioContexto import UsuarioContexto
-from app.services.ordensServico.buscarOrdensServico import consultar_todas_ordens_servico
+from app.schemas import UsuarioContexto
+from app.services.ordensServico import consultar_todas_ordens_servico
 from app.tools.ordensServico.utilitarios import montar_tabelas
 
 

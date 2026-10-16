@@ -1,7 +1,7 @@
 from langchain.tools import ToolRuntime, tool
 
-from app.schemas.UsuarioContexto import UsuarioContexto
-from app.services.tecnicos.buscarTecnicosDisponiveis import (
+from app.schemas import UsuarioContexto
+from app.services.tecnicos import (
     buscar_tecnicos_disponiveis as consultar_tecnicos_disponiveis,
 )
 

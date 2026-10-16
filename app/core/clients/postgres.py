@@ -2,15 +2,15 @@ from sqlalchemy import text
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from app.core import config
+from app.core import configuracao
 
 
 _URLS_POR_PERFIL = {
-    "solicitante": config.DATABASE_URL_SOLICITANTE,
-    "tecnico": config.DATABASE_URL_TECNICO,
-    "gestor": config.DATABASE_URL_GESTOR,
+    "solicitante": configuracao.BANCO_URL_SOLICITANTE,
+    "tecnico": configuracao.BANCO_URL_TECNICO,
+    "gestor": configuracao.BANCO_URL_GESTOR,
 }
-_ENGINES: dict[tuple[str, str], AsyncEngine] = {}
+_MOTORES: dict[tuple[str, str], AsyncEngine] = {}
 
 
 def _url_asyncpg(valor: str) -> URL:
@@ -21,45 +21,45 @@ def _url_asyncpg(valor: str) -> URL:
         url = url.set(drivername="postgresql+asyncpg")
     else:
         raise ValueError("A URL configurada nao usa PostgreSQL.")
-    query = dict(url.query)
-    if "sslmode" in query and "ssl" not in query:
-        query["ssl"] = query.pop("sslmode")
-        url = url.set(query=query)
+    consulta = dict(url.query)
+    if "sslmode" in consulta and "ssl" not in consulta:
+        consulta["ssl"] = consulta.pop("sslmode")
+        url = url.set(query=consulta)
     return url
 
 
-def _engine_para_url(perfil: str, valor: str) -> AsyncEngine:
+def _motor_url(perfil: str, valor: str) -> AsyncEngine:
     chave = (perfil, valor)
-    if chave not in _ENGINES:
-        _ENGINES[chave] = create_async_engine(
+    if chave not in _MOTORES:
+        _MOTORES[chave] = create_async_engine(
             _url_asyncpg(valor),
             pool_pre_ping=True,
             pool_size=5,
             max_overflow=5,
         )
-    return _ENGINES[chave]
+    return _MOTORES[chave]
 
 
-def obter_engine(perfil: str) -> AsyncEngine:
+def obter_motor(perfil: str) -> AsyncEngine:
     if perfil not in _URLS_POR_PERFIL:
         raise PermissionError("Perfil sem acesso ao banco.")
     url = _URLS_POR_PERFIL[perfil]
     if not url:
         raise RuntimeError(f"Configure DATABASE_URL_{perfil.upper()}.")
-    return _engine_para_url(perfil, url)
+    return _motor_url(perfil, url)
 
 
-async def executar_select(perfil: str, sql: str, parametros: dict) -> list[dict]:
-    engine = obter_engine(perfil)
-    async with engine.connect() as conexao:
+async def executar_consulta(perfil: str, sql: str, parametros: dict) -> list[dict]:
+    motor = obter_motor(perfil)
+    async with motor.connect() as conexao:
         resultado = await conexao.execute(text(sql), parametros)
         return [dict(linha) for linha in resultado.mappings().all()]
 
 
-async def executar_insert(perfil: str, sql: str, parametros: dict) -> list[dict]:
+async def executar_insercao(perfil: str, sql: str, parametros: dict) -> list[dict]:
     """Executa um INSERT em transacao e retorna as linhas de RETURNING, se houver."""
-    engine = obter_engine(perfil)
-    async with engine.begin() as conexao:
+    motor = obter_motor(perfil)
+    async with motor.begin() as conexao:
         resultado = await conexao.execute(text(sql), parametros)
         if not resultado.returns_rows:
             return []
@@ -67,6 +67,6 @@ async def executar_insert(perfil: str, sql: str, parametros: dict) -> list[dict]
 
 
 async def fechar_conexoes_postgres() -> None:
-    for engine in _ENGINES.values():
-        await engine.dispose()
-    _ENGINES.clear()
+    for motor in _MOTORES.values():
+        await motor.dispose()
+    _MOTORES.clear()
