@@ -1,9 +1,9 @@
 from app.core.clients.mongo import abrir_cliente_mongo
-from app.core.config import MONGO_BANCO_DADOS, MONGO_COLLECTION_SESSOES
+from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
 
-async def recuperar_mensagens(doc_id: str, user_id: int) -> list[dict]:
+async def recuperar_mensagens(documento_id: str, usuario_id: int) -> list[dict]:
     async with abrir_cliente_mongo() as cliente:
-        db = cliente[MONGO_BANCO_DADOS]
-        collection_sessoes = db[MONGO_COLLECTION_SESSOES]
-        doc = await collection_sessoes.find_one({"_id": doc_id, "user_id": user_id}, {"mensagens": 1})
-        return doc["mensagens"] if doc else []
+        banco = cliente[MONGO_BANCO_DADOS]
+        colecao_sessoes = banco[MONGO_COLECAO_SESSOES]
+        documento = await colecao_sessoes.find_one({"_id": documento_id, "user_id": usuario_id}, {"mensagens": 1})
+        return documento["mensagens"] if documento else []

@@ -1,21 +1,24 @@
 import logging
 from langchain.tools import ToolRuntime, tool
 from pydantic import model_validator
-from app.core.config import QDRANT_LOCAL_COLLECTION, QDRANT_CATEGORIA_COLLECTION
+from app.core.propostas import avaliar_confirmacao, metadados_proposta
+from app.tools.propostas import resolver_rotulos
+from app.core.configuracao import QDRANT_COLECAO_LOCAL, QDRANT_COLECAO_CATEGORIA
 from app.core.clients.qdrant import abrir_cliente_qdrant
 from app.memory.vectorSearch.busca import validar_selecao
-from app.memory.persistencia.rascunho_solicitacao import (
+from app.memory.persistencia import (
     salvar_rascunho_solicitacao, obter_rascunho_solicitacao, atualizar_rascunho_solicitacao,
 )
-from app.services.ocorrencias.criarOcorrencia import adicionar_ocorrencia
-from app.tools.toolsRequest.CriarOcorrenciaRequest import CriarOcorrenciaRequest, CategoriaProblema, Prioridade
-from app.tools.solicitacoes.criarSolicitacao import _contexto, _confirmacao_explicita
-from app.observability.metrics import stage_resolution
+from app.services.ocorrencias import adicionar_ocorrencia
+from app.tools.toolsRequest import CriarOcorrenciaEntrada, CategoriaProblema, Prioridade
+from app.tools.solicitacoes.criarSolicitacao import _contexto
+from app.observability.metricas import adicionar_resolucao_pendente
+from app.services.gerais import obter_unidade_id
 
-logger = logging.getLogger(__name__)
+registrador = logging.getLogger(__name__)
 
 
-class _ArgumentosCriarOcorrencia(CriarOcorrenciaRequest):
+class _ArgumentosCriarOcorrencia(CriarOcorrenciaEntrada):
     @model_validator(mode="before")
     @classmethod
     def separar_runtime_injetado(cls, dados):
@@ -35,19 +38,25 @@ async def salvar_rascunho_ocorrencia(
     Use IDs consultados no Qdrant, enums textuais, título até 100 caracteres
     e descrições até 255. Exclusiva de técnicos e gestores.
     """
-    _, usuario, session_id = _contexto(runtime)
+    contexto, usuario, sessao_id = _contexto(runtime)
+    if contexto.get("intencao_atual") not in {None, "ocorrencia"}:
+        return {"status": "INTENCAO_DIVERGENTE", "mensagem": "Prepare o tipo de registro solicitado nesta mensagem."}
     if usuario.tipo_acesso not in {"tecnico", "gestor"}:
         return {"status": "ACESSO_NEGADO", "mensagem": "Perfil sem permissão para ocorrências."}
-    dados = CriarOcorrenciaRequest(
+    dados = CriarOcorrenciaEntrada(
         local_endereco_id=local_endereco_id, categoria_equipamento_id=categoria_equipamento_id,
         categoria_problema_id=categoria_problema_id, titulo=titulo,
         descricao_ocorrencia=descricao_ocorrencia, descricao_local=descricao_local, prioridade=prioridade,
     )
-    rascunho = await salvar_rascunho_solicitacao(session_id, usuario.usuario_id, dados.model_dump(), tipo="ocorrencia")
+    rascunho = await salvar_rascunho_solicitacao(
+        sessao_id, usuario.usuario_id, dados.model_dump(), tipo="ocorrencia",
+        turno_id=contexto.get("turno_id", ""), rotulos=await resolver_rotulos(dados.model_dump(), usuario),
+    )
     return {"status": "RASCUNHO_SALVO", "dados_salvos": rascunho["dados"],
+            "proposta": metadados_proposta(rascunho),
             "imagens_recebidas": len(rascunho["imagens"]),
             "imagens_associadas_ao_rascunho": bool(rascunho["imagens"]),
-            "mensagem": "Proposta salva. Peça confirmação; é necessária pelo menos uma foto."}
+            "mensagem": "Mostre somente os dados pendentes. Não repita a confirmação dos campos já aceitos. É necessária uma foto."}
 
 
 @tool
@@ -57,10 +66,10 @@ async def criar_ocorrencia(runtime: ToolRuntime) -> dict:
     Se confirmada sem foto, aguarda a imagem. Retome quando a imagem chegar.
     Não repita envios com resultado indeterminado.
     """
-    contexto, usuario, session_id = _contexto(runtime)
+    contexto, usuario, sessao_id = _contexto(runtime)
     if usuario.tipo_acesso not in {"tecnico", "gestor"}:
         return {"status": "ACESSO_NEGADO", "mensagem": "Perfil sem permissão para ocorrências."}
-    rascunho = await obter_rascunho_solicitacao(session_id, usuario.usuario_id, tipo="ocorrencia")
+    rascunho = await obter_rascunho_solicitacao(sessao_id, usuario.usuario_id, tipo="ocorrencia")
     if not rascunho:
         return {"status": "SEM_RASCUNHO", "mensagem": "Prepare e salve a proposta antes do cadastro."}
     status = rascunho.get("status_fluxo")
@@ -70,41 +79,62 @@ async def criar_ocorrencia(runtime: ToolRuntime) -> dict:
         return {"status": "RESULTADO_INDETERMINADO", "mensagem": "Consulte os registros antes de repetir o envio."}
     if status not in {"aguardando_confirmacao", "aguardando_imagem", "erro_api"}:
         return {"status": "RASCUNHO_INDISPONIVEL", "mensagem": "Rascunho indisponível para cadastro."}
-    confirmado = rascunho.get("confirmado") is True and status == "aguardando_imagem"
-    if not confirmado and not _confirmacao_explicita(contexto.get("mensagem_atual", "")):
-        return {"status": "CONFIRMACAO_NECESSARIA", "mensagem": "Confirme os dados antes de cadastrar."}
+    bloqueio = avaliar_confirmacao(rascunho, contexto)
+    if bloqueio:
+        if bloqueio["status"] == "CONFIRMACAO_PARCIAL":
+            aceitos = {**rascunho.get("dados_confirmados", {}), **{
+                campo: rascunho["dados"][campo] for campo in bloqueio["campos_confirmados"]}}
+            atualizou = await atualizar_rascunho_solicitacao(
+                sessao_id, usuario.usuario_id, {"dados_confirmados": aceitos}, tipo="ocorrencia",
+                status_esperados={rascunho["status_fluxo"]}, rascunho_id=rascunho["id"],
+                versao=rascunho["versao"], exigir_ativo=True,
+            )
+            if not atualizou:
+                return {"status": "RESULTADO_INDETERMINADO", "mensagem": "A proposta mudou. Releia os dados."}
+            rascunho = {**rascunho, "dados_confirmados": aceitos}
+        if rascunho.get("id") and rascunho.get("versao") and rascunho.get("tipo"):
+            bloqueio["proposta"] = metadados_proposta(rascunho)
+        return bloqueio
+    controle = {"rascunho_id": rascunho["id"], "versao": rascunho["versao"], "exigir_ativo": True}
+    confirmou = await atualizar_rascunho_solicitacao(
+        sessao_id, usuario.usuario_id, {"confirmado": True, "dados_confirmados": rascunho["dados"]},
+        status_esperados={status}, tipo="ocorrencia", **controle,
+    )
+    if not confirmou:
+        return {"status": "RESULTADO_INDETERMINADO", "mensagem": "A proposta mudou. Confira os dados antes de repetir."}
     if not rascunho.get("imagens"):
-        await atualizar_rascunho_solicitacao(session_id, usuario.usuario_id,
+        await atualizar_rascunho_solicitacao(sessao_id, usuario.usuario_id,
             {"confirmado": True, "status_fluxo": "aguardando_imagem"},
-            status_esperados={status}, tipo="ocorrencia")
+            status_esperados={status}, tipo="ocorrencia", **controle)
         return {"status": "AGUARDANDO_INFORMACAO", "mensagem": "Proposta confirmada. Envie pelo menos uma foto."}
-    dados = CriarOcorrenciaRequest.model_validate(rascunho["dados"])
+    dados = CriarOcorrenciaEntrada.model_validate(rascunho["dados"])
+    unidade_id = await obter_unidade_id(usuario)
     async with abrir_cliente_qdrant() as cliente:
         try:
-            await validar_selecao(QDRANT_LOCAL_COLLECTION, dados.local_endereco_id, usuario.cnpj_endereco, cliente)
-            await validar_selecao(QDRANT_CATEGORIA_COLLECTION, dados.categoria_equipamento_id, usuario.cnpj_endereco, cliente)
+            await validar_selecao(QDRANT_COLECAO_LOCAL, dados.local_endereco_id, unidade_id, cliente)
+            await validar_selecao(QDRANT_COLECAO_CATEGORIA, dados.categoria_equipamento_id, unidade_id, cliente)
         except ValueError:
             return {"status": "ERRO_VALIDACAO", "mensagem": "Local ou categoria indisponível. Consulte e confirme novamente."}
-    iniciou = await atualizar_rascunho_solicitacao(session_id, usuario.usuario_id,
-        {"status_fluxo": "enviando", "confirmado": True}, status_esperados={status}, tipo="ocorrencia")
+    iniciou = await atualizar_rascunho_solicitacao(sessao_id, usuario.usuario_id,
+        {"status_fluxo": "enviando", "confirmado": True}, status_esperados={status}, tipo="ocorrencia", **controle)
     if not iniciou:
         return {"status": "RESULTADO_INDETERMINADO", "mensagem": "Outro envio pode estar em andamento. Consulte os registros."}
     try:
         resultado = await adicionar_ocorrencia(dados, usuario.access_token,
             usuario_id=usuario.usuario_id, imagens=rascunho["imagens"])
     except Exception:
-        logger.exception("Falha ao enviar ocorrência")
+        registrador.exception("Falha ao enviar ocorrência")
         resultado = {"status": "RESULTADO_INDETERMINADO", "mensagem": "Consulte os registros antes de repetir o envio."}
     status_resultado = resultado.get("status", "ERRO_FERRAMENTA")
-    outcome = (
+    resultado_operacao = (
         "success" if status_resultado == "SUCESSO"
         else "indeterminate" if status_resultado == "RESULTADO_INDETERMINADO"
         else "error"
     )
-    if outcome == "success":
-        stage_resolution()
+    if resultado_operacao == "success":
+        adicionar_resolucao_pendente()
     proximo = {"SUCESSO": "cadastrada", "RESULTADO_INDETERMINADO": "resultado_indeterminado"}.get(status_resultado, "erro_api")
-    await atualizar_rascunho_solicitacao(session_id, usuario.usuario_id,
+    await atualizar_rascunho_solicitacao(sessao_id, usuario.usuario_id,
         {"status_fluxo": proximo, "ocorrencia_id_api": resultado.get("ocorrencia_id")},
-        status_esperados={"enviando"}, tipo="ocorrencia")
+        status_esperados={"enviando"}, tipo="ocorrencia", **controle)
     return resultado

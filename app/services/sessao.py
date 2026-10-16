@@ -1,15 +1,15 @@
-from app.graph.workflow import grafo
-from app.memory.persistencia.sessoes.encerrar_sessao import (
+from app.graph.fluxo import grafo
+from app.memory.persistencia.sessoes import (
     encerrar_sessao,
 )
-from app.schemas.UsuarioContexto import UsuarioContexto
-from app.schemas.sessao import EncerrarSessaoResponse
+from app.schemas import UsuarioContexto
+from app.schemas import EncerrarSessaoSaida
 
 
 async def finalizar_sessao_chat(
     thread_id: str,
     usuario: UsuarioContexto,
-) -> EncerrarSessaoResponse:
+) -> EncerrarSessaoSaida:
     thread_id = thread_id.strip()
 
     if not thread_id:
@@ -18,11 +18,11 @@ async def finalizar_sessao_chat(
         )
 
     resumo = await encerrar_sessao(
-        session_id=thread_id,
-        user_id=usuario.usuario_id,
+        sessao_id=thread_id,
+        usuario_id=usuario.usuario_id,
     )
 
-    thread_id_interno = (
+    sessao_id_interno = (
         f"{usuario.usuario_id}:{thread_id}"
     )
 
@@ -30,10 +30,10 @@ async def finalizar_sessao_chat(
 
     if checkpointer is not None:
         await checkpointer.adelete_thread(
-            thread_id_interno
+            sessao_id_interno
         )
 
-    return EncerrarSessaoResponse(
+    return EncerrarSessaoSaida(
         thread_id=thread_id,
         status="ENCERRADA",
         mensagem="Sessão encerrada com sucesso.",

@@ -17,7 +17,7 @@ DROP TABLE IF EXISTS modelo_equipamento CASCADE;
 DROP TABLE IF EXISTS marca_equipamento CASCADE;
 DROP TABLE IF EXISTS categoria_equipamento CASCADE;
 DROP TABLE IF EXISTS evento CASCADE;
-DROP TABLE IF EXISTS local_endereco CASCADE;
+DROP TABLE IF EXISTS local_unidade CASCADE;
 DROP TABLE IF EXISTS feedback CASCADE;
 DROP TABLE IF EXISTS aptidao CASCADE;
 DROP TABLE IF EXISTS usuario CASCADE;
@@ -38,7 +38,7 @@ DROP TABLE IF EXISTS super_admin CASCADE;
 -- Dependências: -
 
 CREATE TABLE super_admin (
-    id          SERIAL PRIMARY KEY,
+    id          BIGSERIAL PRIMARY KEY,
     nome        VARCHAR(100) NOT NULL,
     email       VARCHAR(100) NOT NULL UNIQUE,
     senha_hash  VARCHAR(255) NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE super_admin (
 -- Dependências: -
 
 CREATE TABLE instituicao (
-    id                 SERIAL PRIMARY KEY,
+    id                 BIGSERIAL PRIMARY KEY,
     nome               VARCHAR(100) NOT NULL,
     tipo_instituicao   INTEGER NOT NULL,
     email_corporativo  VARCHAR(100) UNIQUE,
@@ -71,8 +71,8 @@ CREATE TABLE instituicao (
  */
 
 CREATE TABLE unidade (
-    id              SERIAL PRIMARY KEY,
-    instituicao_id  INTEGER NOT NULL REFERENCES instituicao(id),
+    id              BIGSERIAL PRIMARY KEY,
+    instituicao_id  BIGINT NOT NULL REFERENCES instituicao(id),
     nome            VARCHAR(100) NOT NULL,
     cnpj            CHAR(14) NOT NULL UNIQUE,
     logradouro      VARCHAR(100) NOT NULL,
@@ -91,7 +91,7 @@ CREATE TABLE unidade (
 -- Dependências: -
 
 CREATE TABLE plano (
-    id             SERIAL PRIMARY KEY,
+    id             BIGSERIAL PRIMARY KEY,
     nome           VARCHAR(100) NOT NULL,
     valor          DECIMAL(10, 2) NOT NULL,
     descricao      VARCHAR(255),
@@ -113,9 +113,9 @@ CREATE TABLE plano (
  */
 
 CREATE TABLE contrato (
-    id            SERIAL PRIMARY KEY,
-    plano_id      INTEGER NOT NULL REFERENCES plano(id),
-    unidade_id   INTEGER NOT NULL REFERENCES unidade(id),
+    id            BIGSERIAL PRIMARY KEY,
+    plano_id      BIGINT NOT NULL REFERENCES plano(id),
+    unidade_id   BIGINT NOT NULL REFERENCES unidade(id),
     data_inicio   DATE NOT NULL DEFAULT CURRENT_DATE,
     data_fim      DATE NOT NULL,
     status        INTEGER NOT NULL DEFAULT 1,
@@ -129,8 +129,8 @@ CREATE TABLE contrato (
 -- Dependências: contrato
 
 CREATE TABLE pagamento (
-    id                SERIAL PRIMARY KEY,
-    contrato_id       INTEGER NOT NULL REFERENCES contrato(id),
+    id                BIGSERIAL PRIMARY KEY,
+    contrato_id       BIGINT NOT NULL REFERENCES contrato(id),
     data_pagamento    TIMESTAMP NOT NULL,
     valor_pago        DECIMAL(10, 2) NOT NULL,
     status            INTEGER DEFAULT 1,
@@ -151,8 +151,8 @@ CREATE TABLE pagamento (
  */
 
 CREATE TABLE usuario (
-    id               SERIAL PRIMARY KEY,
-    unidade_id      INTEGER NOT NULL REFERENCES unidade(id),
+    id               BIGSERIAL PRIMARY KEY,
+    unidade_id      BIGINT NOT NULL REFERENCES unidade(id),
     nome_completo    VARCHAR(100) NOT NULL,
     email            VARCHAR(100) NOT NULL UNIQUE,
     tipo_acesso      INTEGER NOT NULL,
@@ -160,6 +160,7 @@ CREATE TABLE usuario (
     cargo            VARCHAR(100) NOT NULL,
     data_nascimento  DATE NOT NULL,
     data_criacao     TIMESTAMP NOT NULL DEFAULT NOW(),
+    data_atualizacao TIMESTAMP DEFAULT NOW(),
     esta_ativo       BOOLEAN NOT NULL DEFAULT FALSE,
     primeiro_acesso  BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT uk_usuario_id_unidade UNIQUE (id, unidade_id),
@@ -171,8 +172,8 @@ CREATE TABLE usuario (
 -- Dependências: usuario
 
 CREATE TABLE aptidao (
-    id                  SERIAL PRIMARY KEY,
-    usuario_id          INTEGER NOT NULL REFERENCES usuario(id),
+    id                  BIGSERIAL PRIMARY KEY,
+    usuario_id          BIGINT NOT NULL REFERENCES usuario(id),
     categoria_problema  INTEGER NOT NULL,
     nota                DECIMAL(4, 2) NOT NULL,
     data_criacao        TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -186,15 +187,15 @@ CREATE TABLE aptidao (
 -- Dependências: usuario
 
 CREATE TABLE feedback (
-    id             SERIAL PRIMARY KEY,
-    usuario_id     INTEGER NOT NULL REFERENCES usuario(id),
+    id             BIGSERIAL PRIMARY KEY,
+    usuario_id     BIGINT NOT NULL REFERENCES usuario(id),
     comentario     VARCHAR(255),
     ideia_central  VARCHAR(255),
     data_criacao   TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 /**
- * Tabela: local_endereco
+ * Tabela: local_unidade
  *
  * Descrição:
  * Representa locais específicos dentro das unidades.
@@ -203,32 +204,35 @@ CREATE TABLE feedback (
  * - unidade
  */
 
-CREATE TABLE local_endereco (
-    id                   SERIAL PRIMARY KEY,
-    unidade_id          INTEGER NOT NULL REFERENCES unidade(id),
+CREATE TABLE local_unidade (
+    id                   BIGSERIAL PRIMARY KEY,
+    unidade_id          BIGINT NOT NULL REFERENCES unidade(id),
     nome                 VARCHAR(100) NOT NULL,
-    tipo_local_endereco  INTEGER NOT NULL,
+    tipo_local_unidade  INTEGER NOT NULL,
     descricao            VARCHAR(255) NOT NULL,
     data_criacao         TIMESTAMP NOT NULL DEFAULT NOW(),
+    data_atualizacao     TIMESTAMP DEFAULT NOW(),
     esta_ativo           BOOLEAN NOT NULL DEFAULT TRUE,
-    CONSTRAINT ck_tipo_local_endereco_1_a_6 CHECK (tipo_local_endereco BETWEEN 1 AND 6)
+    CONSTRAINT ck_tipo_local_unidade_1_a_6 CHECK (tipo_local_unidade BETWEEN 1 AND 6)
 );
 
 -- TABELA: evento
 -- Descrição: Armazena eventos agendados em um endereço.
--- Dependências: usuario, local_endereco
+-- Dependências: usuario, local_unidade
 
 CREATE TABLE evento (
-    id                 SERIAL PRIMARY KEY,
-    usuario_id         INTEGER NOT NULL REFERENCES usuario(id),
-    local_endereco_id  INTEGER NOT NULL REFERENCES local_endereco(id),
+    id                 BIGSERIAL PRIMARY KEY,
+    usuario_id         BIGINT NOT NULL REFERENCES usuario(id),
+    local_unidade_id  BIGINT NOT NULL REFERENCES local_unidade(id),
     titulo             VARCHAR(100) NOT NULL,
     descricao          VARCHAR(255) NOT NULL,
     descricao_local    VARCHAR(255) NOT NULL,
     observacao         VARCHAR(255),
     data_hora_inicio   TIMESTAMP NOT NULL,
     data_hora_fim      TIMESTAMP NOT NULL,
-    data_criacao       TIMESTAMP NOT NULL DEFAULT NOW()
+    data_criacao       TIMESTAMP NOT NULL DEFAULT NOW(),
+    data_atualizacao   TIMESTAMP DEFAULT NOW(),
+    esta_ativo         BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- TABELA: categoria_equipamento
@@ -236,11 +240,12 @@ CREATE TABLE evento (
 -- Dependências: usuario
 
 CREATE TABLE categoria_equipamento (
-    id            SERIAL PRIMARY KEY,
-    usuario_id    INTEGER NOT NULL REFERENCES usuario(id),
+    id            BIGSERIAL PRIMARY KEY,
+    usuario_id    BIGINT NOT NULL REFERENCES usuario(id),
     nome          VARCHAR(100) NOT NULL,
     descricao     VARCHAR(255) NOT NULL,
     data_criacao  TIMESTAMP NOT NULL DEFAULT NOW(),
+    data_atualizacao TIMESTAMP DEFAULT NOW(),
     esta_ativo    BOOLEAN NOT NULL DEFAULT TRUE
 );
 
@@ -249,10 +254,11 @@ CREATE TABLE categoria_equipamento (
 -- Dependências: -
 
 CREATE TABLE marca_equipamento (
-    id            SERIAL PRIMARY KEY,
+    id            BIGSERIAL PRIMARY KEY,
     nome          VARCHAR(100) NOT NULL,
     descricao     VARCHAR(255) NOT NULL,
     data_criacao  TIMESTAMP NOT NULL DEFAULT NOW(),
+    data_atualizacao TIMESTAMP DEFAULT NOW(),
     esta_ativo    BOOLEAN NOT NULL DEFAULT TRUE
 );
 
@@ -261,67 +267,72 @@ CREATE TABLE marca_equipamento (
 -- Dependências: marca_equipamento, categoria_equipamento
 
 CREATE TABLE modelo_equipamento (
-    id                       SERIAL PRIMARY KEY,
-    marca_equipamento_id     INTEGER NOT NULL REFERENCES marca_equipamento(id),
-    categoria_equipamento_id INTEGER NOT NULL REFERENCES categoria_equipamento(id),
+    id                       BIGSERIAL PRIMARY KEY,
+    marca_equipamento_id     BIGINT NOT NULL REFERENCES marca_equipamento(id),
+    categoria_equipamento_id BIGINT NOT NULL REFERENCES categoria_equipamento(id),
     nome                     VARCHAR(100) NOT NULL,
     descricao                VARCHAR(255) NOT NULL,
     data_criacao             TIMESTAMP NOT NULL DEFAULT NOW(),
+    data_atualizacao         TIMESTAMP DEFAULT NOW(),
     esta_ativo               BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- TABELA: equipamento
 -- Descrição: Armazena os equipamentos e suas localizações.
--- Dependências: usuario, modelo_equipamento, local_endereco
+-- Dependências: usuario, modelo_equipamento, local_unidade
 
 CREATE TABLE equipamento (
-    id                    SERIAL PRIMARY KEY,
-    usuario_id            INTEGER NOT NULL REFERENCES usuario(id),
-    modelo_equipamento_id INTEGER NOT NULL REFERENCES modelo_equipamento(id),
-    local_endereco_id     INTEGER NOT NULL REFERENCES local_endereco(id),
+    id                    BIGSERIAL PRIMARY KEY,
+    usuario_id            BIGINT NOT NULL REFERENCES usuario(id),
+    modelo_equipamento_id BIGINT NOT NULL REFERENCES modelo_equipamento(id),
+    local_unidade_id     BIGINT NOT NULL REFERENCES local_unidade(id),
     codigo                VARCHAR(100) NOT NULL,
     data_criacao          TIMESTAMP NOT NULL DEFAULT NOW(),
+    data_atualizacao      TIMESTAMP DEFAULT NOW(),
     esta_ativo            BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- TABELA: problema
 -- Descrição: Registra problemas identificados nas instituições.
--- Dependências: usuario, categoria_equipamento, local_endereco
+-- Dependências: usuario, categoria_equipamento, local_unidade
 
 CREATE TABLE problema (
-    id                       SERIAL PRIMARY KEY,
-    usuario_id               INTEGER NOT NULL REFERENCES usuario(id),
-    categoria_equipamento_id INTEGER NOT NULL REFERENCES categoria_equipamento(id),
-    local_endereco_id        INTEGER NOT NULL REFERENCES local_endereco(id),
+    id                       BIGSERIAL PRIMARY KEY,
+    usuario_id               BIGINT NOT NULL REFERENCES usuario(id),
+    categoria_equipamento_id BIGINT NOT NULL REFERENCES categoria_equipamento(id),
+    local_unidade_id        BIGINT NOT NULL REFERENCES local_unidade(id),
     titulo                   VARCHAR(100) NOT NULL,
     descricao_problema       VARCHAR(255) NOT NULL,
     descricao_local          VARCHAR(255) NOT NULL,
     motivo_recusa            VARCHAR(255),
     data_criacao             TIMESTAMP NOT NULL DEFAULT NOW(),
+    data_atualizacao         TIMESTAMP DEFAULT NOW(),
+    esta_ativo               BOOLEAN NOT NULL DEFAULT TRUE,
     status                   INTEGER NOT NULL DEFAULT 0,
     CONSTRAINT ck_status_problema_0_a_2 CHECK (status BETWEEN 0 AND 2),
     CONSTRAINT ck_motivo_recusa_status_recusado CHECK (
-        (status = 2 AND motivo_recusa IS NOT NULL)
+        (status = 1 AND motivo_recusa IS NOT NULL)
         OR
-        (status <> 2 AND motivo_recusa IS NULL)
+        (status <> 1 AND motivo_recusa IS NULL)
     )
 );
 
 -- TABELA: ocorrencia
 -- Descrição: Registra problemas não registrados previamente, mas que já foram resolvidos por um técnico.
--- Dependências: usuario, local_endereco, categoria_equipamento
+-- Dependências: usuario, local_unidade, categoria_equipamento
 
 CREATE TABLE ocorrencia (
-    id                       SERIAL PRIMARY KEY,
-    usuario_id               INTEGER NOT NULL REFERENCES usuario(id),
-    local_endereco_id        INTEGER NOT NULL REFERENCES local_endereco(id),
-    categoria_equipamento_id INTEGER NOT NULL REFERENCES categoria_equipamento(id),
+    id                       BIGSERIAL PRIMARY KEY,
+    usuario_id               BIGINT NOT NULL REFERENCES usuario(id),
+    local_unidade_id        BIGINT NOT NULL REFERENCES local_unidade(id),
+    categoria_equipamento_id BIGINT NOT NULL REFERENCES categoria_equipamento(id),
     categoria_problema       INTEGER NOT NULL,
     titulo                   VARCHAR(100) NOT NULL,
     descricao_ocorrencia     VARCHAR(255) NOT NULL,
     descricao_local          VARCHAR(255) NOT NULL,
     prioridade               INTEGER NOT NULL,
     data_criacao             TIMESTAMP NOT NULL DEFAULT NOW(),
+    data_atualizacao         TIMESTAMP DEFAULT NOW(),
     esta_ativo               BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT ck_categoria_problema_ocorrencia_1_a_10 CHECK (categoria_problema BETWEEN 1 AND 10),
     CONSTRAINT ck_prioridade_ocorrencia_0_a_2 CHECK (prioridade BETWEEN 0 AND 2)
@@ -339,14 +350,16 @@ CREATE TABLE ocorrencia (
  */
 
 CREATE TABLE ordem_servico (
-    id                       SERIAL PRIMARY KEY,
-    problema_id              INTEGER NOT NULL UNIQUE REFERENCES problema(id),
-    usuario_id               INTEGER NOT NULL REFERENCES usuario(id),
-    status_ordem_servico                   INTEGER NOT NULL DEFAULT 0,
+    id                       BIGSERIAL PRIMARY KEY,
+    problema_id              BIGINT NOT NULL UNIQUE REFERENCES problema(id),
+    usuario_id               BIGINT NOT NULL REFERENCES usuario(id),
+    status_ordem_servico     INTEGER NOT NULL DEFAULT 0,
     categoria_problema       INTEGER NOT NULL,
     data_prevista            TIMESTAMP NOT NULL,
     prioridade               INTEGER NOT NULL,
     data_criacao             TIMESTAMP NOT NULL DEFAULT NOW(),
+    data_atualizacao         TIMESTAMP DEFAULT NOW(),
+    esta_ativo               BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT ck_status_ordem_servico CHECK (status_ordem_servico BETWEEN 0 AND 4),
     CONSTRAINT ck_categoria_problema_os_1_a_10 CHECK (categoria_problema BETWEEN 1 AND 10),
     CONSTRAINT ck_prioridade_os_0_a_2 CHECK (prioridade BETWEEN 0 AND 2)
@@ -363,8 +376,8 @@ CREATE TABLE ordem_servico (
  */
 
 CREATE TABLE ordem_servico_status_auditoria (
-    id                  SERIAL PRIMARY KEY,
-    ordem_servico_id    INTEGER NOT NULL REFERENCES ordem_servico(id),
+    id                  BIGSERIAL PRIMARY KEY,
+    ordem_servico_id    BIGINT NOT NULL REFERENCES ordem_servico(id),
     status_anterior     INTEGER NOT NULL,
     status_novo         INTEGER NOT NULL,
     data_alteracao      TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -377,10 +390,10 @@ CREATE TABLE ordem_servico_status_auditoria (
 -- Dependências: ordem_servico, usuario
 
 CREATE TABLE ordem_servico_tecnico_auditoria (
-    id                   SERIAL PRIMARY KEY,
-    ordem_servico_id     INTEGER NOT NULL REFERENCES ordem_servico(id),
-    tecnico_anterior_id  INTEGER NOT NULL REFERENCES usuario(id),
-    tecnico_novo_id      INTEGER NOT NULL REFERENCES usuario(id),
+    id                   BIGSERIAL PRIMARY KEY,
+    ordem_servico_id     BIGINT NOT NULL REFERENCES ordem_servico(id),
+    tecnico_anterior_id  BIGINT NOT NULL REFERENCES usuario(id),
+    tecnico_novo_id      BIGINT NOT NULL REFERENCES usuario(id),
     data_alteracao       TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -395,12 +408,14 @@ CREATE TABLE ordem_servico_tecnico_auditoria (
  */
 
 CREATE TABLE tarefa (
-    id                       SERIAL PRIMARY KEY,
-    ordem_servico_id         INTEGER NOT NULL REFERENCES ordem_servico(id) ON DELETE CASCADE,
-    status_ordem_servico                   INTEGER NOT NULL DEFAULT 0,
+    id                       BIGSERIAL PRIMARY KEY,
+    ordem_servico_id         BIGINT NOT NULL REFERENCES ordem_servico(id) ON DELETE CASCADE,
+    status_ordem_servico     INTEGER NOT NULL DEFAULT 0,
     titulo                   VARCHAR(100) NOT NULL,
     descricao                VARCHAR(255) NOT NULL,
     data_criacao             TIMESTAMP NOT NULL DEFAULT NOW(),
+    data_atualizacao         TIMESTAMP DEFAULT NOW(),
+    esta_ativo               BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT ck_status_tarefa CHECK (status_ordem_servico BETWEEN 0 AND 4)
 );
 
@@ -409,11 +424,13 @@ CREATE TABLE tarefa (
 -- Dependências: ordem_servico
 
 CREATE TABLE observacao_conclusao (
-    id                SERIAL PRIMARY KEY,
-    ordem_servico_id  INTEGER NOT NULL REFERENCES ordem_servico(id),
+    id                BIGSERIAL PRIMARY KEY,
+    ordem_servico_id  BIGINT NOT NULL REFERENCES ordem_servico(id),
     dificuldade       INTEGER NOT NULL,
     observacao        VARCHAR(255) NOT NULL,
     data_criacao      TIMESTAMP NOT NULL DEFAULT NOW(),
+    data_atualizacao  TIMESTAMP DEFAULT NOW(),
+    esta_ativo        BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT ck_dificuldade_observacao_1_a_3 CHECK (dificuldade BETWEEN 1 AND 3)
 );
 
@@ -422,12 +439,12 @@ CREATE TABLE observacao_conclusao (
 -- Dependências: problema, ocorrencia, ordem_servico, observacao_conclusao, usuario
 
 CREATE TABLE foto (
-    id                       SERIAL PRIMARY KEY,
-    problema_id              INTEGER REFERENCES problema(id),
-    ocorrencia_id            INTEGER REFERENCES ocorrencia(id),
-    ordem_servico_id         INTEGER REFERENCES ordem_servico(id),
-    observacao_conclusao_id  INTEGER REFERENCES observacao_conclusao(id),
-    usuario_id               INTEGER REFERENCES usuario(id),
+    id                       BIGSERIAL PRIMARY KEY,
+    problema_id              BIGINT REFERENCES problema(id),
+    ocorrencia_id            BIGINT REFERENCES ocorrencia(id),
+    ordem_servico_id         BIGINT REFERENCES ordem_servico(id),
+    observacao_conclusao_id  BIGINT REFERENCES observacao_conclusao(id),
+    usuario_id               BIGINT REFERENCES usuario(id),
     url                      VARCHAR(255) NOT NULL,
     esta_ativo               BOOLEAN NOT NULL DEFAULT TRUE,
     data_criacao             TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -451,8 +468,8 @@ CREATE TABLE foto (
  */
 
 CREATE TABLE turno (
-    id                    SERIAL PRIMARY KEY,
-    unidade_id           INTEGER NOT NULL REFERENCES unidade(id),
+    id                    BIGSERIAL PRIMARY KEY,
+    unidade_id           BIGINT NOT NULL REFERENCES unidade(id),
     nome                  VARCHAR(100) NOT NULL,
     hora_inicio           INTEGER NOT NULL,
     hora_fim              INTEGER NOT NULL,
@@ -473,10 +490,301 @@ CREATE TABLE turno (
 -- Dependências: turno, usuario
 
 CREATE TABLE turno_usuario (
-    id            SERIAL PRIMARY KEY,
-    turno_id      INTEGER NOT NULL REFERENCES turno(id),
-    usuario_id    INTEGER NOT NULL REFERENCES usuario(id),
+    id            BIGSERIAL PRIMARY KEY,
+    turno_id      BIGINT NOT NULL REFERENCES turno(id),
+    usuario_id    BIGINT NOT NULL REFERENCES usuario(id),
     data_criacao  TIMESTAMP NOT NULL DEFAULT NOW(),
     esta_ativo    BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT uk_turno_usuario UNIQUE (turno_id, usuario_id)
 );
+
+/**
+ * Funções: tradução dos enums numéricos para seus nomes em português.
+ *
+ * Recebem o código INTEGER e retornam TEXT.
+ * NULL e códigos fora do domínio retornam NULL.
+ * Não consultam nem alteram tabelas.
+ */
+
+-- instituicao.tipo_instituicao
+CREATE OR REPLACE FUNCTION public.traduzir_tipo_instituicao(p_codigo INTEGER)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+    SELECT CASE p_codigo
+        WHEN 1 THEN 'Escola'
+        WHEN 2 THEN 'Faculdade'
+        WHEN 3 THEN 'Empresa'
+        WHEN 4 THEN 'Órgão Público'
+        ELSE NULL
+    END;
+$$;
+
+-- contrato.status
+CREATE OR REPLACE FUNCTION public.traduzir_status_contrato(p_codigo INTEGER)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+    SELECT CASE p_codigo
+        WHEN 1 THEN 'Ativo'
+        WHEN 2 THEN 'Inativo'
+        WHEN 3 THEN 'Cancelado'
+        ELSE NULL
+    END;
+$$;
+
+-- pagamento.status
+CREATE OR REPLACE FUNCTION public.traduzir_status_pagamento(p_codigo INTEGER)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+    SELECT CASE p_codigo
+        WHEN 1 THEN 'Pendente'
+        WHEN 2 THEN 'Aprovado'
+        WHEN 3 THEN 'Rejeitado'
+        ELSE NULL
+    END;
+$$;
+
+-- pagamento.metodo_pagamento
+CREATE OR REPLACE FUNCTION public.traduzir_metodo_pagamento(p_codigo INTEGER)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+    SELECT CASE p_codigo
+        WHEN 1 THEN 'Crédito'
+        WHEN 2 THEN 'Débito'
+        WHEN 3 THEN 'Pix'
+        ELSE NULL
+    END;
+$$;
+
+-- usuario.tipo_acesso
+CREATE OR REPLACE FUNCTION public.traduzir_tipo_acesso(p_codigo INTEGER)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+    SELECT CASE p_codigo
+        WHEN 1 THEN 'Administrador'
+        WHEN 2 THEN 'Gestor'
+        WHEN 3 THEN 'Técnico'
+        WHEN 4 THEN 'Solicitante'
+        ELSE NULL
+    END;
+$$;
+
+-- aptidao, ocorrencia e ordem_servico: categoria_problema
+CREATE OR REPLACE FUNCTION public.traduzir_categoria_problema(p_codigo INTEGER)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+    SELECT CASE p_codigo
+        WHEN 1 THEN 'Elétrica'
+        WHEN 2 THEN 'Hidráulica'
+        WHEN 3 THEN 'Mecânica'
+        WHEN 4 THEN 'Informática'
+        WHEN 5 THEN 'Mobiliário'
+        WHEN 6 THEN 'Climatização'
+        WHEN 7 THEN 'Rede e Conectividade'
+        WHEN 8 THEN 'Segurança'
+        WHEN 9 THEN 'Iluminação'
+        WHEN 10 THEN 'Limpeza e Conservação'
+        ELSE NULL
+    END;
+$$;
+
+-- local_unidade.tipo_local_unidade
+CREATE OR REPLACE FUNCTION public.traduzir_tipo_local_unidade(p_codigo INTEGER)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+    SELECT CASE p_codigo
+        WHEN 1 THEN 'Sala de Aula'
+        WHEN 2 THEN 'Laboratório'
+        WHEN 3 THEN 'Depto. Administrativo'
+        WHEN 4 THEN 'Auditório'
+        WHEN 5 THEN 'Almoxarifado'
+        WHEN 6 THEN 'Área Comum'
+        ELSE NULL
+    END;
+$$;
+
+-- problema.status (mesmos códigos da API)
+CREATE OR REPLACE FUNCTION public.traduzir_status_problema(p_codigo INTEGER)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+    SELECT CASE p_codigo
+        WHEN 0 THEN 'Pendente'
+        WHEN 1 THEN 'Reprovado'
+        WHEN 2 THEN 'Aprovado'
+        ELSE NULL
+    END;
+$$;
+
+-- observacao_conclusao.dificuldade
+CREATE OR REPLACE FUNCTION public.traduzir_dificuldade(p_codigo INTEGER)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+    SELECT CASE p_codigo
+        WHEN 1 THEN 'Fácil'
+        WHEN 2 THEN 'Médio'
+        WHEN 3 THEN 'Difícil'
+        ELSE NULL
+    END;
+$$;
+
+-- ocorrencia.prioridade e ordem_servico.prioridade
+CREATE OR REPLACE FUNCTION public.traduzir_prioridade(p_codigo INTEGER)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+    SELECT CASE p_codigo
+        WHEN 0 THEN 'Alta'
+        WHEN 1 THEN 'Média'
+        WHEN 2 THEN 'Baixa'
+        ELSE NULL
+    END;
+$$;
+
+-- ordem_servico, tarefa e auditoria: status da ordem de serviço
+CREATE OR REPLACE FUNCTION public.traduzir_status_ordem_servico(p_codigo INTEGER)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+STRICT
+PARALLEL SAFE
+AS $$
+    SELECT CASE p_codigo
+        WHEN 0 THEN 'Não iniciadas'
+        WHEN 1 THEN 'Atrasada'
+        WHEN 2 THEN 'Pausada'
+        WHEN 3 THEN 'Em Andamento'
+        WHEN 4 THEN 'Finalizadas'
+        ELSE NULL
+    END;
+$$;
+
+/**
+ * Trigger: trg_atualizar_data_atualizacao
+ *
+ * Descrição:
+ * Atualiza data_atualizacao com NOW() em cada registro afetado por UPDATE.
+ * Uma função compartilhada atende uma trigger BEFORE UPDATE por tabela.
+ * O DEFAULT NOW() das colunas continua responsável pelos INSERTs.
+ *
+ * Dependências:
+ * - problema
+ * - ocorrencia
+ * - ordem_servico
+ * - tarefa
+ * - observacao_conclusao
+ * - evento
+ * - equipamento
+ * - modelo_equipamento
+ * - categoria_equipamento
+ * - marca_equipamento
+ * - local_unidade
+ * - usuario
+ */
+
+CREATE OR REPLACE FUNCTION public.atualizar_data_atualizacao()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    NEW.data_atualizacao := NOW();
+    RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE TRIGGER trg_atualizar_data_atualizacao
+BEFORE UPDATE ON public.problema
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_data_atualizacao();
+
+CREATE OR REPLACE TRIGGER trg_atualizar_data_atualizacao
+BEFORE UPDATE ON public.ocorrencia
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_data_atualizacao();
+
+CREATE OR REPLACE TRIGGER trg_atualizar_data_atualizacao
+BEFORE UPDATE ON public.ordem_servico
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_data_atualizacao();
+
+CREATE OR REPLACE TRIGGER trg_atualizar_data_atualizacao
+BEFORE UPDATE ON public.tarefa
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_data_atualizacao();
+
+CREATE OR REPLACE TRIGGER trg_atualizar_data_atualizacao
+BEFORE UPDATE ON public.observacao_conclusao
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_data_atualizacao();
+
+CREATE OR REPLACE TRIGGER trg_atualizar_data_atualizacao
+BEFORE UPDATE ON public.evento
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_data_atualizacao();
+
+CREATE OR REPLACE TRIGGER trg_atualizar_data_atualizacao
+BEFORE UPDATE ON public.equipamento
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_data_atualizacao();
+
+CREATE OR REPLACE TRIGGER trg_atualizar_data_atualizacao
+BEFORE UPDATE ON public.modelo_equipamento
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_data_atualizacao();
+
+CREATE OR REPLACE TRIGGER trg_atualizar_data_atualizacao
+BEFORE UPDATE ON public.categoria_equipamento
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_data_atualizacao();
+
+CREATE OR REPLACE TRIGGER trg_atualizar_data_atualizacao
+BEFORE UPDATE ON public.marca_equipamento
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_data_atualizacao();
+
+CREATE OR REPLACE TRIGGER trg_atualizar_data_atualizacao
+BEFORE UPDATE ON public.local_unidade
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_data_atualizacao();
+
+CREATE OR REPLACE TRIGGER trg_atualizar_data_atualizacao
+BEFORE UPDATE ON public.usuario
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_data_atualizacao();

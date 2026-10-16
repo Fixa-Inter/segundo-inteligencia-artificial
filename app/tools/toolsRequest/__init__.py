@@ -1,5 +1,9 @@
-from .CriarSolicitacaoRequest import CriarSolicitacaoRequest
+from .CriarSolicitacaoEntrada import CriarSolicitacaoEntrada
+from .CriarOcorrenciaEntrada import CriarOcorrenciaEntrada, CategoriaProblema, Prioridade
 
 __all__ = [
-    "CriarSolicitacaoRequest"
+    "CriarSolicitacaoEntrada",
+    "CriarOcorrenciaEntrada",
+    "CategoriaProblema",
+    "Prioridade",
 ]

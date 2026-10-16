@@ -1,4 +1,4 @@
-TECNICO_PROMPT = """
+TECNICO_INSTRUCAO = """
 ## Usuário: Técnico
 
 ### Papel no sistema

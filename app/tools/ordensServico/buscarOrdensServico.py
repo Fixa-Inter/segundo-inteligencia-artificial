@@ -3,15 +3,15 @@ from datetime import date
 from langchain.tools import ToolRuntime, tool
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.schemas.UsuarioContexto import UsuarioContexto
-from app.services.ordensServico.buscarOrdensServico import buscar_ordens_servico as consultar_ordens
+from app.schemas import UsuarioContexto
+from app.services.ordensServico import buscar_ordens_servico as consultar_ordens
 from app.tools.ordensServico.utilitarios import montar_tabelas
 
 
 class _ArgumentosBuscarOrdensServico(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-    status: str | None = Field(default=None, min_length=1, max_length=100, description="Status: Não Iniciada, Atrasada, Pausada, Em andamento ou Concluída.")
+    status: str | None = Field(default=None, min_length=1, max_length=100, description="Status: Não Iniciada/Não iniciadas, Atrasada, Pausada, Em andamento ou Concluída/Finalizadas.")
     prioridade: str | None = Field(default=None, min_length=1, max_length=20, description="Prioridade: ALTA, MEDIA ou BAIXA.")
     categoria_problema: str | None = Field(default=None, min_length=1, max_length=50, description="Categoria do problema mencionada pelo usuario.")
     categoria_equipamento: str | None = Field(default=None, min_length=1, max_length=100, description="Categoria do equipamento mencionada pelo usuario.")

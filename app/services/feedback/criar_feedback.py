@@ -1,10 +1,10 @@
 import logging
 
-from app.core.clients.postgres import executar_insert
-from app.schemas.UsuarioContexto import UsuarioContexto
+from app.core.clients.postgres import executar_insercao
+from app.schemas import UsuarioContexto
 
 
-logger = logging.getLogger(__name__)
+registrador = logging.getLogger(__name__)
 
 _SQL_CRIAR_FEEDBACK = """
     INSERT INTO feedback (usuario_id, comentario, ideia_central)
@@ -42,7 +42,7 @@ async def criar_feedback(
         }
 
     try:
-        linhas = await executar_insert(
+        linhas = await executar_insercao(
             perfil,
             _SQL_CRIAR_FEEDBACK,
             {
@@ -67,7 +67,7 @@ async def criar_feedback(
             "mensagem": "Feedback registrado com sucesso.",
         }
     except Exception:
-        logger.exception("Falha ao registrar feedback no PostgreSQL")
+        registrador.exception("Falha ao registrar feedback no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
             "mensagem": "Nao foi possivel registrar o feedback no banco.",

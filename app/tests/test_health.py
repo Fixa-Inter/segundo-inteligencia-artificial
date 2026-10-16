@@ -3,14 +3,14 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
-client = TestClient(app)
+cliente = TestClient(app)
 
 
 def test_health_check() -> None:
-    response = client.get("/api/v1/health")
+    resposta = cliente.get("/api/v1/health")
 
-    assert response.status_code == 200
-    assert response.json() == {
+    assert resposta.status_code == 200
+    assert resposta.json() == {
         "status": "ok",
         "service": "segundo-inteligencia-artificial",
     }

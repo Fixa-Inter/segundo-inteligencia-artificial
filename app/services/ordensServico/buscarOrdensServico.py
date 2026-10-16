@@ -1,13 +1,14 @@
+from app.core import data_atual
 import logging
 from calendar import monthrange
 from datetime import date, datetime, timedelta
 import unicodedata
 
-from app.core.clients.postgres import executar_select
-from app.schemas.UsuarioContexto import UsuarioContexto
+from app.core.clients.postgres import executar_consulta
+from app.schemas import UsuarioContexto
 
 
-logger = logging.getLogger(__name__)
+registrador = logging.getLogger(__name__)
 
 ORDEM_PRIORIDADE = ("ALTA", "MEDIA", "BAIXA")
 PRIORIDADE_POR_ID = {0: "ALTA", 1: "MEDIA", 2: "BAIXA"}
@@ -67,6 +68,10 @@ _ID_POR_PRIORIDADE = {
 
 
 _ID_POR_STATUS = {_normalizar_filtro(nome): codigo for codigo, nome in STATUS_ORDEM_SERVICO_POR_ID.items()}
+_ID_POR_STATUS.update({
+    "NAO INICIADAS": 0,
+    "FINALIZADAS": 4,
+})
 
 
 def chave_ordenacao_status(status: str) -> tuple[int, str]:
@@ -126,23 +131,29 @@ async def buscar_ordens_servico(
             "mensagem": "A data inicial de cada periodo deve ser anterior ou igual a data final.",
         }
 
-    where = [
+    condicoes = [
         "unidade_registro.cnpj = unidade_autenticada.cnpj",
+        "os.esta_ativo IS TRUE",
+        "problema.esta_ativo IS TRUE",
+        "local_registro.esta_ativo IS TRUE",
+        "unidade_registro.esta_ativo IS TRUE",
+        "usuario_autenticado.esta_ativo IS TRUE",
+        "unidade_autenticada.esta_ativo IS TRUE",
     ]
     parametros = {"usuario_id": usuario.usuario_id}
     filtros_legiveis = {}
 
     if perfil == "tecnico":
-        where.append("os.usuario_id = :usuario_id")
+        condicoes.append("os.usuario_id = :usuario_id")
 
     if status is not None:
         status_id = _ID_POR_STATUS.get(_normalizar_filtro(status))
         if status_id is None:
             return {
                 "status": "ERRO_VALIDACAO",
-                "mensagem": "Use Não Iniciada, Atrasada, Pausada, Em andamento ou Concluída.",
+                "mensagem": "Use Não Iniciada/Não iniciadas, Atrasada, Pausada, Em andamento ou Concluída/Finalizadas.",
             }
-        where.append("os.status_ordem_servico = :status_id")
+        condicoes.append("os.status_ordem_servico = :status_id")
         parametros["status_id"] = status_id
         filtros_legiveis["status"] = STATUS_ORDEM_SERVICO_POR_ID[status_id]
 
@@ -153,7 +164,7 @@ async def buscar_ordens_servico(
                 "status": "ERRO_VALIDACAO",
                 "mensagem": "Prioridade invalida. Use ALTA, MEDIA ou BAIXA.",
             }
-        where.append("os.prioridade = :prioridade")
+        condicoes.append("os.prioridade = :prioridade")
         parametros["prioridade"] = _ID_POR_PRIORIDADE[prioridade_normalizada]
         filtros_legiveis["prioridade"] = PRIORIDADE_POR_ID[parametros["prioridade"]]
 
@@ -164,24 +175,24 @@ async def buscar_ordens_servico(
                 "status": "ERRO_VALIDACAO",
                 "mensagem": "Categoria do problema invalida. Informe uma categoria cadastrada.",
             }
-        where.append("os.categoria_problema = :categoria_problema")
+        condicoes.append("os.categoria_problema = :categoria_problema")
         parametros["categoria_problema"] = _ID_POR_CATEGORIA_PROBLEMA[categoria_normalizada]
         filtros_legiveis["categoria_problema"] = CATEGORIA_PROBLEMA_POR_ID[
             parametros["categoria_problema"]
         ]
 
     if categoria_equipamento is not None:
-        where.append("categoria_eq.nome ILIKE :categoria_equipamento")
+        condicoes.append("categoria_eq.nome ILIKE :categoria_equipamento")
         parametros["categoria_equipamento"] = f"%{categoria_equipamento.strip()}%"
         filtros_legiveis["categoria_equipamento"] = categoria_equipamento.strip()
 
     if local is not None:
-        where.append("local_registro.nome ILIKE :local")
+        condicoes.append("local_registro.nome ILIKE :local")
         parametros["local"] = f"%{local.strip()}%"
         filtros_legiveis["local"] = local.strip()
 
     if termo is not None:
-        where.append(
+        condicoes.append(
             "(problema.titulo ILIKE :termo OR problema.descricao_problema ILIKE :termo)"
         )
         parametros["termo"] = f"%{termo.strip()}%"
@@ -195,7 +206,7 @@ async def buscar_ordens_servico(
     ))
     inicio_padrao = fim_padrao = None
     if not usa_periodo_explicito:
-        hoje = date.today()
+        hoje = data_atual()
         inicio_padrao = inicio_periodo(hoje)
         fim_padrao = hoje
         data_criacao_inicio = inicio_padrao
@@ -206,21 +217,21 @@ async def buscar_ordens_servico(
         }
 
     if data_criacao_inicio is not None:
-        where.append("os.data_criacao >= :data_criacao_inicio")
+        condicoes.append("os.data_criacao >= :data_criacao_inicio")
         parametros["data_criacao_inicio"] = data_criacao_inicio
         if usa_periodo_explicito:
             filtros_legiveis["data_criacao_inicio"] = data_criacao_inicio.isoformat()
     if data_criacao_fim is not None:
-        where.append("os.data_criacao < :data_criacao_fim_exclusivo")
+        condicoes.append("os.data_criacao < :data_criacao_fim_exclusivo")
         parametros["data_criacao_fim_exclusivo"] = data_criacao_fim + timedelta(days=1)
         if usa_periodo_explicito:
             filtros_legiveis["data_criacao_fim"] = data_criacao_fim.isoformat()
     if data_prevista_inicio is not None:
-        where.append("os.data_prevista >= :data_prevista_inicio")
+        condicoes.append("os.data_prevista >= :data_prevista_inicio")
         parametros["data_prevista_inicio"] = data_prevista_inicio
         filtros_legiveis["data_prevista_inicio"] = data_prevista_inicio.isoformat()
     if data_prevista_fim is not None:
-        where.append("os.data_prevista < :data_prevista_fim_exclusivo")
+        condicoes.append("os.data_prevista < :data_prevista_fim_exclusivo")
         parametros["data_prevista_fim_exclusivo"] = data_prevista_fim + timedelta(days=1)
         filtros_legiveis["data_prevista_fim"] = data_prevista_fim.isoformat()
 
@@ -240,25 +251,25 @@ async def buscar_ordens_servico(
         JOIN problema ON problema.id = os.problema_id
         JOIN categoria_equipamento AS categoria_eq
             ON categoria_eq.id = problema.categoria_equipamento_id
-        JOIN local_endereco AS local_registro
-            ON local_registro.id = problema.local_endereco_id
+        JOIN local_unidade AS local_registro
+            ON local_registro.id = problema.local_unidade_id
         JOIN unidade AS unidade_registro
             ON unidade_registro.id = local_registro.unidade_id
         JOIN usuario AS usuario_autenticado
             ON usuario_autenticado.id = :usuario_id
         JOIN unidade AS unidade_autenticada
             ON unidade_autenticada.id = usuario_autenticado.unidade_id
-        WHERE {' AND '.join(where)}
+        WHERE {' AND '.join(condicoes)}
         ORDER BY os.data_criacao DESC
     """
 
     try:
-        rows = await executar_select(perfil, sql, parametros)
+        linhas = await executar_consulta(perfil, sql, parametros)
         ordens = []
-        for row in rows:
-            prioridade_formatada = PRIORIDADE_POR_ID.get(row["prioridade_id"])
-            categoria = CATEGORIA_PROBLEMA_POR_ID.get(row["categoria_id"])
-            status_formatado = STATUS_ORDEM_SERVICO_POR_ID.get(row["statusOrdemServico"])
+        for linha in linhas:
+            prioridade_formatada = PRIORIDADE_POR_ID.get(linha["prioridade_id"])
+            categoria = CATEGORIA_PROBLEMA_POR_ID.get(linha["categoria_id"])
+            status_formatado = STATUS_ORDEM_SERVICO_POR_ID.get(linha["statusOrdemServico"])
             if (
                 prioridade_formatada is None
                 or categoria is None
@@ -266,23 +277,23 @@ async def buscar_ordens_servico(
             ):
                 raise ValueError("Status, categoria ou prioridade de OS desconhecido.")
             ordens.append({
-                "titulo": row["titulo"],
-                "descricaoProblema": row["descricaoProblema"],
-                "local": row["local"],
-                "descricaoLocal": row["descricaoLocal"],
+                "titulo": linha["titulo"],
+                "descricaoProblema": linha["descricaoProblema"],
+                "local": linha["local"],
+                "descricaoLocal": linha["descricaoLocal"],
                 "statusOrdemServico": status_formatado,
                 "categoriaProblema": categoria,
-                "categoriaEquipamento": row["categoriaEquipamento"],
-                "dataPrevista": _data_iso(row["dataPrevista"]),
+                "categoriaEquipamento": linha["categoriaEquipamento"],
+                "dataPrevista": _data_iso(linha["dataPrevista"]),
                 "prioridade": prioridade_formatada,
-                "dataCriacao": _data_iso(row["dataCriacao"]),
+                "dataCriacao": _data_iso(linha["dataCriacao"]),
             })
         ordens.sort(key=lambda ordem: (
             chave_ordenacao_status(ordem["statusOrdemServico"]),
             ORDEM_PRIORIDADE.index(ordem["prioridade"]),
         ))
     except Exception:
-        logger.exception("Falha ao buscar ordens de servico com filtros no PostgreSQL")
+        registrador.exception("Falha ao buscar ordens de servico com filtros no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
             "mensagem": "Nao foi possivel consultar as ordens de servico no banco.",
@@ -317,7 +328,7 @@ async def _consultar_ordens_servico(
     *,
     somente_usuario: bool,
 ) -> dict:
-    hoje = date.today()
+    hoje = data_atual()
     inicio = inicio_periodo(hoje)
     filtro_usuario = " AND os.usuario_id = :usuario_id" if somente_usuario else ""
     sql = f"""
@@ -333,8 +344,8 @@ async def _consultar_ordens_servico(
             os.data_criacao::date AS "dataCriacao"
         FROM ordem_servico AS os
         JOIN problema ON problema.id = os.problema_id
-        JOIN local_endereco AS local_registro
-            ON local_registro.id = problema.local_endereco_id
+        JOIN local_unidade AS local_registro
+            ON local_registro.id = problema.local_unidade_id
         JOIN unidade AS unidade_registro
             ON unidade_registro.id = local_registro.unidade_id
         JOIN usuario AS usuario_autenticado
@@ -342,6 +353,12 @@ async def _consultar_ordens_servico(
         JOIN unidade AS unidade_autenticada
             ON unidade_autenticada.id = usuario_autenticado.unidade_id
         WHERE unidade_registro.cnpj = unidade_autenticada.cnpj
+          AND os.esta_ativo IS TRUE
+          AND problema.esta_ativo IS TRUE
+          AND local_registro.esta_ativo IS TRUE
+          AND unidade_registro.esta_ativo IS TRUE
+          AND usuario_autenticado.esta_ativo IS TRUE
+          AND unidade_autenticada.esta_ativo IS TRUE
           AND os.data_criacao >= :inicio
           AND os.data_criacao < :fim_exclusivo
           {filtro_usuario}
@@ -354,31 +371,31 @@ async def _consultar_ordens_servico(
     }
 
     try:
-        rows = await executar_select(usuario.tipo_acesso, sql, parametros)
+        linhas = await executar_consulta(usuario.tipo_acesso, sql, parametros)
         ordens = []
-        for row in rows:
-            prioridade = PRIORIDADE_POR_ID.get(row["prioridade_id"])
-            categoria = CATEGORIA_PROBLEMA_POR_ID.get(row["categoria_id"])
-            status = STATUS_ORDEM_SERVICO_POR_ID.get(row["statusOrdemServico"])
+        for linha in linhas:
+            prioridade = PRIORIDADE_POR_ID.get(linha["prioridade_id"])
+            categoria = CATEGORIA_PROBLEMA_POR_ID.get(linha["categoria_id"])
+            status = STATUS_ORDEM_SERVICO_POR_ID.get(linha["statusOrdemServico"])
             if prioridade is None or categoria is None or not status:
                 raise ValueError("Status, categoria ou prioridade de OS desconhecido.")
             ordens.append({
-                "titulo": row["titulo"],
-                "descricaoProblema": row["descricaoProblema"],
-                "local": row["local"],
-                "descricaoLocal": row["descricaoLocal"],
+                "titulo": linha["titulo"],
+                "descricaoProblema": linha["descricaoProblema"],
+                "local": linha["local"],
+                "descricaoLocal": linha["descricaoLocal"],
                 "statusOrdemServico": status,
                 "categoriaProblema": categoria,
-                "dataPrevista": _data_iso(row["dataPrevista"]),
+                "dataPrevista": _data_iso(linha["dataPrevista"]),
                 "prioridade": prioridade,
-                "dataCriacao": _data_iso(row["dataCriacao"]),
+                "dataCriacao": _data_iso(linha["dataCriacao"]),
             })
         ordens.sort(key=lambda ordem: (
             chave_ordenacao_status(ordem["statusOrdemServico"]),
             ORDEM_PRIORIDADE.index(ordem["prioridade"]),
         ))
     except Exception:
-        logger.exception("Falha ao consultar ordens de servico no PostgreSQL")
+        registrador.exception("Falha ao consultar ordens de servico no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
             "mensagem": "Nao foi possivel consultar as ordens de servico no banco.",

@@ -1,7 +1,7 @@
 from langchain.tools import ToolRuntime, tool
 
-from app.schemas.UsuarioContexto import UsuarioContexto
-from app.services.solicitacoes.buscarSolicitacao import listar_solicitacoes_pendentes
+from app.schemas import UsuarioContexto
+from app.services.solicitacoes import listar_solicitacoes_pendentes
 
 
 @tool

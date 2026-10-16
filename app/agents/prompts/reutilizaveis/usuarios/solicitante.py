@@ -1,4 +1,4 @@
-SOLICITANTE_PROMPT = """
+SOLICITANTE_INSTRUCAO = """
 ## Usuário: Solicitante
 
 ### Papel no sistema

@@ -1,8 +1,8 @@
 from langchain.tools import ToolRuntime, tool
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.schemas.UsuarioContexto import UsuarioContexto
-from app.services.feedback.criar_feedback import criar_feedback
+from app.schemas import UsuarioContexto
+from app.services.feedback import criar_feedback
 
 
 class _ArgumentosCriarFeedback(BaseModel):

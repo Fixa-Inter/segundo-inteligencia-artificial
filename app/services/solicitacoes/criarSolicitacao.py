@@ -1,11 +1,11 @@
 import httpx
 
-from app.core.config import FIXA_API_BASE_URL
-from app.tools.toolsRequest.CriarSolicitacaoRequest import CriarSolicitacaoRequest
+from app.core.configuracao import FIXA_URL_BASE_API
+from app.tools.toolsRequest import CriarSolicitacaoEntrada
 
 
 async def adicionar_solicitacao(
-    solicitacao: CriarSolicitacaoRequest,
+    solicitacao: CriarSolicitacaoEntrada,
     access_token: str,
     *, imagens: list[str],
 ) -> dict:
@@ -18,7 +18,7 @@ async def adicionar_solicitacao(
         not isinstance(url, str) or not url.strip() for url in imagens
     ):
         raise ValueError("Forneça pelo menos uma URL de imagem em uma lista de strings.")
-    if not FIXA_API_BASE_URL:
+    if not FIXA_URL_BASE_API:
         raise ValueError("Configure FIXA_API_BASE_URL.")
 
     # LEMBRAR DE FAZER A VALIDAÇÃO DO ACCESS_TOKEN
@@ -28,13 +28,13 @@ async def adicionar_solicitacao(
     indeterminado = {"status": "RESULTADO_INDETERMINADO", "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio."}
 
     try:
-        async with httpx.AsyncClient(timeout=15, follow_redirects=False) as client:
-            resposta = await client.post(
-                f"{FIXA_API_BASE_URL.rstrip('/')}/api/v1/solicitacoes",
+        async with httpx.AsyncClient(timeout=15, follow_redirects=False) as cliente:
+            resposta = await cliente.post(
+                f"{FIXA_URL_BASE_API.rstrip('/')}/api/v1/solicitacoes",
                 json={
                     "titulo": solicitacao.titulo,
                     "descricaoProblema": solicitacao.descricao_problema,
-                    "localEnderecoID": solicitacao.local_endereco_id,
+                    "localUnidadeID": solicitacao.local_endereco_id,
                     "descricaoLocal": solicitacao.descricao_local,
                     "categoriaEquipamentoId": solicitacao.categoria_equipamento_id,
                     "urlsFoto": imagens,

@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 
 from app.api.dependencies.auth import obter_usuario_atual
-from app.schemas.UsuarioContexto import UsuarioContexto
+from app.schemas import UsuarioContexto
 
 
 def exigir_perfis(
