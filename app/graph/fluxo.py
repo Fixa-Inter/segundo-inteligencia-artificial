@@ -8,6 +8,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from .estado import EstadoGrafo
 from .contexto import ContextoGrafo
 from app.agents.juiz import revisar_resposta
+from app.agents import classificar_emocao
 from .nos import (
     validar_entrada,
     supervisionar,
@@ -78,6 +79,7 @@ def construir_grafo():
     construtor.add_node("revisar_resposta", _instrumentar_no("revisar_resposta", revisar_resposta))
     construtor.add_node("proteger_saida", _instrumentar_no("proteger_saida", validar_saida))
     construtor.add_node("fallback", _instrumentar_no("fallback", tratar_erro))
+    construtor.add_node("classificar_emocao", _instrumentar_no("classificar_emocao", classificar_emocao))
 
     construtor.add_edge(START, "proteger_entrada")
     construtor.add_conditional_edges(
@@ -123,9 +125,10 @@ def construir_grafo():
         },
     )
 
-    construtor.add_edge("proteger_saida", END)
+    construtor.add_edge("proteger_saida", "classificar_emocao")
     construtor.add_edge("revisar_resposta", "juiz")
-    construtor.add_edge("fallback", END)
+    construtor.add_edge("fallback", "classificar_emocao")
+    construtor.add_edge("classificar_emocao", END)
 
     memoria = MemorySaver()
     return construtor.compile(checkpointer=memoria)

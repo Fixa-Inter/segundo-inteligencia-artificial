@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from app.graph.executor import PERFIS_VALIDOS, executar_grafo
 from app.schemas import UsuarioContexto
 from app.schemas import ConversaEntrada, ConversaSaida
+from app.core import Emocao
 from app.memory.persistencia.sessoes import iniciar_sessao
 from app.memory.persistencia import obter_documento_sessao_id
 from app.observability.metricas import (
@@ -55,6 +56,7 @@ async def _processar_chat(
 
     return ConversaSaida(
         thread_id=dados.thread_id,
+        emocao=resultado.get("emocao", Emocao.NEUTRO),
         intencao=resultado.get("intencao"),
         resposta=resultado.get(
             "resposta_final",

@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from app.core import Emocao
 from app.memory.persistencia.sessoes import iniciar_sessao
 from app.memory.persistencia.utilitarios import obter_documento_sessao_id, agora
 from app.memory.persistencia.rascunho_solicitacao import (
@@ -15,6 +16,7 @@ async def salvar_mensagem(
     usuario_id: int,
     imagens: list[str] | None = None,
     *, associar_imagens: bool = True,
+    emocao: Emocao | str | None = None,
 ) -> None:
 
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
@@ -28,6 +30,8 @@ async def salvar_mensagem(
         )
 
     mensagem = {"role": papel, "content": conteudo}
+    if papel == "assistant":
+        mensagem["emocao"] = Emocao(emocao or Emocao.NEUTRO).value
     imagens_validas = [
         url.strip()
         for url in (imagens or [])

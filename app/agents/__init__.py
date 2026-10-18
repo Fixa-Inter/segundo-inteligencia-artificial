@@ -21,8 +21,10 @@ from .retorno_usuario import (
 from .juiz import (
     criar_agente_juiz,
 )
+from .emocoes import classificar_emocao
 
 __all__ = [
+    "classificar_emocao",
     "criar_agente_faq",
     "criar_agente_solicitacoes",
     "criar_agente_ajuda_geral",

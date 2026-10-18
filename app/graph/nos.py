@@ -716,6 +716,7 @@ def validar_saida(
         "resposta_final": resposta_final,
         "propostas_apresentadas": [p for p in propostas_resposta(estado) if p["resumo_confirmacao"] in resposta]
         if not resultado.get("bloqueado") else [],
+        "saida_bloqueada": bool(resultado.get("bloqueado")),
         "messages": [
             AIMessage(
                 content=resposta_final,

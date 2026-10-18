@@ -2,6 +2,7 @@ from typing import Annotated, Literal, TypedDict
 
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
+from app.core import Emocao
 
 
 class EstadoGrafo(TypedDict, total=False):
@@ -49,6 +50,8 @@ class EstadoGrafo(TypedDict, total=False):
     tentativas: int
 
     resposta_final: str
+    emocao: Emocao | str
+    saida_bloqueada: bool
     erro: str | None 
     solicitacao_pendente: dict | None
 

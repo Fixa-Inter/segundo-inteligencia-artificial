@@ -1,6 +1,7 @@
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
+from app.core import Emocao
 
 
 class ConversaEntrada(BaseModel):
@@ -42,3 +43,4 @@ class ConversaSaida(BaseModel):
     ] | None
 
     resposta: str
+    emocao: Emocao = Emocao.NEUTRO

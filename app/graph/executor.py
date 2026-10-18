@@ -7,6 +7,7 @@ from app.graph.contexto import ContextoGrafo
 from app.graph.estado import EstadoGrafo
 from app.graph.fluxo import grafo
 from app.schemas import UsuarioContexto
+from app.core import Emocao
 from app.memory.persistencia import salvar_mensagem
 from app.memory.persistencia import recuperar_mensagens
 from app.memory.persistencia import obter_documento_sessao_id
@@ -59,6 +60,8 @@ def criar_estado_inicial(
         "perfil": perfil,
         "tentativas": 0,
         "resposta_final": "",
+        "emocao": Emocao.NEUTRO.value,
+        "saida_bloqueada": False,
         "resposta_especialista": "",
         "feedback_juiz": "",
         "evidencias": [],
@@ -165,7 +168,10 @@ async def executar_grafo(
     if resultado.get("erro"):
         marcar_falha_requisicao()
 
-    await salvar_mensagem(thread_id,"assistant",resultado["resposta_final"],usuario_id)
+    await salvar_mensagem(
+        thread_id, "assistant", resultado["resposta_final"], usuario_id,
+        emocao=resultado.get("emocao", Emocao.NEUTRO),
+    )
     for proposta in resultado.get("propostas_apresentadas", []):
         await atualizar_rascunho_solicitacao(
             thread_id, usuario_id,
