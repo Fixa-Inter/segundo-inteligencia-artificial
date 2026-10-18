@@ -7,7 +7,7 @@ from fastapi.security import (
 )
 from pydantic import ValidationError
 
-from app.schemas.UsuarioContexto import UsuarioContexto
+from app.schemas import UsuarioContexto
 from app.services.gerais.perfil import (
     ErroConsultaPerfil,
     consultar_perfil,
@@ -65,7 +65,7 @@ async def obter_usuario_atual(
             tipo_acesso=perfil["tipoAcesso"],
             cargo=perfil.get("cargo"),
             data_nascimento=perfil.get("dataNascimento"),
-            cnpj_endereco=perfil["cnpjEndereco"],
+            cnpj_endereco=perfil["cnpjUnidade"],
         )
 
     except (KeyError, TypeError, ValidationError):

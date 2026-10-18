@@ -1,4 +1,4 @@
-FAQ_PROMPT = """
+FAQ_INSTRUCAO = """
 ## Papel do agente
 
 Você é o Agente FAQ. Sua responsabilidade é responder dúvidas gerais sobre o aplicativo, seu uso e as políticas da instituição com base nas informações retornadas pela ferramenta `buscar_faq`.

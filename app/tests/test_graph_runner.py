@@ -3,8 +3,8 @@ from datetime import date
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
-from app.graph import runner
-from app.schemas.UsuarioContexto import UsuarioContexto
+from app.graph import executor
+from app.schemas import UsuarioContexto
 
 
 def criar_usuario() -> UsuarioContexto:
@@ -35,24 +35,26 @@ def test_executar_grafo_inicializa_estado_e_contexto(
     )
 
     monkeypatch.setattr(
-        runner,
+        executor,
         "grafo",
         grafo_mock,
     )
 
     monkeypatch.setattr(
-        runner,
-        "documento_id_da_sessao",
+        executor,
+        "obter_documento_sessao_id",
         AsyncMock(return_value="documento-123"),
     )
     monkeypatch.setattr(
-        runner,
+        executor,
         "recuperar_mensagens",
         AsyncMock(return_value=[]),
     )
+    monkeypatch.setattr(executor, "obter_rascunho_solicitacao", AsyncMock(return_value=None))
+    monkeypatch.setattr(executor, "obter_acao", AsyncMock(return_value=None))
     salvar_mensagem = AsyncMock()
     monkeypatch.setattr(
-        runner,
+        executor,
         "salvar_mensagem",
         salvar_mensagem,
     )
@@ -61,7 +63,7 @@ def test_executar_grafo_inicializa_estado_e_contexto(
     mensagem = "Como acompanho uma solicitacao?"
 
     resultado = asyncio.run(
-        runner.executar_grafo(
+        executor.executar_grafo(
             mensagem=mensagem,
             usuario=usuario,
             thread_id="conversa-123",
@@ -75,18 +77,15 @@ def test_executar_grafo_inicializa_estado_e_contexto(
 
     estado = argumentos[0]
 
-    assert estado["user_id"] == "10"
+    assert estado["user_id"] == 10
     assert estado["perfil"] == "solicitante"
     assert estado["tentativas"] == 0
     assert estado["mensagem_anonimizada"] == mensagem
     assert estado["mapa_pii"] == {}
     assert estado["messages"][0].content == mensagem
 
-    assert nomeados["config"] == {
-        "configurable": {
-            "thread_id": "10:conversa-123",
-        }
-    }
+    assert nomeados["config"]["configurable"] == {"thread_id": "10:conversa-123"}
+    assert len(nomeados["config"]["callbacks"]) == 1
 
     assert nomeados["context"]["usuario"] == usuario
     assert nomeados["context"]["imagens"] == [

@@ -54,15 +54,15 @@ def test_coletor_acumula_evidencias_sem_mutar_estado():
     agente = SimpleNamespace(ainvoke=AsyncMock(return_value={"messages": [
         chamada("consulta", "nova"), retorno("nova", "resultado"),
     ]}))
-    state = {"messages": [], "evidencias": ["evidencia anterior da mesma rodada"]}
-    _, evidencias = asyncio.run(executar_com_evidencias(agente, state, {}, Formato))
+    estado = {"messages": [], "evidencias": ["evidencia anterior da mesma rodada"]}
+    _, evidencias = asyncio.run(executar_com_evidencias(agente, estado, {}, Formato))
     assert len(evidencias) == 2
-    assert evidencias[0] == state["evidencias"][0]
-    assert len(state["evidencias"]) == 1
+    assert evidencias[0] == estado["evidencias"][0]
+    assert len(estado["evidencias"]) == 1
 
 
 def test_no_solicitacoes_entrega_multiplas_evidencias_ao_grafo(monkeypatch):
-    from app.graph import nodes
+    from app.graph import nos
     from app.agents.agentsResult import SolicitacaoOcorrenciaResultado
 
     mensagens = [
@@ -75,8 +75,8 @@ def test_no_solicitacoes_entrega_multiplas_evidencias_ao_grafo(monkeypatch):
             agente="solicitacao", resposta="Cadastro realizado", status="SUCESSO",
         ),
     }))
-    monkeypatch.setattr(nodes, "solicitacoes_solicitante", agente)
-    resultado = asyncio.run(nodes.executar_solicitacao(
+    monkeypatch.setattr(nos, "solicitacoes_solicitante", agente)
+    resultado = asyncio.run(nos.executar_solicitacao(
         {"perfil": "solicitante", "messages": [], "evidencias": []},
         SimpleNamespace(context={}),
     ))
@@ -87,7 +87,7 @@ def test_no_solicitacoes_entrega_multiplas_evidencias_ao_grafo(monkeypatch):
 
 def test_nova_mensagem_limpa_evidencias_do_checkpoint():
     from langchain_core.messages import HumanMessage
-    from app.graph.runner import criar_estado_inicial
+    from app.graph.executor import criar_estado_inicial
 
     usuario = SimpleNamespace(tipo_acesso="solicitante", usuario_id=1)
     estado_anterior = {"evidencias": ["consulta de outra rodada"]}

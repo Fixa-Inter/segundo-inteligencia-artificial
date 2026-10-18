@@ -1,23 +1,26 @@
 from fastapi import HTTPException, status
-from app.memory.persistencia.sessoes.iniciar_sessao import iniciar_sessao
-from app.memory.persistencia.utilitarios import documento_id_da_sessao, agora
+from app.core import Emocao
+from app.memory.persistencia.sessoes import iniciar_sessao
+from app.memory.persistencia.utilitarios import obter_documento_sessao_id, agora
 from app.memory.persistencia.rascunho_solicitacao import (
-    adicionar_imagens_a_sessao,
+    adicionar_imagens_sessao,
 )
 from app.core.clients.mongo import abrir_cliente_mongo
-from app.core.config import MONGO_BANCO_DADOS, MONGO_COLLECTION_SESSOES
+from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
 
 
 async def salvar_mensagem(
-    session_id: str,
-    role: str,
-    content: str,
-    user_id: int,
+    sessao_id: str,
+    papel: str,
+    conteudo: str,
+    usuario_id: int,
     imagens: list[str] | None = None,
+    *, associar_imagens: bool = True,
+    emocao: Emocao | str | None = None,
 ) -> None:
 
-    doc_id = await documento_id_da_sessao(session_id, user_id)
-    if not doc_id:
+    documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
+    if not documento_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Inicie uma conversa para salvar a mensagem!",
@@ -26,29 +29,31 @@ async def salvar_mensagem(
             },
         )
 
-    mensagem = {"role": role, "content": content}
+    mensagem = {"role": papel, "content": conteudo}
+    if papel == "assistant":
+        mensagem["emocao"] = Emocao(emocao or Emocao.NEUTRO).value
     imagens_validas = [
         url.strip()
         for url in (imagens or [])
         if isinstance(url, str) and url.strip()
     ]
-    if role == "human" and imagens_validas:
+    if papel == "human" and imagens_validas:
         mensagem["imagens"] = imagens_validas
 
     async with abrir_cliente_mongo() as cliente:
-        db = cliente[MONGO_BANCO_DADOS]
-        collection_sessoes = db[MONGO_COLLECTION_SESSOES]
-        await collection_sessoes.update_one(
-            {"_id": doc_id, "user_id": user_id},
+        banco = cliente[MONGO_BANCO_DADOS]
+        colecao_sessoes = banco[MONGO_COLECAO_SESSOES]
+        await colecao_sessoes.update_one(
+            {"_id": documento_id, "user_id": usuario_id},
             {
                 "$push": {"mensagens": mensagem},
                 "$set":  {"atualizada_em": agora()},
             },
         )
 
-    if role == "human" and imagens_validas:
-        await adicionar_imagens_a_sessao(
-            session_id=session_id,
-            user_id=user_id,
+    if papel == "human" and imagens_validas and associar_imagens:
+        await adicionar_imagens_sessao(
+            sessao_id=sessao_id,
+            usuario_id=usuario_id,
             imagens=imagens_validas,
         )

@@ -1,10 +1,10 @@
 import logging
 
-from app.core.clients.postgres import executar_select
-from app.schemas.UsuarioContexto import UsuarioContexto
+from app.core.clients.postgres import executar_consulta
+from app.schemas import UsuarioContexto
 
 
-logger = logging.getLogger(__name__)
+registrador = logging.getLogger(__name__)
 
 _SQL_TECNICOS_DISPONIVEIS = """
     WITH usuario_autenticado AS (
@@ -14,6 +14,7 @@ _SQL_TECNICOS_DISPONIVEIS = """
         WHERE autenticado.id = :usuario_id
           AND autenticado.tipo_acesso = 2
           AND autenticado.esta_ativo IS TRUE
+          AND unidade.esta_ativo IS TRUE
     ), tecnicos AS (
         SELECT tecnico.id, tecnico.nome_completo, unidade_tecnico.cnpj
         FROM usuario AS tecnico
@@ -23,6 +24,7 @@ _SQL_TECNICOS_DISPONIVEIS = """
             ON usuario_autenticado.cnpj = unidade_tecnico.cnpj
         WHERE tecnico.tipo_acesso = 3
           AND tecnico.esta_ativo IS TRUE
+          AND unidade_tecnico.esta_ativo IS TRUE
     )
     SELECT
         tecnico.id,
@@ -38,11 +40,15 @@ _SQL_TECNICOS_DISPONIVEIS = """
             )::integer AS ordens_nao_concluidas
         FROM ordem_servico AS os
         JOIN problema ON problema.id = os.problema_id
-        JOIN local_endereco AS local_registro
-            ON local_registro.id = problema.local_endereco_id
+        JOIN local_unidade AS local_registro
+            ON local_registro.id = problema.local_unidade_id
         JOIN unidade AS unidade_registro
             ON unidade_registro.id = local_registro.unidade_id
         WHERE os.usuario_id = tecnico.id
+          AND os.esta_ativo IS TRUE
+          AND problema.esta_ativo IS TRUE
+          AND local_registro.esta_ativo IS TRUE
+          AND unidade_registro.esta_ativo IS TRUE
           AND unidade_registro.cnpj = tecnico.cnpj
     ) AS carga ON TRUE
     ORDER BY ordens_nao_concluidas, tecnico.nome_completo
@@ -58,13 +64,13 @@ async def buscar_tecnicos_disponiveis(usuario: UsuarioContexto) -> dict:
         }
 
     try:
-        tecnicos = await executar_select(
+        tecnicos = await executar_consulta(
             "gestor",
             _SQL_TECNICOS_DISPONIVEIS,
             {"usuario_id": usuario.usuario_id},
         )
     except Exception:
-        logger.exception("Falha ao buscar tecnicos disponiveis no PostgreSQL")
+        registrador.exception("Falha ao buscar tecnicos disponiveis no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
             "mensagem": "Nao foi possivel consultar os tecnicos disponiveis.",

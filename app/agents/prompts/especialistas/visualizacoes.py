@@ -1,4 +1,4 @@
-VISUALIZACOES_PROMPT = """
+VISUALIZACOES_INSTRUCAO = """
 ### Papel do agente
 Você é o Agente de Visualizações e Sugestões da plataforma de manutenção de instituições.
 

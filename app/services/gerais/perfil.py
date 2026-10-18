@@ -1,6 +1,6 @@
 import httpx
 
-from app.core.config import FIXA_API_BASE_URL
+from app.core.configuracao import FIXA_URL_BASE_API
 
 
 class ErroConsultaPerfil(Exception):
@@ -11,7 +11,7 @@ class ErroConsultaPerfil(Exception):
 
 
 async def consultar_perfil(access_token: str) -> dict:
-    if not FIXA_API_BASE_URL:
+    if not FIXA_URL_BASE_API:
         raise ErroConsultaPerfil(
             500,
             "FIXA_API_BASE_URL não foi configurada.",
@@ -27,9 +27,9 @@ async def consultar_perfil(access_token: str) -> dict:
         async with httpx.AsyncClient(
             timeout=15,
             follow_redirects=False,
-        ) as client:
-            resposta = await client.get(
-                f"{FIXA_API_BASE_URL.rstrip('/')}/api/v1/perfil",
+        ) as cliente:
+            resposta = await cliente.get(
+                f"{FIXA_URL_BASE_API.rstrip('/')}/api/v1/perfil",
                 headers={
                     "Authorization": f"Bearer {access_token}",
                 },

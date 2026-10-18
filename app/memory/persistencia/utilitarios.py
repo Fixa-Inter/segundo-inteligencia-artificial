@@ -1,5 +1,5 @@
 from app.core.clients.mongo import abrir_cliente_mongo
-from app.core.config import MONGO_BANCO_DADOS, MONGO_COLLECTION_SESSOES
+from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
 from datetime import datetime, timezone
 
 sessoes_ativas: dict[tuple[int, str], str] = {}
@@ -7,22 +7,22 @@ sessoes_ativas: dict[tuple[int, str], str] = {}
 def agora() -> datetime:
     return datetime.now(timezone.utc)
 
-async def documento_id_da_sessao(session_id: str, user_id: int) -> str | None:
-    chave = (user_id, session_id)
-    doc_id = sessoes_ativas.get(chave)
-    if doc_id:
-        return doc_id
+async def obter_documento_sessao_id(sessao_id: str, usuario_id: int) -> str | None:
+    chave = (usuario_id, sessao_id)
+    documento_id = sessoes_ativas.get(chave)
+    if documento_id:
+        return documento_id
 
     async with abrir_cliente_mongo() as cliente:
-        db = cliente[MONGO_BANCO_DADOS]
-        collection_sessoes = db[MONGO_COLLECTION_SESSOES]
-        doc = await collection_sessoes.find_one(
-            {"user_id": user_id, "session_id": session_id},
+        banco = cliente[MONGO_BANCO_DADOS]
+        colecao_sessoes = banco[MONGO_COLECAO_SESSOES]
+        documento = await colecao_sessoes.find_one(
+            {"user_id": usuario_id, "session_id": sessao_id},
             {"_id": 1},
             sort=[("iniciada_em", -1)],
         )
-        if not doc:
+        if not documento:
             return None
 
-        sessoes_ativas[chave] = doc["_id"]
-        return doc["_id"]
+        sessoes_ativas[chave] = documento["_id"]
+        return documento["_id"]

@@ -15,42 +15,42 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from qdrant_client import models
 
-from app.memory.embedding.config import gerar_embeddings_documentos
+from app.memory.embedding.configuracao import gerar_vetores_documentos
 from app.core.clients.qdrant import abrir_cliente_qdrant
-from app.core.config import QDRANT_FAQ_COLLECTION
+from app.core.configuracao import QDRANT_COLECAO_FAQ
 
-CHUNK_SIZE    = 700
-CHUNK_OVERLAP = 150
-BATCH_SIZE    = 50
+TAMANHO_TRECHO    = 700
+SOBREPOSICAO_TRECHOS = 150
+TAMANHO_LOTE    = 50
 
 
-async def ingerir_faq(pdf_path: str | Path, perfil: str) -> int:
+async def ingerir_faq(caminho_pdf: str | Path, perfil: str) -> int:
     """Indexa o PDF de um perfil, preservando os pontos dos outros perfis."""
     perfil = perfil.lower()
 
     if perfil not in {"solicitante", "tecnico", "gestor"}:
         raise ValueError("Perfil de FAQ inválido.")
     
-    pdf_path = Path(pdf_path)
+    caminho_pdf = Path(caminho_pdf)
 
     async with abrir_cliente_qdrant() as qdrant:
-        print(f"[ingest] Carregando PDF de {perfil}: {pdf_path}")
-        loader = PyPDFLoader(str(pdf_path))
-        docs = loader.load()
-        print(f"[ingest] {len(docs)} página(s) carregada(s)")
+        print(f"[ingest] Carregando PDF de {perfil}: {caminho_pdf}")
+        carregador = PyPDFLoader(str(caminho_pdf))
+        documentos = carregador.load()
+        print(f"[ingest] {len(documentos)} página(s) carregada(s)")
 
-        splitter = RecursiveCharacterTextSplitter(
-            chunk_size=CHUNK_SIZE,
-            chunk_overlap=CHUNK_OVERLAP,
+        divisor = RecursiveCharacterTextSplitter(
+            chunk_size=TAMANHO_TRECHO,
+            chunk_overlap=SOBREPOSICAO_TRECHOS,
         )
-        chunks = splitter.split_documents(docs)
-        print(f"[ingest] {len(chunks)} chunk(s) gerado(s)")
+        trechos = divisor.split_documents(documentos)
+        print(f"[ingest] {len(trechos)} chunk(s) gerado(s)")
 
-        if not chunks:
+        if not trechos:
             raise ValueError("O PDF não contém trechos para indexar; os dados existentes foram preservados.")
         
         await qdrant.create_payload_index(
-            collection_name=QDRANT_FAQ_COLLECTION,
+            collection_name=QDRANT_COLECAO_FAQ,
             field_name="perfil",
             field_schema=models.PayloadSchemaType.KEYWORD,
             wait=True,
@@ -58,7 +58,7 @@ async def ingerir_faq(pdf_path: str | Path, perfil: str) -> int:
         
         print(f"[ingest] Substituindo pontos do perfil {perfil}...")
         await qdrant.delete(
-            collection_name=QDRANT_FAQ_COLLECTION,
+            collection_name=QDRANT_COLECAO_FAQ,
             points_selector=models.FilterSelector(
                 filter=models.Filter(must=[models.FieldCondition(
                     key="perfil", match=models.MatchValue(value=perfil),
@@ -67,32 +67,32 @@ async def ingerir_faq(pdf_path: str | Path, perfil: str) -> int:
             wait=True,
         )
 
-        textos = [chunk.page_content for chunk in chunks]
+        textos = [trecho.page_content for trecho in trechos]
 
-        for i in range(0, len(textos), BATCH_SIZE):
-            lote_textos = textos[i : i + BATCH_SIZE]
-            lote_chunks = chunks[i : i + BATCH_SIZE]
+        for i in range(0, len(textos), TAMANHO_LOTE):
+            lote_textos = textos[i : i + TAMANHO_LOTE]
+            lote_trechos = trechos[i : i + TAMANHO_LOTE]
 
             print(f"[ingest] Gerando embeddings para chunk {i+1}–{i+len(lote_textos)}...")
-            vetores = await gerar_embeddings_documentos(lote_textos)
+            vetores = await gerar_vetores_documentos(lote_textos)
 
             pontos = [
                 models.PointStruct(
                     id=str(uuid.uuid4()),
                     vector=vetor,
                     payload={
-                        "page_content": chunk.page_content,
+                        "page_content": trecho.page_content,
                         "perfil": perfil,
-                        "page_number":  chunk.metadata.get("page", 0),
-                        "source":       pdf_path.name,
+                        "page_number":  trecho.metadata.get("page", 0),
+                        "source":       caminho_pdf.name,
                     },
                 )
-                for vetor, chunk in zip(vetores, lote_chunks)
+                for vetor, trecho in zip(vetores, lote_trechos)
             ]
 
-            await qdrant.upsert(collection_name=QDRANT_FAQ_COLLECTION, points=pontos, wait=True)
+            await qdrant.upsert(collection_name=QDRANT_COLECAO_FAQ, points=pontos, wait=True)
 
-        print(f"[ingest] Concluído! {len(chunks)} chunk(s) indexado(s) no Qdrant.")
-        return len(chunks)
+        print(f"[ingest] Concluído! {len(trechos)} chunk(s) indexado(s) no Qdrant.")
+        return len(trechos)
 
 

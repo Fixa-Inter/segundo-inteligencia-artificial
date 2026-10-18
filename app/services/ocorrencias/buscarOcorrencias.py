@@ -1,8 +1,9 @@
+from app.core import data_atual
 import logging
 from datetime import date, datetime, timedelta
 
-from app.core.clients.postgres import executar_select
-from app.schemas.UsuarioContexto import UsuarioContexto
+from app.core.clients.postgres import executar_consulta
+from app.schemas import UsuarioContexto
 from app.services.ordensServico.buscarOrdensServico import (
     CATEGORIA_PROBLEMA_POR_ID,
     PRIORIDADE_POR_ID,
@@ -10,7 +11,7 @@ from app.services.ordensServico.buscarOrdensServico import (
 )
 
 
-logger = logging.getLogger(__name__)
+registrador = logging.getLogger(__name__)
 
 
 def _data_iso(valor) -> str:
@@ -34,8 +35,8 @@ async def buscar_equipamento_por_codigo(codigo: str, usuario: UsuarioContexto) -
         FROM equipamento
         JOIN modelo_equipamento AS modelo
             ON modelo.id = equipamento.modelo_equipamento_id
-        JOIN local_endereco AS local_registro
-            ON local_registro.id = equipamento.local_endereco_id
+        JOIN local_unidade AS local_registro
+            ON local_registro.id = equipamento.local_unidade_id
         JOIN unidade AS unidade_registro
             ON unidade_registro.id = local_registro.unidade_id
         JOIN usuario AS usuario_autenticado
@@ -44,18 +45,22 @@ async def buscar_equipamento_por_codigo(codigo: str, usuario: UsuarioContexto) -
             ON unidade_autenticada.id = usuario_autenticado.unidade_id
         WHERE equipamento.codigo = :codigo
           AND equipamento.esta_ativo IS TRUE
+          AND local_registro.esta_ativo IS TRUE
+          AND unidade_registro.esta_ativo IS TRUE
+          AND usuario_autenticado.esta_ativo IS TRUE
+          AND unidade_autenticada.esta_ativo IS TRUE
           AND unidade_registro.cnpj = unidade_autenticada.cnpj
         ORDER BY equipamento.id
         LIMIT 2
     """
     try:
-        encontrados = await executar_select(
+        encontrados = await executar_consulta(
             usuario.tipo_acesso,
             sql,
             {"usuario_id": usuario.usuario_id, "codigo": codigo.strip()},
         )
     except Exception:
-        logger.exception("Falha ao consultar equipamento por codigo no PostgreSQL")
+        registrador.exception("Falha ao consultar equipamento por codigo no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
             "mensagem": "Nao foi possivel consultar o equipamento no banco.",
@@ -76,7 +81,7 @@ async def buscar_equipamento_por_codigo(codigo: str, usuario: UsuarioContexto) -
 
 async def consultar_minhas_ocorrencias(usuario: UsuarioContexto) -> dict:
     """Consulta ocorrencias do usuario no endereco dele nos ultimos tres meses."""
-    hoje = date.today()
+    hoje = data_atual()
     inicio = inicio_periodo(hoje)
     sql = """
         SELECT ocorrencia.titulo,
@@ -88,8 +93,8 @@ async def consultar_minhas_ocorrencias(usuario: UsuarioContexto) -> dict:
                ocorrencia.data_criacao::date AS "dataCriacao",
                NULL::varchar AS "equipamentoCodigo"
         FROM ocorrencia
-        JOIN local_endereco AS local_registro
-            ON local_registro.id = ocorrencia.local_endereco_id
+        JOIN local_unidade AS local_registro
+            ON local_registro.id = ocorrencia.local_unidade_id
         JOIN unidade AS unidade_registro
             ON unidade_registro.id = local_registro.unidade_id
         JOIN usuario AS usuario_autenticado
@@ -98,13 +103,17 @@ async def consultar_minhas_ocorrencias(usuario: UsuarioContexto) -> dict:
             ON unidade_autenticada.id = usuario_autenticado.unidade_id
         WHERE ocorrencia.usuario_id = :usuario_id
           AND ocorrencia.esta_ativo IS TRUE
+          AND local_registro.esta_ativo IS TRUE
+          AND unidade_registro.esta_ativo IS TRUE
+          AND usuario_autenticado.esta_ativo IS TRUE
+          AND unidade_autenticada.esta_ativo IS TRUE
           AND unidade_registro.cnpj = unidade_autenticada.cnpj
           AND ocorrencia.data_criacao >= :inicio
           AND ocorrencia.data_criacao < :fim_exclusivo
         ORDER BY ocorrencia.data_criacao DESC
     """
     try:
-        rows = await executar_select(
+        linhas = await executar_consulta(
             usuario.tipo_acesso,
             sql,
             {
@@ -114,23 +123,23 @@ async def consultar_minhas_ocorrencias(usuario: UsuarioContexto) -> dict:
             },
         )
         ocorrencias = []
-        for row in rows:
-            categoria = CATEGORIA_PROBLEMA_POR_ID.get(row["categoria_id"])
-            prioridade = PRIORIDADE_POR_ID.get(row["prioridade_id"])
+        for linha in linhas:
+            categoria = CATEGORIA_PROBLEMA_POR_ID.get(linha["categoria_id"])
+            prioridade = PRIORIDADE_POR_ID.get(linha["prioridade_id"])
             if categoria is None or prioridade is None:
                 raise ValueError("Categoria ou prioridade de ocorrencia desconhecida.")
             ocorrencias.append({
-                "titulo": row["titulo"],
-                "descricaoOcorrencia": row["descricaoOcorrencia"],
+                "titulo": linha["titulo"],
+                "descricaoOcorrencia": linha["descricaoOcorrencia"],
                 "categoriaProblema": categoria,
                 "prioridade": prioridade,
-                "localEndereco": row["localEndereco"],
-                "descricaoLocal": row["descricaoLocal"],
-                "dataCriacao": _data_iso(row["dataCriacao"]),
-                "equipamentoCodigo": row["equipamentoCodigo"],
+                "localEndereco": linha["localEndereco"],
+                "descricaoLocal": linha["descricaoLocal"],
+                "dataCriacao": _data_iso(linha["dataCriacao"]),
+                "equipamentoCodigo": linha["equipamentoCodigo"],
             })
     except Exception:
-        logger.exception("Falha ao consultar ocorrencias no PostgreSQL")
+        registrador.exception("Falha ao consultar ocorrencias no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
             "mensagem": "Nao foi possivel consultar as ocorrencias no banco.",

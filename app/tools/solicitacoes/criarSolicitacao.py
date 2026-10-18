@@ -1,28 +1,29 @@
 import logging
-import re
-import unicodedata
 from typing import Any
 
 from langchain.tools import ToolRuntime, tool
 from pydantic import field_validator, model_validator
+from app.core.propostas import avaliar_confirmacao, metadados_proposta
+from app.tools.propostas import resolver_rotulos
 
 from app.core.clients.qdrant import abrir_cliente_qdrant
-from app.core.config import QDRANT_CATEGORIA_COLLECTION, QDRANT_LOCAL_COLLECTION
-from app.memory.persistencia.rascunho_solicitacao import (
+from app.core.configuracao import QDRANT_COLECAO_CATEGORIA, QDRANT_COLECAO_LOCAL
+from app.memory.persistencia import (
     atualizar_rascunho_solicitacao,
     obter_rascunho_solicitacao,
     salvar_rascunho_solicitacao as persistir_rascunho,
 )
 from app.memory.vectorSearch import validar_selecao
-from app.schemas.UsuarioContexto import UsuarioContexto
-from app.services.solicitacoes.criarSolicitacao import adicionar_solicitacao
-from app.tools.toolsRequest.CriarSolicitacaoRequest import CriarSolicitacaoRequest
+from app.schemas import UsuarioContexto
+from app.services.solicitacoes import adicionar_solicitacao
+from app.services.gerais import obter_unidade_id
+from app.tools.toolsRequest import CriarSolicitacaoEntrada
 
 
-logger = logging.getLogger(__name__)
+registrador = logging.getLogger(__name__)
 
 
-class _ArgumentosCriarSolicitacao(CriarSolicitacaoRequest):
+class _ArgumentosCriarSolicitacao(CriarSolicitacaoEntrada):
     @field_validator("titulo")
     @classmethod
     def validar_titulo(cls, valor):
@@ -43,59 +44,13 @@ def _contexto(runtime: ToolRuntime) -> tuple[dict[str, Any], UsuarioContexto, st
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
         raise ValueError("Forneça UsuarioContexto em context['usuario'].")
 
-    session_id = contexto.get("session_id")
-    if not isinstance(session_id, str) or not session_id.strip():
+    sessao_id = contexto.get("session_id")
+    if not isinstance(sessao_id, str) or not sessao_id.strip():
         raise ValueError("A sessão atual não foi informada ao agente.")
+    if not isinstance(contexto.get("turno_id"), str) or not contexto["turno_id"].strip():
+        raise ValueError("O turno atual não foi informado ao agente.")
 
-    return contexto, contexto["usuario"], session_id
-
-
-def _confirmacao_explicita(texto: str) -> bool:
-    if "?" in texto:
-        return False
-    normalizado = unicodedata.normalize("NFKD", texto.lower())
-    normalizado = "".join(
-        caractere for caractere in normalizado
-        if not unicodedata.combining(caractere)
-    )
-    normalizado = re.sub(r"[^a-z0-9 ]", " ", normalizado)
-    normalizado = " ".join(normalizado.split())
-
-    if not normalizado or re.search(
-        r"\b(nao|mas|porem|corrija|alterar|mude|como|qual|quando|onde|porque)\b",
-        normalizado,
-    ):
-        return False
-
-    frases = (
-        "sim",
-        "confirmo",
-        "confirmado",
-        "autorizo",
-        "isso",
-        "tudo certo",
-        "pode cadastrar",
-        "pode criar",
-        "pode registrar",
-        "pode enviar",
-        "pode prosseguir",
-        "pode seguir",
-        "esta correto",
-        "isso mesmo",
-        "esta bom",
-        "esta certo",
-        "beleza",
-        "fechado",
-        "perfeito",
-        "ok",
-        "okay",
-        "certo",
-        "correto",
-    )
-    return any(
-        normalizado == frase or normalizado.startswith(f"{frase} ")
-        for frase in frases
-    )
+    return contexto, contexto["usuario"], sessao_id
 
 
 def _normalizar_status_backend(status: Any) -> str | None:
@@ -133,7 +88,9 @@ async def salvar_rascunho_solicitacao(
     As imagens já recebidas nesta sessão são associadas ao rascunho. Esta tool
     não cria a solicitação na API.
     """
-    _, usuario, session_id = _contexto(runtime)
+    contexto, usuario, sessao_id = _contexto(runtime)
+    if contexto.get("intencao_atual") not in {None, "solicitacao"}:
+        return {"status": "INTENCAO_DIVERGENTE", "mensagem": "Prepare o tipo de registro solicitado nesta mensagem."}
     if usuario.tipo_acesso.lower() not in {"tecnico", "solicitante"}:
         return {
             "status": "ACESSO_NEGADO",
@@ -148,13 +105,16 @@ async def salvar_rascunho_solicitacao(
         descricao_local=descricao_local,
     )
     rascunho = await persistir_rascunho(
-        session_id=session_id,
-        user_id=usuario.usuario_id,
+        sessao_id=sessao_id,
+        usuario_id=usuario.usuario_id,
         dados=dados.model_dump(),
+        turno_id=contexto.get("turno_id", ""),
+        rotulos=await resolver_rotulos(dados.model_dump(), usuario),
     )
     return {
         "status": "RASCUNHO_SALVO",
-        "mensagem": "Proposta salva na sessão. Ainda aguarda confirmação explícita.",
+        "proposta": metadados_proposta(rascunho),
+        "mensagem": "Apresente somente os dados pendentes. Preserve os campos já confirmados; não peça autorização de cadastro novamente.",
         "dados_salvos": rascunho["dados"],
         "imagens_recebidas": len(rascunho.get("imagens", [])),
         "imagens_associadas_ao_rascunho": bool(rascunho.get("imagens")),
@@ -169,14 +129,14 @@ async def criar_solicitacao(runtime: ToolRuntime) -> dict:
     junto com as imagens; se as imagens forem enviadas depois, ficam anexadas
     ao rascunho até o envio.
     """
-    contexto, usuario, session_id = _contexto(runtime)
+    contexto, usuario, sessao_id = _contexto(runtime)
     if usuario.tipo_acesso.lower() not in {"tecnico", "solicitante"}:
         return {
             "status": "ACESSO_NEGADO",
             "mensagem": "Somente técnicos e solicitantes podem criar solicitações.",
         }
 
-    rascunho = await obter_rascunho_solicitacao(session_id, usuario.usuario_id)
+    rascunho = await obter_rascunho_solicitacao(sessao_id, usuario.usuario_id)
     if not rascunho:
         return {
             "status": "SEM_RASCUNHO",
@@ -216,33 +176,39 @@ async def criar_solicitacao(runtime: ToolRuntime) -> dict:
             ),
         }
 
-    mensagem_atual = contexto.get("mensagem_atual", "")
-    ja_confirmado = (
-        rascunho.get("confirmado") is True
-        and status_fluxo == "aguardando_imagem"
-    )
-    if not ja_confirmado and not _confirmacao_explicita(str(mensagem_atual)):
-        return {
-            "status": "CONFIRMACAO_NECESSARIA",
-            "mensagem": "Peça confirmação explícita da proposta antes de cadastrar.",
-        }
+    bloqueio = avaliar_confirmacao(rascunho, contexto)
+    if bloqueio:
+        if bloqueio["status"] == "CONFIRMACAO_PARCIAL":
+            aceitos = {**rascunho.get("dados_confirmados", {}), **{
+                campo: rascunho["dados"][campo] for campo in bloqueio["campos_confirmados"]}}
+            atualizou = await atualizar_rascunho_solicitacao(
+                sessao_id, usuario.usuario_id, {"dados_confirmados": aceitos},
+                status_esperados={rascunho["status_fluxo"]}, rascunho_id=rascunho["id"],
+                versao=rascunho["versao"], exigir_ativo=True,
+            )
+            if not atualizou:
+                return {"status": "RESULTADO_INDETERMINADO", "mensagem": "A proposta mudou. Releia os dados."}
+            rascunho = {**rascunho, "dados_confirmados": aceitos}
+        if rascunho.get("id") and rascunho.get("versao") and rascunho.get("tipo"):
+            bloqueio["proposta"] = metadados_proposta(rascunho)
+        return bloqueio
 
-    if not ja_confirmado:
-        await atualizar_rascunho_solicitacao(
-            session_id,
-            usuario.usuario_id,
-            {"confirmado": True},
-            status_esperados={"aguardando_confirmacao", "erro_api"},
-        )
-        rascunho["confirmado"] = True
+    controle = {"rascunho_id": rascunho["id"], "versao": rascunho["versao"], "exigir_ativo": True}
+    confirmado = await atualizar_rascunho_solicitacao(
+        sessao_id, usuario.usuario_id,
+        {"confirmado": True, "dados_confirmados": rascunho["dados"]},
+        status_esperados={"aguardando_confirmacao", "aguardando_imagem", "erro_api"}, **controle,
+    )
+    if not confirmado:
+        return {"status": "RESULTADO_INDETERMINADO", "mensagem": "A proposta mudou. Confira os dados antes de repetir."}
 
     imagens = rascunho.get("imagens", [])
     if not imagens:
         await atualizar_rascunho_solicitacao(
-            session_id,
+            sessao_id,
             usuario.usuario_id,
             {"status_fluxo": "aguardando_imagem", "confirmado": True},
-            status_esperados={"aguardando_confirmacao", "aguardando_imagem", "erro_api"},
+            status_esperados={"aguardando_confirmacao", "aguardando_imagem", "erro_api"}, **controle,
         )
         return {
             "status": "AGUARDANDO_INFORMACAO",
@@ -251,26 +217,27 @@ async def criar_solicitacao(runtime: ToolRuntime) -> dict:
             ),
         }
 
-    dados = CriarSolicitacaoRequest.model_validate(rascunho.get("dados", {}))
-    async with abrir_cliente_qdrant() as client:
+    dados = CriarSolicitacaoEntrada.model_validate(rascunho.get("dados", {}))
+    unidade_id = await obter_unidade_id(usuario)
+    async with abrir_cliente_qdrant() as cliente:
         await validar_selecao(
-            QDRANT_CATEGORIA_COLLECTION,
+            QDRANT_COLECAO_CATEGORIA,
             dados.categoria_equipamento_id,
-            usuario.cnpj_endereco,
-            client,
+            unidade_id,
+            cliente,
         )
         await validar_selecao(
-            QDRANT_LOCAL_COLLECTION,
+            QDRANT_COLECAO_LOCAL,
             dados.local_endereco_id,
-            usuario.cnpj_endereco,
-            client,
+            unidade_id,
+            cliente,
         )
 
     iniciou_envio = await atualizar_rascunho_solicitacao(
-        session_id,
+        sessao_id,
         usuario.usuario_id,
         {"status_fluxo": "enviando", "confirmado": True},
-        status_esperados={"aguardando_confirmacao", "aguardando_imagem", "erro_api"},
+        status_esperados={"aguardando_confirmacao", "aguardando_imagem", "erro_api"}, **controle,
     )
     if not iniciou_envio:
         return {
@@ -285,7 +252,7 @@ async def criar_solicitacao(runtime: ToolRuntime) -> dict:
             imagens=imagens,
         )
     except Exception:
-        logger.exception("Falha ao enviar rascunho de solicitação à API")
+        registrador.exception("Falha ao enviar rascunho de solicitação à API")
         resultado = {
             "status": "RESULTADO_INDETERMINADO",
             "mensagem": (
@@ -298,7 +265,7 @@ async def criar_solicitacao(runtime: ToolRuntime) -> dict:
     if status_operacao == "SUCESSO":
         status_backend = resultado.get("status_backend")
         await atualizar_rascunho_solicitacao(
-            session_id,
+            sessao_id,
             usuario.usuario_id,
             {
                 "status_fluxo": "cadastrada",
@@ -306,21 +273,21 @@ async def criar_solicitacao(runtime: ToolRuntime) -> dict:
                 "status_backend": status_backend,
                 "status_solicitacao": _normalizar_status_backend(status_backend),
             },
-            status_esperados={"enviando"},
+            status_esperados={"enviando"}, **controle,
         )
     elif status_operacao == "RESULTADO_INDETERMINADO":
         await atualizar_rascunho_solicitacao(
-            session_id,
+            sessao_id,
             usuario.usuario_id,
             {"status_fluxo": "resultado_indeterminado"},
-            status_esperados={"enviando"},
+            status_esperados={"enviando"}, **controle,
         )
     else:
         await atualizar_rascunho_solicitacao(
-            session_id,
+            sessao_id,
             usuario.usuario_id,
             {"status_fluxo": "erro_api"},
-            status_esperados={"enviando"},
+            status_esperados={"enviando"}, **controle,
         )
 
     return resultado

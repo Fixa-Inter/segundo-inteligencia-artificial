@@ -75,7 +75,7 @@ pymongo==4.18.1
 pypdf==6.19.0
 pytest==9.1.1
 python-dotenv==1.2.3
-pywin32==312
+pywin32==312; platform_system == "Windows"
 PyYAML==6.0.3
 qdrant-client==1.19.0
 regex==2026.9.29
@@ -99,3 +99,4 @@ websockets==16.1.1
 xxhash==4.0.1
 yarl==1.25.1
 zstandard==0.25.0
+tzdata==2026.5

@@ -3,16 +3,16 @@ from collections.abc import AsyncIterator
 
 from qdrant_client import AsyncQdrantClient
 
-from app.core import config
+from app.core import configuracao
 
 
 @asynccontextmanager
 async def abrir_cliente_qdrant() -> AsyncIterator[AsyncQdrantClient]:
     """Disponibiliza um cliente sob demanda e o fecha mesmo em caso de erro."""
-    if not config.QDRANT_URL:
+    if not configuracao.QDRANT_URL:
         raise ValueError("Configure QDRANT_URL.")
     cliente = AsyncQdrantClient(
-        url=config.QDRANT_URL, api_key=config.QDRANT_API_KEY,
+        url=configuracao.QDRANT_URL, api_key=configuracao.QDRANT_CHAVE_API,
     )
     try:
         yield cliente

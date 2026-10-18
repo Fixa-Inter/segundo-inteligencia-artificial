@@ -1,4 +1,4 @@
-MAPEAMENTO_CATEGORIA_PROBLEMA_PROMPT = """
+MAPEAMENTO_CATEGORIA_PROBLEMA_INSTRUCAO = """
 ### Categorias de problema para cadastro de ocorrência
 Envie categoria_problema_id como o nome textual do enum, nunca como inteiro:
 ELETRICA - Elétrica: alimentação elétrica, tomadas, circuitos e instalações elétricas.

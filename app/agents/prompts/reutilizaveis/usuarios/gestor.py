@@ -1,4 +1,4 @@
-GESTOR_PROMPT = """
+GESTOR_INSTRUCAO = """
 ## Usuário: Gestor
 
 ### Papel no sistema
