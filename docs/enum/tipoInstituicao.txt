@@ -1,0 +1,4 @@
+ESCOLA("Escola", 1),
+FACULDADE("Faculdade", 2),
+EMPRESA("Empresa", 3),
+ORGAO_PUBLICO("Órgão Público", 4);

@@ -1,0 +1,4 @@
+ADMINISTRADOR("Administrador", 1),
+GESTOR("Gestor", 2),
+TECNICO("Técnico", 3),
+SOLICITANTE("Solicitante", 4);

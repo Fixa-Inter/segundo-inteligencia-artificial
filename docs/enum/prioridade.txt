@@ -1,0 +1,3 @@
+ALTA("Alta", 0),
+MEDIA("Média", 1),
+BAIXA("Baixa", 2);
