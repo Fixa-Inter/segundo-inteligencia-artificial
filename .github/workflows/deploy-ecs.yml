@@ -1,0 +1,25 @@
+name: Deploy AWS ECS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      task-definition:
+        description: 'Opcional: ARN completo da revisao criada pelo Terraform para aplicar novas configuracoes'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    uses: Fixa-Inter/.github/.github/workflows/deploy-ecs.yml@main
+    with:
+      api: ia
+      aws-account-id: ${{ vars.AWS_ACCOUNT_ID }}
+      aws-region: us-east-1
+      ecs-cluster: cluster-fixa
+      task-definition: ${{ inputs.task-definition || '' }}
+    secrets: inherit
