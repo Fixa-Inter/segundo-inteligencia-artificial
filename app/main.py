@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.api.router import api_router
 from app.core.clients.mongo import validar_config_mongo
+from app.core.clients.databricks import fechar_cliente_databricks
 from app.core.clients.postgres import fechar_conexoes_postgres
 from app.memory.persistencia.garantir_indice import garantir_indice_persistencia
 from app.memory.vectorSearch.garantir_indice import (
@@ -21,7 +22,10 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
-        await fechar_conexoes_postgres()
+        try:
+            await fechar_cliente_databricks()
+        finally:
+            await fechar_conexoes_postgres()
 
 app = FastAPI(
     lifespan=lifespan,

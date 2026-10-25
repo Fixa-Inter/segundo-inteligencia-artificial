@@ -118,7 +118,6 @@ def test_instrucao_utiliza_data_atual_construcao(monkeypatch):
     assert "2099" in construir_contexto_temporal()
 
 
-@pytest.mark.xfail(strict=True, reason="D07: indicador gerencial não recebe consulta operacional")
 def test_indicadores_recebe_ferramenta_dados_operacionais(monkeypatch):
     from app.agents import indicadores
 
