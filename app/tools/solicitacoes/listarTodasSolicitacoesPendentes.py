@@ -6,7 +6,7 @@ from app.services.solicitacoes import listar_solicitacoes_pendentes
 
 @tool
 async def listar_todas_solicitacoes_pendentes(runtime: ToolRuntime) -> dict:
-    """Lista problemas pendentes no endereco do gestor autenticado.
+    """Lista ate cinco pendencias do gestor nos ultimos tres meses.
 
 Nao recebe argumentos da IA. O SELECT filtra status pendente e CNPJ do
 endereco associado ao gestor."""

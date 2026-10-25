@@ -62,6 +62,7 @@ async def _processar_chat(
             "resposta_final",
             "Não foi possível produzir uma resposta.",
         ),
+        confirmacao=resultado.get("confirmacao", "nao"),
     )
 
 

@@ -58,6 +58,8 @@ class EstadoGrafo(TypedDict, total=False):
     ocorrencia_pendente: dict | None
     ajuda_geral_pendente: dict | None
     imagens_recebidas: bool
+    anexos_pendentes: int
+    cadastro_em_andamento: bool
     esclarecimento_roteamento: bool
     propostas_apresentadas: list[dict]
     contexto_temporal: str

@@ -2,56 +2,36 @@ from app.agents.prompts.reutilizaveis import CONTEXTO_INSTRUCAO, GLOSSARIO_INSTR
 from app.agents.prompts.reutilizaveis import MAPEAMENTO_CATEGORIA_PROBLEMA_INSTRUCAO
 from app.agents.prompts.especialistas import (
     AJUDA_GERAL_INSTRUCAO,
+    AJUDA_GERAL_INSTRUCAO_SOLICITANTE_TECNICO,
     AJUDA_GERAL_INSTRUCAO_TECNICO_GESTOR,
+    AJUDA_GERAL_INSTRUCAO_GESTOR,
     INDICADORES_INSTRUCAO,
     FAQ_INSTRUCAO,
     RETORNO_USUARIO_INSTRUCAO,
-    JUIZ_INSTRUCAO,
     SOLICITACOES_INSTRUCAO,
     VISUALIZACOES_INSTRUCAO,
 )
 
 
 def construir_ajuda_geral_solicitante() -> str:
-    return "\n".join([CONTEXTO_INSTRUCAO, SOLICITANTE_INSTRUCAO, AJUDA_GERAL_INSTRUCAO])
+    return "\n".join([
+        CONTEXTO_INSTRUCAO, SOLICITANTE_INSTRUCAO, AJUDA_GERAL_INSTRUCAO,
+        AJUDA_GERAL_INSTRUCAO_SOLICITANTE_TECNICO,
+    ])
 
 
 def construir_ajuda_geral_tecnico() -> str:
     return "\n".join([
         CONTEXTO_INSTRUCAO, TECNICO_INSTRUCAO, AJUDA_GERAL_INSTRUCAO,
-        AJUDA_GERAL_INSTRUCAO_TECNICO_GESTOR,
+        AJUDA_GERAL_INSTRUCAO_SOLICITANTE_TECNICO, AJUDA_GERAL_INSTRUCAO_TECNICO_GESTOR,
     ])
 
 
 def construir_ajuda_geral_gestor() -> str:
     return "\n".join([
         CONTEXTO_INSTRUCAO, GESTOR_INSTRUCAO, AJUDA_GERAL_INSTRUCAO,
-        AJUDA_GERAL_INSTRUCAO_TECNICO_GESTOR,
+        AJUDA_GERAL_INSTRUCAO_TECNICO_GESTOR, AJUDA_GERAL_INSTRUCAO_GESTOR,
     ])
-
-def construir_juiz_solicitante() -> str:
-    return (
-        CONTEXTO_INSTRUCAO     +"\n"+
-        GLOSSARIO_INSTRUCAO    +"\n"+
-        SOLICITANTE_INSTRUCAO  +"\n"+
-        JUIZ_INSTRUCAO
-    )
-
-def construir_juiz_tecnico() -> str:
-    return (
-        CONTEXTO_INSTRUCAO    +"\n"+
-        GLOSSARIO_INSTRUCAO   +"\n"+
-        TECNICO_INSTRUCAO     +"\n"+
-        JUIZ_INSTRUCAO
-    )
-
-def construir_juiz_gestor() -> str:
-    return (
-        CONTEXTO_INSTRUCAO    +"\n"+
-        GLOSSARIO_INSTRUCAO   +"\n"+
-        GESTOR_INSTRUCAO      +"\n"+
-        JUIZ_INSTRUCAO
-    )
 
 def construir_retorno_usuario() -> str:
     return (

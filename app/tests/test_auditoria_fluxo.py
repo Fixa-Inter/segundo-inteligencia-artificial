@@ -17,9 +17,10 @@ from app.tools.ajuda_geral.edicoes import _confirmacao_edicao
 def test_novo_turno_fora_escopo_nao_herda_bloqueio_juiz(monkeypatch):
     monkeypatch.setattr(nos, "proteger_entrada", lambda _: {"bloqueado": False})
     decisoes = iter(["faq", "fora_de_escopo"])
-    monkeypatch.setattr(nos, "roteador_estruturado", SimpleNamespace(
-        invoke=lambda _: SimpleNamespace(intencao=next(decisoes), justificativa="Teste"),
-    ))
+    async def rotear(*_):
+        return SimpleNamespace(intencao=next(decisoes), justificativa="Teste",
+                               continua_pendente=False, precisa_esclarecimento=False)
+    monkeypatch.setattr(nos, "rotear_orquestrador", rotear)
     monkeypatch.setattr(fluxo, "executar_faq", AsyncMock(return_value={
         "resposta_especialista": "Resposta candidata", "erro": None,
     }))
@@ -46,11 +47,12 @@ def test_novo_turno_fora_escopo_nao_herda_bloqueio_juiz(monkeypatch):
 def test_confirmacao_solicitacao_disponibiliza_contexto_roteador(monkeypatch):
     entradas = []
 
-    def classificar(mensagens):
-        entradas.extend(mensagens)
-        return SimpleNamespace(intencao="solicitacao", justificativa="Teste")
+    async def classificar(estado, pergunta):
+        entradas.extend(estado["messages"])
+        return SimpleNamespace(intencao="solicitacao", justificativa="Teste",
+                               continua_pendente=False, precisa_esclarecimento=False)
 
-    monkeypatch.setattr(nos, "roteador_estruturado", SimpleNamespace(invoke=classificar))
+    monkeypatch.setattr(nos, "rotear_orquestrador", classificar)
     resultado = asyncio.run(nos.supervisionar({
         "messages": [HumanMessage(content="Cadastre o ventilador quebrado"),
                      HumanMessage(content="Sim")],

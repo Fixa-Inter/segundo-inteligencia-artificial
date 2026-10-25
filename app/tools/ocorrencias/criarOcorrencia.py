@@ -56,7 +56,8 @@ async def salvar_rascunho_ocorrencia(
             "proposta": metadados_proposta(rascunho),
             "imagens_recebidas": len(rascunho["imagens"]),
             "imagens_associadas_ao_rascunho": bool(rascunho["imagens"]),
-            "mensagem": "Mostre somente os dados pendentes. Não repita a confirmação dos campos já aceitos. É necessária uma foto."}
+            "mensagem": "Mostre somente os dados pendentes. Não repita a confirmação dos campos já aceitos. "
+                        + ("A foto já foi recebida." if rascunho["imagens"] else "Ainda é necessária uma foto.")}
 
 
 @tool

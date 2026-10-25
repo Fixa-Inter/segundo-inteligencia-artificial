@@ -1,3 +1,4 @@
 PENDENTE("Pendente", 0),
-APROVADO("Aprovado", 1),
-REPROVADO("Reprovado", 2);
+REPROVADO("Reprovado", 1),
+APROVADO("Aprovado", 2),
+CONCLUIDO("Concluído", 3);

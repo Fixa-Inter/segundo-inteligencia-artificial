@@ -13,11 +13,13 @@ from app.memory.persistencia import recuperar_mensagens
 from app.memory.persistencia import obter_documento_sessao_id
 from app.memory.persistencia import (
     obter_rascunho_solicitacao,
+    obter_quantidade_anexos_pendentes,
 )
 from app.memory.persistencia import obter_acao
 from app.memory.persistencia import atualizar_rascunho_solicitacao
 
 from app.guardrails import anonimizar_entrada
+from app.core.propostas import campos_pendentes, resumo_confirmacao
 from app.agents.prompts.reutilizaveis import construir_contexto_temporal
 from app.observability.metricas import (
     MonitorMetricas,
@@ -75,6 +77,7 @@ def criar_estado_inicial(
         "intencao": None,
         "esclarecimento_roteamento": False,
         "propostas_apresentadas": [],
+        "cadastro_em_andamento": False,
         "contexto_temporal": construir_contexto_temporal(),
     }
 
@@ -146,6 +149,9 @@ async def executar_grafo(
     )
     estado_inicial["ajuda_geral_pendente"] = await obter_acao(thread_id, usuario_id)
     estado_inicial["imagens_recebidas"] = bool(imagens)
+    estado_inicial["anexos_pendentes"] = await obter_quantidade_anexos_pendentes(
+        thread_id, usuario_id,
+    )
 
     contexto: ContextoGrafo = {
         "usuario": usuario,
@@ -172,8 +178,10 @@ async def executar_grafo(
         thread_id, "assistant", resultado["resposta_final"], usuario_id,
         emocao=resultado.get("emocao", Emocao.NEUTRO),
     )
-    for proposta in resultado.get("propostas_apresentadas", []):
-        await atualizar_rascunho_solicitacao(
+    propostas_apresentadas = resultado.get("propostas_apresentadas", [])
+    resultado["confirmacao"] = "nao"
+    for proposta in propostas_apresentadas:
+        apresentada = await atualizar_rascunho_solicitacao(
             thread_id, usuario_id,
             {"turno_apresentacao": contexto["turno_id"], "versao_apresentada": proposta["versao"],
              "dados_apresentados": proposta["dados"]},
@@ -181,5 +189,22 @@ async def executar_grafo(
             versao=proposta["versao"], status_esperados={"aguardando_confirmacao", "aguardando_imagem", "erro_api"},
             exigir_ativo=True,
         )
+        if apresentada and len(propostas_apresentadas) == 1:
+            resultado["confirmacao"] = "sim"
+
+    if not propostas_apresentadas and resultado.get("intencao") in {"solicitacao", "ocorrencia"}:
+        rascunho = resultado.get(f"{resultado['intencao']}_pendente")
+        if (
+            isinstance(rascunho, dict)
+            and rascunho.get("status_fluxo") in {"aguardando_confirmacao", "aguardando_imagem", "erro_api"}
+            and not rascunho.get("pausado")
+            and not rascunho.get("confirmado")
+            and campos_pendentes(rascunho)
+            and rascunho.get("versao_apresentada") == rascunho.get("versao")
+            and rascunho.get("dados_apresentados") == rascunho.get("dados")
+            and rascunho.get("turno_apresentacao")
+            and resumo_confirmacao(rascunho) in resultado["resposta_final"]
+        ):
+            resultado["confirmacao"] = "sim"
 
     return resultado

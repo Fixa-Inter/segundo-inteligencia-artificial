@@ -72,6 +72,7 @@ def test_executar_grafo_inicializa_estado_e_contexto(
     )
 
     assert resultado["resposta_final"] == "Resposta de teste"
+    assert resultado["confirmacao"] == "nao"
 
     argumentos, nomeados = ainvoke.await_args
 

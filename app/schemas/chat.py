@@ -44,3 +44,4 @@ class ConversaSaida(BaseModel):
 
     resposta: str
     emocao: Emocao = Emocao.NEUTRO
+    confirmacao: Literal["sim", "nao"] = "nao"

@@ -7,7 +7,7 @@ from app.tools.ordensServico.utilitarios import montar_tabelas
 
 @tool
 async def listar_todas_ordens_servico(runtime: ToolRuntime) -> dict:
-    """Lista OS do endereco do gestor nos ultimos tres meses.
+    """Lista ate tres OS recentes do endereco do gestor nos ultimos tres meses.
 
 Exclusiva para gestores. O SELECT restringe os registros ao CNPJ do
 endereco associado ao usuario autenticado. Apresente tabela e periodo."""

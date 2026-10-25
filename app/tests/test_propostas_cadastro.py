@@ -140,8 +140,7 @@ def test_atualizar_rascunho_preserva_aceite_campos_inalterados(monkeypatch):
 
 def test_resumo_conferido_juiz_antes_de_ser_marcado_apresentado(monkeypatch):
     from langchain_core.messages import HumanMessage
-    from app.agents import registro
-    from app.agents.juiz import AvaliacaoJuiz, julgar_resposta
+    from app.agents.juiz import julgar_resposta
     from app.graph.nos import validar_saida
 
     resumo = metadados_proposta(proposta())
@@ -150,10 +149,16 @@ def test_resumo_conferido_juiz_antes_de_ser_marcado_apresentado(monkeypatch):
                   "ferramenta": "salvar_rascunho_solicitacao", "status_execucao": "success",
                   "resultado": {"status": "RASCUNHO_SALVO", "proposta": resumo},
               })]}
-    julgador = Mock(return_value=AvaliacaoJuiz(veredito="aprovado", feedback="Correto"))
-    monkeypatch.setattr(registro, "juiz", SimpleNamespace(invoke=julgador))
-    estado.update(julgar_resposta(estado))
-    assert resumo["resumo_confirmacao"] in julgador.call_args.args[0][1].content
+    julgador = AsyncMock(return_value={"model": "jev-teste", "answers": {
+        "veredito": {"type": "choice", "choice": "aprovado", "confidence": 0.95},
+        "motivo": {"type": "choice", "choice": "nenhum", "confidence": 0.95},
+        "afirmacao_sem_suporte": {"type": "noul", "noul": 0.05},
+        "correcao_textual": {"type": "noul", "noul": 0.05},
+        "risco_grave": {"type": "noul", "noul": 0.05},
+    }})
+    monkeypatch.setattr(import_module("app.agents.juiz"), "consultar_jev", julgador)
+    estado.update(asyncio.run(julgar_resposta(estado)))
+    assert resumo["resumo_confirmacao"] in julgador.await_args.args[0]["resposta_candidata"]
     assert validar_saida(estado)["propostas_apresentadas"] == [resumo]
     estado["veredito"] = "bloqueado"
     assert not validar_saida(estado).get("propostas_apresentadas")
@@ -181,8 +186,8 @@ def test_aceite_foto_nao_confirma_dados_e_categoria_ambigua_esclarecida():
     assert avaliar_confirmacao(proposta("ocorrencia"), contexto("Confirmo a categoria"))["status"] == "CONFIRMACAO_NECESSARIA"
 
 
-@pytest.mark.parametrize("falhar_resposta", [False, True])
-def test_apresentacao_registrada_somente_depois_resposta_persistida(monkeypatch, falhar_resposta):
+@pytest.mark.parametrize("falhar_resposta,marcada", [(False, True), (False, False), (True, True)])
+def test_apresentacao_registrada_somente_depois_resposta_persistida(monkeypatch, falhar_resposta, marcada):
     from app.graph import executor
     eventos = []
     metadados = metadados_proposta(proposta())
@@ -205,7 +210,7 @@ def test_apresentacao_registrada_somente_depois_resposta_persistida(monkeypatch,
         assert eventos[-2] == "assistant"
         assert kwargs["rascunho_id"] == metadados["proposta_id"]
         assert kwargs["versao"] == metadados["versao"]
-        return True
+        return marcada
 
     monkeypatch.setattr(executor, "salvar_mensagem", salvar)
     atualizar = AsyncMock(side_effect=marcar)
@@ -216,8 +221,40 @@ def test_apresentacao_registrada_somente_depois_resposta_persistida(monkeypatch,
             asyncio.run(chamada)
         atualizar.assert_not_awaited()
     else:
-        asyncio.run(chamada)
+        resultado = asyncio.run(chamada)
         assert eventos == ["human", "assistant", "apresentacao"]
+        assert resultado["confirmacao"] == ("sim" if marcada else "nao")
+
+
+@pytest.mark.parametrize("pausado,mostrar_resumo,esperado", [
+    (False, True, "sim"), (True, True, "nao"), (False, False, "nao"),
+])
+def test_reapresentacao_da_proposta_controla_botao_de_confirmacao(
+    monkeypatch, pausado, mostrar_resumo, esperado,
+):
+    from app.graph import executor
+
+    rascunho = {**proposta("ocorrencia"), "pausado": pausado}
+    texto = resumo_confirmacao(rascunho) if mostrar_resumo else "A ocorrência permanece pendente."
+    monkeypatch.setattr(executor, "grafo", SimpleNamespace(
+        get_state=lambda _: SimpleNamespace(values={}),
+        ainvoke=AsyncMock(return_value={
+            "intencao": "ocorrencia", "ocorrencia_pendente": rascunho,
+            "resposta_final": texto, "propostas_apresentadas": [],
+        }),
+    ))
+    monkeypatch.setattr(executor, "obter_documento_sessao_id", AsyncMock(return_value="documento"))
+    monkeypatch.setattr(executor, "recuperar_mensagens", AsyncMock(return_value=[]))
+    monkeypatch.setattr(executor, "obter_rascunho_solicitacao", AsyncMock(return_value=None))
+    monkeypatch.setattr(executor, "obter_acao", AsyncMock(return_value=None))
+    monkeypatch.setattr(executor, "salvar_mensagem", AsyncMock())
+    monkeypatch.setattr(executor, "atualizar_rascunho_solicitacao", AsyncMock())
+
+    resultado = asyncio.run(executor.executar_grafo(
+        "Voltei à ocorrência do notebook", SimpleNamespace(usuario_id=7, tipo_acesso="tecnico"),
+        "sessao",
+    ))
+    assert resultado["confirmacao"] == esperado
 
 
 def test_referencia_temporal_renovada_entre_invocacoes(monkeypatch):

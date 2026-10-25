@@ -101,7 +101,8 @@ async def buscar_problemas_por_local(
         return await _consultar(usuario, "problema", f"""
             SELECT p.id AS entidade_id, local.id AS local_id, local.nome AS local,
                    CASE p.status WHEN 0 THEN 'Pendente'
-                        WHEN 1 THEN 'Reprovado' WHEN 2 THEN 'Aprovado' END AS situacao
+                        WHEN 1 THEN 'Reprovado' WHEN 2 THEN 'Aprovado'
+                        WHEN 3 THEN 'Concluído' END AS situacao
             FROM problema AS p
             JOIN local_unidade AS local ON local.id = p.local_unidade_id
             WHERE local.unidade_id = :unidade_id AND local.esta_ativo IS TRUE
@@ -124,7 +125,8 @@ async def consultar_situacao_problema(
         return await _consultar(usuario, "problema", f"""
             SELECT p.id AS entidade_id,
                    CASE p.status WHEN 0 THEN 'Pendente'
-                        WHEN 1 THEN 'Reprovado' WHEN 2 THEN 'Aprovado' END AS situacao,
+                        WHEN 1 THEN 'Reprovado' WHEN 2 THEN 'Aprovado'
+                        WHEN 3 THEN 'Concluído' END AS situacao,
                    p.motivo_recusa
             FROM problema AS p
             JOIN local_unidade AS local ON local.id = p.local_unidade_id

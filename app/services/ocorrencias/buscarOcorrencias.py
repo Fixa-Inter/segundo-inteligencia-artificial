@@ -110,7 +110,8 @@ async def consultar_minhas_ocorrencias(usuario: UsuarioContexto) -> dict:
           AND unidade_registro.cnpj = unidade_autenticada.cnpj
           AND ocorrencia.data_criacao >= :inicio
           AND ocorrencia.data_criacao < :fim_exclusivo
-        ORDER BY ocorrencia.data_criacao DESC
+        ORDER BY ocorrencia.data_criacao DESC, ocorrencia.id DESC
+        LIMIT 3
     """
     try:
         linhas = await executar_consulta(
@@ -148,6 +149,7 @@ async def consultar_minhas_ocorrencias(usuario: UsuarioContexto) -> dict:
     return {
         "status": "SUCESSO" if ocorrencias else "SEM_RESULTADO",
         "ocorrencias": ocorrencias,
+        "orientacao": "Para consultar suas ocorrências, acesse a área Minhas ocorrências no app.",
         "mensagem": (
             "Ocorrencias consultadas com sucesso."
             if ocorrencias

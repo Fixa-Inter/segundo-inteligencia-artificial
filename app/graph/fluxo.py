@@ -7,7 +7,7 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from .estado import EstadoGrafo
 from .contexto import ContextoGrafo
-from app.agents.juiz import revisar_resposta
+from app.agents.juiz import julgar_resposta, revisar_resposta
 from app.agents import classificar_emocao
 from .nos import (
     validar_entrada,
@@ -18,7 +18,6 @@ from .nos import (
     executar_indicadores,
     executar_visualizacao,
     executar_retorno_usuario,
-    julgar_resposta,
     validar_saida,
     tratar_erro,
 )

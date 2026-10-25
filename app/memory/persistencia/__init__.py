@@ -21,6 +21,8 @@ from .rascunho_solicitacao import (
     salvar_rascunho_solicitacao,
     atualizar_rascunho_solicitacao,
     adicionar_imagens_sessao,
+    obter_quantidade_anexos_pendentes,
+    registrar_coleta_parcial,
 )
 
 __all__ = [
@@ -36,4 +38,6 @@ __all__ = [
     "salvar_rascunho_solicitacao",
     "atualizar_rascunho_solicitacao",
     "adicionar_imagens_sessao",
+    "obter_quantidade_anexos_pendentes",
+    "registrar_coleta_parcial",
 ]

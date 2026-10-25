@@ -44,7 +44,7 @@ async def buscar_ordem_servico(
     data_prevista_inicio: date | None = None,
     data_prevista_fim: date | None = None,
 ) -> dict:
-    """Busca ordens com filtros citados, dentro do escopo autenticado."""
+    """Busca ate tres ordens recentes com filtros citados, no escopo autenticado."""
     contexto = runtime.context
     if not isinstance(contexto, dict) or not isinstance(
         contexto.get("usuario"), UsuarioContexto

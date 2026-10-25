@@ -19,6 +19,7 @@ def _campo_rascunho(tipo: TipoRascunho) -> str:
 
 
 STATUS_ATIVOS = {
+    "coletando_dados",
     "aguardando_confirmacao",
     "aguardando_imagem",
     "erro_api",
@@ -37,6 +38,90 @@ def _urls_validas(imagens: list[str]) -> list[str]:
         for imagem in imagens
         if isinstance(imagem, str) and imagem.strip()
     ))
+
+
+async def obter_quantidade_anexos_pendentes(sessao_id: str, usuario_id: int) -> int:
+    documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
+    if not documento_id:
+        return 0
+    async with abrir_cliente_mongo() as cliente:
+        colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
+        documento = await colecao.find_one(
+            {"_id": documento_id, "user_id": usuario_id}, {"anexos_pendentes": 1},
+        )
+    return len(_urls_validas((documento or {}).get("anexos_pendentes", [])))
+
+
+async def registrar_coleta_parcial(
+    sessao_id: str, usuario_id: int, *, tipo: TipoRascunho,
+    turno_id: str, relato: str,
+) -> dict[str, Any]:
+    """Guarda o relato do usuário sem exigir IDs ou propor um cadastro completo."""
+    if not turno_id or not isinstance(relato, str):
+        raise ValueError("O turno e o texto da coleta são obrigatórios.")
+    campo = _campo_rascunho(tipo)
+    outro_campo = _campo_rascunho("ocorrencia" if tipo == "solicitacao" else "solicitacao")
+    documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
+    if not documento_id:
+        raise ValueError("Sessão não encontrada para salvar a coleta.")
+
+    async with abrir_cliente_mongo() as cliente:
+        colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
+        documento = await colecao.find_one(
+            {"_id": documento_id, "user_id": usuario_id},
+            {campo: 1, outro_campo: 1, "anexos_pendentes": 1},
+        )
+        if not documento:
+            raise ValueError("Sessão não encontrada para salvar a coleta.")
+        atual = documento.get(campo) or {}
+        status = atual.get("status_fluxo")
+        if status in {"enviando", "resultado_indeterminado"}:
+            raise ValueError("O envio anterior precisa ser reconciliado antes de abrir outro rascunho.")
+        relato_turno = {"turno_id": turno_id, "texto": relato.strip()} if relato.strip() else None
+        if status in STATUS_ATIVOS and not atual.get("pausado"):
+            if status != "coletando_dados" or relato_turno is None or any(
+                item.get("turno_id") == turno_id for item in atual.get("relatos", [])
+            ):
+                return atual
+            novo = {**atual, "relatos": [*atual.get("relatos", []), relato_turno],
+                    "atualizada_em": _agora()}
+            resultado = await colecao.update_one(
+                {"_id": documento_id, "user_id": usuario_id, campo: documento.get(campo)},
+                {"$set": {campo: novo, "atualizada_em": novo["atualizada_em"]}},
+            )
+            if resultado.matched_count != 1:
+                raise ValueError("A coleta mudou. Releia os dados antes de atualizar.")
+            return novo
+
+        outro = documento.get(outro_campo) or {}
+        # Anexos legados sem tipo só podem ser migrados quando não há outra proposta ativa.
+        anexos_legados = _urls_validas(documento.get("anexos_pendentes", [])) if not (
+            outro.get("status_fluxo") in STATUS_ATIVOS and not outro.get("pausado")
+        ) else []
+        agora = _agora()
+        rascunho = {
+            "id": str(uuid.uuid4()), "versao": 1, "turno_id": turno_id, "tipo": tipo,
+            "status_fluxo": "coletando_dados", "confirmado": False,
+            "dados_confirmados": {}, "pausado": False, "rotulos": {}, "dados": {},
+            "relatos": [relato_turno] if relato_turno else [], "imagens": anexos_legados,
+            "problema_id_api": None, "status_backend": None,
+            "criada_em": agora, "atualizada_em": agora,
+        }
+        atualizacao: dict[str, Any] = {"$set": {campo: rascunho, "atualizada_em": agora}}
+        if anexos_legados:
+            atualizacao["$unset"] = {"anexos_pendentes": ""}
+        if status == "cadastrada":
+            arquivo = "solicitacoes" if tipo == "solicitacao" else "ocorrencias"
+            atualizacao["$push"] = {arquivo: atual}
+        elif atual:
+            atualizacao["$push"] = {"rascunhos_arquivados": atual}
+        resultado = await colecao.update_one(
+            {"_id": documento_id, "user_id": usuario_id, campo: documento.get(campo)},
+            atualizacao,
+        )
+        if resultado.matched_count != 1:
+            raise ValueError("A coleta mudou. Releia os dados antes de atualizar.")
+        return rascunho
 
 
 async def adicionar_imagens_sessao(
@@ -93,6 +178,7 @@ async def salvar_rascunho_solicitacao(
     if not turno_id:
         raise ValueError("Informe o turno que produziu a proposta.")
     campo = _campo_rascunho(tipo)
+    outro_campo = _campo_rascunho("ocorrencia" if tipo == "solicitacao" else "solicitacao")
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if not documento_id:
         raise ValueError("Sessão não encontrada para salvar o rascunho.")
@@ -101,7 +187,7 @@ async def salvar_rascunho_solicitacao(
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
             {"_id": documento_id, "user_id": usuario_id},
-            {campo: 1, "anexos_pendentes": 1},
+            {campo: 1, outro_campo: 1, "anexos_pendentes": 1},
         )
         if not documento:
             raise ValueError("Sessão não encontrada para salvar o rascunho.")
@@ -122,10 +208,11 @@ async def salvar_rascunho_solicitacao(
         imagens = _urls_validas(
             atual.get("imagens", []) if mesmo_rascunho else []
         )
-        imagens.extend(
-            url for url in _urls_validas(documento.get("anexos_pendentes", []))
-            if url not in imagens
-        )
+        outro = documento.get(outro_campo) or {}
+        anexos_legados = _urls_validas(documento.get("anexos_pendentes", [])) if not (
+            outro.get("status_fluxo") in STATUS_ATIVOS and not outro.get("pausado")
+        ) else []
+        imagens.extend(url for url in anexos_legados if url not in imagens)
 
         agora = _agora()
         rascunho = {
@@ -139,6 +226,7 @@ async def salvar_rascunho_solicitacao(
             "pausado": False,
             "rotulos": rotulos or {},
             "dados": dados,
+            "relatos": atual.get("relatos", []) if mesmo_rascunho else [],
             "imagens": imagens,
             "problema_id_api": None,
             "status_backend": None,
@@ -151,8 +239,9 @@ async def salvar_rascunho_solicitacao(
                 campo: rascunho,
                 "atualizada_em": agora,
             },
-            "$unset": {"anexos_pendentes": ""},
         }
+        if anexos_legados:
+            atualizacao["$unset"] = {"anexos_pendentes": ""}
         if status_atual == "cadastrada":
             arquivo = "solicitacoes" if tipo == "solicitacao" else "ocorrencias"
             atualizacao["$push"] = {arquivo: atual}

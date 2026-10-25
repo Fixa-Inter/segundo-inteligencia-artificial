@@ -16,10 +16,10 @@ from app.services.ajuda_geral import (
 Colecao = Literal[
     "problema", "ocorrencia", "ordem_servico", "tarefa",
     "observacao_conclusao", "evento", "equipamento", "modelo_equipamento",
-    "categoria_equipamento", "marca_equipamento", "local_endereco",
+    "categoria_equipamento", "marca_equipamento", "local_unidade",
 ]
 ColecaoSolicitante = Literal[
-    "problema", "local_endereco", "modelo_equipamento",
+    "problema", "local_unidade", "modelo_equipamento",
     "categoria_equipamento", "marca_equipamento",
 ]
 

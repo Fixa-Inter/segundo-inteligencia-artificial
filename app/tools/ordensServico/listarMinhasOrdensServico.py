@@ -9,7 +9,7 @@ from app.tools.ordensServico.utilitarios import montar_tabelas
 
 @tool
 async def listar_minhas_ordens_servico(runtime: ToolRuntime) -> dict:
-    """Lista OS do tecnico ou gestor autenticado nos ultimos tres meses.
+    """Lista ate tres OS recentes do tecnico ou gestor nos ultimos tres meses.
 
 Nao recebe argumentos da IA. O SELECT filtra usuario, CNPJ e periodo.
 Apresente a tabela Markdown e o periodo retornado sem inventar ordens."""
