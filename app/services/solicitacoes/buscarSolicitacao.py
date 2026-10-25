@@ -1,8 +1,10 @@
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
+from app.core import data_atual
 from app.core.clients.postgres import executar_consulta
 from app.schemas import UsuarioContexto
+from app.services.ordensServico.buscarOrdensServico import inicio_periodo
 
 
 registrador = logging.getLogger(__name__)
@@ -39,12 +41,20 @@ def _data_iso(valor) -> str:
 
 
 async def listar_solicitacoes_pendentes(usuario: UsuarioContexto) -> dict:
-    """Lista problemas pendentes no endereco do gestor autenticado."""
+    """Lista ate cinco pendencias recentes da unidade nos ultimos tres meses."""
+    hoje = data_atual()
     try:
         linhas = await executar_consulta(
             usuario.tipo_acesso,
-            _SQL_BASE + " AND p.status = 0 ORDER BY p.data_criacao DESC",
-            {"usuario_id": usuario.usuario_id},
+            _SQL_BASE
+            + " AND p.status = 0"
+              " AND p.data_criacao >= :inicio AND p.data_criacao < :fim_exclusivo"
+              " ORDER BY p.data_criacao DESC, p.id DESC LIMIT 5",
+            {
+                "usuario_id": usuario.usuario_id,
+                "inicio": inicio_periodo(hoje),
+                "fim_exclusivo": hoje + timedelta(days=1),
+            },
         )
         solicitacoes = [
             {
@@ -65,22 +75,30 @@ async def listar_solicitacoes_pendentes(usuario: UsuarioContexto) -> dict:
     return {
         "status": "SUCESSO" if solicitacoes else "SEM_RESULTADO",
         "solicitacoes": solicitacoes,
+        "orientacao": "Para consultar as pendências, acesse a tela de Solicitações abertas no app.",
         "mensagem": (
             "Solicitacoes pendentes consultadas com sucesso."
             if solicitacoes
-            else "Nenhuma solicitacao pendente encontrada no endereco do gestor."
+            else "Nenhuma solicitacao pendente encontrada no endereco do gestor nos ultimos tres meses."
         ),
     }
 
 
 async def listar_minhas_solicitacoes(usuario: UsuarioContexto) -> dict:
-    """Lista problemas do usuario autenticado dentro do endereco dele."""
+    """Lista as tres solicitacoes mais recentes do usuario nos ultimos tres meses."""
+    hoje = data_atual()
     try:
         linhas = await executar_consulta(
             usuario.tipo_acesso,
             _SQL_BASE
-            + " AND p.usuario_id = :usuario_id ORDER BY p.data_criacao DESC",
-            {"usuario_id": usuario.usuario_id},
+            + " AND p.usuario_id = :usuario_id"
+              " AND p.data_criacao >= :inicio AND p.data_criacao < :fim_exclusivo"
+              " ORDER BY p.data_criacao DESC, p.id DESC LIMIT 3",
+            {
+                "usuario_id": usuario.usuario_id,
+                "inicio": inicio_periodo(hoje),
+                "fim_exclusivo": hoje + timedelta(days=1),
+            },
         )
         solicitacoes = [
             {
@@ -100,9 +118,10 @@ async def listar_minhas_solicitacoes(usuario: UsuarioContexto) -> dict:
     return {
         "status": "SUCESSO" if solicitacoes else "SEM_RESULTADO",
         "solicitacoes": solicitacoes,
+        "orientacao": "Para consultar suas solicitações, acesse a área Minhas solicitações no app.",
         "mensagem": (
             "Solicitacoes consultadas com sucesso."
             if solicitacoes
-            else "Nenhuma solicitacao encontrada para o usuario neste endereco."
+            else "Nenhuma solicitacao encontrada para o usuario neste endereco nos ultimos tres meses."
         ),
     }

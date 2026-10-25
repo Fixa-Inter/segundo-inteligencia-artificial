@@ -260,7 +260,8 @@ async def buscar_ordens_servico(
         JOIN unidade AS unidade_autenticada
             ON unidade_autenticada.id = usuario_autenticado.unidade_id
         WHERE {' AND '.join(condicoes)}
-        ORDER BY os.data_criacao DESC
+        ORDER BY os.data_criacao DESC, os.id DESC
+        LIMIT 3
     """
 
     try:
@@ -303,6 +304,7 @@ async def buscar_ordens_servico(
         "status": "SUCESSO" if ordens else "SEM_RESULTADO",
         "ordens_servico": ordens,
         "filtros_aplicados": filtros_legiveis,
+        "orientacao": "Para consultar ordens de serviço, acesse a área de ordens de serviço no app.",
         "mensagem": (
             "Ordens de servico consultadas com sucesso."
             if ordens
@@ -362,7 +364,8 @@ async def _consultar_ordens_servico(
           AND os.data_criacao >= :inicio
           AND os.data_criacao < :fim_exclusivo
           {filtro_usuario}
-        ORDER BY os.data_criacao DESC
+        ORDER BY os.data_criacao DESC, os.id DESC
+        LIMIT 3
     """
     parametros = {
         "usuario_id": usuario.usuario_id,
@@ -408,6 +411,7 @@ async def _consultar_ordens_servico(
             "inicio": inicio.strftime("%d-%m-%Y"),
             "fim": hoje.strftime("%d-%m-%Y"),
         },
+        "orientacao": "Para consultar ordens de serviço, acesse a área de ordens de serviço no app.",
         "mensagem": (
             "Ordens de servico consultadas com sucesso."
             if ordens

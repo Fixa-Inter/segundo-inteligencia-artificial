@@ -3,11 +3,9 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from langchain_core.messages import HumanMessage, SystemMessage
-from pydantic import BaseModel
-
 from app.core import Emocao
 from app.guardrails import anonimizar_entrada
+from app.services.gerais.jev import consultar_jev, ler_choice
 
 if TYPE_CHECKING:
     from app.graph.estado import EstadoGrafo
@@ -49,8 +47,20 @@ Não reescreva a resposta e não execute ações. Retorne somente a emoção est
 """
 
 
-class ClassificacaoEmocao(BaseModel):
-    emocao: Emocao
+CRITERIOS_EMOCAO = {
+    "NEUTRO": "Resposta informativa comum, calma e receptiva.",
+    "CURIOSO": "Pede informações ou detalhes que faltam.",
+    "PENSATIVO": "Comunica que está avaliando possibilidades ou analisando dados.",
+    "CONFIRMACAO": "Apresenta uma ação ou dados e aguarda o aceite do usuário.",
+    "SUCESSO": "Comunica ação concluída ou informação encontrada.",
+    "EMPATICO": "Acolhe a dificuldade, frustração ou problema relatado pelo usuário.",
+    "ALERTA": "Destaca risco, inconsistência, resultado indeterminado ou ressalva importante.",
+    "ERRO": "Comunica falha de uma operação.",
+    "BLOQUEADO": "Explica falta de permissão ou ação que não pode executar.",
+    "CONSELHEIRO": "Apresenta sugestão ou recomendação.",
+    "AGUARDANDO": "Informa que uma operação ainda está em processamento.",
+    "CELEBRACAO": "Comemora um marco comprovado, como todas as tarefas concluídas.",
+}
 
 
 def resumir_operacoes(estado: "EstadoGrafo") -> list[dict[str, str]]:
@@ -105,24 +115,26 @@ async def classificar_emocao(estado: "EstadoGrafo") -> dict:
 
     operacoes = resumir_operacoes(estado)
     try:
-        from app.agents.modelos import llm_rapido
-
         resposta, _ = anonimizar_entrada(estado["resposta_final"])
-        entrada = json.dumps({
-            "resposta": resposta,
-            "mensagem_usuario": estado.get("mensagem_anonimizada", ""),
-            "operacoes": operacoes,
-            "propostas_apresentadas": bool(estado.get("propostas_apresentadas")),
-        }, ensure_ascii=False)
-        classificador = llm_rapido.with_structured_output(ClassificacaoEmocao)
-        classificacao = await asyncio.wait_for(
-            classificador.ainvoke([
-                SystemMessage(content=PROMPT_CLASSIFICACAO),
-                HumanMessage(content=entrada),
-            ]),
+        dados = await asyncio.wait_for(
+            consultar_jev(
+                {
+                    "resposta": resposta,
+                    "mensagem_usuario": estado.get("mensagem_anonimizada", ""),
+                    "operacoes": operacoes,
+                    "propostas_apresentadas": bool(estado.get("propostas_apresentadas")),
+                },
+                {"emocao": {
+                    "type": "choice",
+                    "instructions": PROMPT_CLASSIFICACAO,
+                    "criteria": CRITERIOS_EMOCAO,
+                }},
+                operacao="emocao",
+            ),
             timeout=TEMPO_LIMITE_CLASSIFICACAO,
         )
-        return {"emocao": ClassificacaoEmocao.model_validate(classificacao).emocao.value}
+        emocao, _ = ler_choice(dados["answers"], "emocao", set(CRITERIOS_EMOCAO))
+        return {"emocao": Emocao(emocao).value}
     except Exception:
         registrador.warning(
             "Classificação de emoção indisponível; utilizando emoção alternativa."

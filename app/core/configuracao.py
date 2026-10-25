@@ -12,7 +12,6 @@ CAMINHO_PDF_FAQ_GESTOR = DIRETORIO_DADOS / "Questionário_Modelos_classicos.pdf"
 load_dotenv(DIRETORIO_BASE / ".env")
 
 GEMINI_CHAVE_API = os.getenv("GEMINI_API_KEY")
-GROQ_CHAVE_API   = os.getenv("GROQ_API_KEY")
 OPENAI_CHAVE_API = os.getenv("OPENAI_API_KEY")
 FIXA_URL_BASE_API = os.getenv("FIXA_API_BASE_URL")
 
@@ -26,11 +25,11 @@ BANCO_URL_GESTOR = os.getenv("DATABASE_URL_GESTOR")
 QDRANT_CHAVE_API = os.getenv("QDRANT_API_KEY")
 QDRANT_URL = os.getenv("QDRANT_URL")
 QDRANT_COLECAO_CATEGORIA = "categoria_equipamento"
-QDRANT_COLECAO_LOCAL = "local_endereco"
+QDRANT_COLECAO_LOCAL = "local_unidade"
 QDRANT_COLECOES_OPERACIONAIS = frozenset({
     "problema", "ocorrencia", "ordem_servico", "tarefa",
     "observacao_conclusao", "evento", "equipamento", "modelo_equipamento",
-    "categoria_equipamento", "marca_equipamento", "local_endereco",
+    "categoria_equipamento", "marca_equipamento", QDRANT_COLECAO_LOCAL,
 })
 QDRANT_COLECAO_FAQ = "faq_fixa"
 QDRANT_COLECAO_HISTORICO = "resumo_historico"
@@ -83,11 +82,17 @@ OBSERVABILIDADE_VALOR_RESOLUCAO_BRL = os.getenv(
 OBSERVABILIDADE_REAIS_DOLAR = float(os.getenv("OBSERVABILITY_BRL_PER_USD") or "0")
 # ================== FIM DAS CONFIGURAÇÕES DE OBSERVABILIDADE ==================
 
+# =================== CONFIGURAÇÕES DO JUIZ ====================
+TYPESAFE_API_KEY = os.getenv("TYPESAFE_API_KEY")
+JEV_URL = "https://api.typesafe.ai/v1/systemone"
+JEV_MODELO = os.getenv("JEV_MODEL", "jev-latest")
+LIMIAR = 0.20
+# ================= FIM DAS CONFIGURAÇÕES DO JUIZ ==================
 
 OBRIGATORIAS = {
     "GEMINI_API_KEY": GEMINI_CHAVE_API,
-    "GROQ_API_KEY":   GROQ_CHAVE_API,
     "OPENAI_API_KEY": OPENAI_CHAVE_API,
+    "TYPESAFE_API_KEY": TYPESAFE_API_KEY,
     "DATABASE_URL_SOLICITANTE": BANCO_URL_SOLICITANTE,
     "DATABASE_URL_TECNICO": BANCO_URL_TECNICO,
     "DATABASE_URL_GESTOR": BANCO_URL_GESTOR,

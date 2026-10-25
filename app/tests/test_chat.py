@@ -63,4 +63,6 @@ def test_chat(monkeypatch) -> None:
         "thread_id": "conversa-1",
         "intencao": "faq",
         "resposta": "Resposta de teste.",
+        "emocao": "NEUTRO",
+        "confirmacao": "nao",
     }

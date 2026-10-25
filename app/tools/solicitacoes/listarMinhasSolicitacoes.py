@@ -12,7 +12,7 @@ registrador = logging.getLogger(__name__)
 
 @tool
 async def listar_minhas_solicitacoes(runtime: ToolRuntime) -> dict:
-    """Lista solicitacoes do usuario autenticado.
+    """Lista ate tres solicitacoes do usuario nos ultimos tres meses.
 
 Nao recebe filtros da IA. O SELECT usa o ID autenticado e restringe os
 registros ao CNPJ do endereco do usuario."""

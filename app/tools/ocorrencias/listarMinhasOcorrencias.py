@@ -7,7 +7,7 @@ from app.tools.ocorrencias.utilitarios import montar_tabela
 
 @tool
 async def listar_minhas_ocorrencias(runtime: ToolRuntime) -> dict:
-    """Lista ocorrencias do tecnico ou gestor autenticado nos ultimos tres meses.
+    """Lista ate tres ocorrencias recentes do tecnico ou gestor nos ultimos tres meses.
 
 Nao recebe argumentos da IA. O SELECT filtra usuario, CNPJ e periodo.
 Apresente integralmente a tabela retornada."""

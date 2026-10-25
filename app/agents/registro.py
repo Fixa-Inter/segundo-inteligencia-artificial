@@ -5,8 +5,7 @@ from app.agents.indicadores import criar_agente_indicadores
 from app.agents.visualizacao import criar_agente_visualizacao
 from app.agents.retorno_usuario import criar_agente_retorno_usuario
 from app.tools.feedback import criar_nome_feedback
-from app.agents.juiz import criar_agente_juiz
-from app.agents.modelos import llm_especialista, llm_luna, llm_groq
+from app.agents.modelos import llm_especialista, llm_luna
 from app.agents.prompts.construtor import (
     construir_ajuda_geral_gestor,
     construir_ajuda_geral_solicitante,
@@ -47,8 +46,6 @@ feedback = criar_agente_retorno_usuario(
     construir_retorno_usuario(),
     ferramentas=[criar_nome_feedback],
 )
-juiz = criar_agente_juiz(llm_luna, modelo_alternativo=llm_groq)
-
 AGENTES_POR_PERFIL = {
     "ajuda_geral": {
         "solicitante": ajuda_geral_solicitante,

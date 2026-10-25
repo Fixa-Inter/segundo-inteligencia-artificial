@@ -10,7 +10,7 @@ import pytest
 from langchain_core.messages import HumanMessage
 from pydantic import ValidationError
 
-from app.agents.juiz import AvaliacaoJuiz, RespostaRevisada, julgar_resposta, revisar_resposta
+from app.agents.juiz import RespostaRevisada, julgar_resposta, revisar_resposta
 from app.graph.transicoes import decidir_apos_julgamento
 from app.services.solicitacoes import criarSolicitacao as servico
 from app.tools.toolsRequest import CriarSolicitacaoEntrada
@@ -71,17 +71,23 @@ def test_recusa_preserva_detalhe_sem_repetir_post(monkeypatch):
 
 
 def test_juiz_recebe_relato_anterior_e_confirmacao(monkeypatch):
-    juiz = Mock()
-    juiz.invoke.return_value = AvaliacaoJuiz(veredito="aprovado", feedback="OK")
-    monkeypatch.setitem(sys.modules, "app.agents.registro", SimpleNamespace(juiz=juiz))
+    from importlib import import_module
+    juiz = AsyncMock(return_value={"model": "jev-teste", "answers": {
+        "veredito": {"type": "choice", "choice": "aprovado", "confidence": 0.95},
+        "motivo": {"type": "choice", "choice": "nenhum", "confidence": 0.95},
+        "afirmacao_sem_suporte": {"type": "noul", "noul": 0.05},
+        "correcao_textual": {"type": "noul", "noul": 0.05},
+        "risco_grave": {"type": "noul", "noul": 0.05},
+    }})
+    monkeypatch.setattr(import_module("app.agents.juiz"), "consultar_jev", juiz)
     estado = {"perfil": "solicitante", "messages": [
         HumanMessage(content="Um notebook está pegando fogo"),
         HumanMessage(content="Pode registrar a solicitação"),
     ], "resposta_especialista": "A API recusou o cadastro", "evidencias": []}
-    assert julgar_resposta(estado)["veredito"] == "aprovado"
-    entrada = juiz.invoke.call_args.args[0][-1].content
-    assert "notebook está pegando fogo" in entrada
-    assert "Pode registrar a solicitação" in entrada
+    assert asyncio.run(julgar_resposta(estado))["veredito"] == "aprovado"
+    entrada = juiz.await_args.args[0]["historico"]
+    assert "notebook está pegando fogo" in str(entrada)
+    assert "Pode registrar a solicitação" in str(entrada)
 
 
 def test_revisao_somente_texto_limitada_a_uma_tentativa(monkeypatch):

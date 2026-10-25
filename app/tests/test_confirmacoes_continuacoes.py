@@ -46,7 +46,7 @@ def contexto():
 
 def test_sim_continua_proposta_ativa_sem_chamar_modelo(monkeypatch):
     classificar = Mock()
-    monkeypatch.setattr(nos, "roteador_estruturado", SimpleNamespace(invoke=classificar))
+    monkeypatch.setattr(nos, "rotear_orquestrador", classificar)
     resultado = asyncio.run(nos.supervisionar({
         "messages": [HumanMessage(content="Sim")], "solicitacao_pendente": proposta(),
     }, SimpleNamespace(context=contexto())))
@@ -57,8 +57,11 @@ def test_sim_continua_proposta_ativa_sem_chamar_modelo(monkeypatch):
 def test_novo_assunto_pausa_rascunho_e_nao_prende_roteamento(monkeypatch):
     salvar = AsyncMock(return_value=True)
     monkeypatch.setattr(continuacoes, "atualizar_rascunho_solicitacao", salvar)
-    classificar = Mock(return_value=SimpleNamespace(intencao="faq", justificativa="Novo assunto", continua_pendente=False))
-    monkeypatch.setattr(nos, "roteador_estruturado", SimpleNamespace(invoke=classificar))
+    classificar = AsyncMock(return_value=SimpleNamespace(
+        intencao="faq", justificativa="Novo assunto", continua_pendente=False,
+        precisa_esclarecimento=False,
+    ))
+    monkeypatch.setattr(nos, "rotear_orquestrador", classificar)
     resultado = asyncio.run(nos.supervisionar({
         "messages": [HumanMessage(content="O ventilador está quebrado"),
                      AIMessage(content="Em qual sala?"), HumanMessage(content="Como altero minha senha?")],
@@ -67,18 +70,21 @@ def test_novo_assunto_pausa_rascunho_e_nao_prende_roteamento(monkeypatch):
     assert resultado["intencao"] == "faq"
     assert resultado["solicitacao_pendente"]["pausado"] is True
     assert salvar.await_args.args[2] == {"pausado": True}
-    assert "ventilador" in classificar.call_args.args[0][1].content
+    assert "ventilador" in classificar.await_args.args[0]["messages"][0].content.lower()
 
 
 def test_detalhe_continua_coleta_sem_rascunho(monkeypatch):
-    classificar = Mock(return_value=SimpleNamespace(intencao="solicitacao", justificativa="Resposta ao local", continua_pendente=True))
-    monkeypatch.setattr(nos, "roteador_estruturado", SimpleNamespace(invoke=classificar))
+    classificar = AsyncMock(return_value=SimpleNamespace(
+        intencao="solicitacao", justificativa="Resposta ao local",
+        continua_pendente=True, precisa_esclarecimento=False,
+    ))
+    monkeypatch.setattr(nos, "rotear_orquestrador", classificar)
     resultado = asyncio.run(nos.supervisionar({"messages": [
         HumanMessage(content="Preciso consertar um ventilador"), AIMessage(content="Em qual sala?"),
         HumanMessage(content="Na sala 2"),
     ]}, SimpleNamespace(context=contexto())))
     assert resultado["intencao"] == "solicitacao"
-    assert "ventilador" in classificar.call_args.args[0][1].content
+    assert "ventilador" in classificar.await_args.args[0]["messages"][0].content.lower()
 
 
 def test_sim_nao_retoma_rascunho_pausado():

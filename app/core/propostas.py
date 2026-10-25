@@ -58,6 +58,8 @@ def avaliar_confirmacao(rascunho: dict, contexto: dict) -> dict | None:
         return {"status": "CONFIRMACAO_NECESSARIA", "mensagem": mensagem,
                 "campos_pendentes": campos_pendentes(rascunho)}
 
+    if rascunho.get("status_fluxo") == "coletando_dados":
+        return solicitar("Complete e apresente a proposta antes de confirmar o cadastro.")
     if rascunho.get("pausado"):
         return solicitar("A proposta está pausada. Retome a conversa antes de cadastrar.")
     if contexto.get("intencao_atual") and contexto["intencao_atual"] != rascunho.get("tipo"):

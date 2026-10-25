@@ -20,7 +20,7 @@ registrador = logging.getLogger(__name__)
 
 COLECOES_PERMITIDAS = configuracao.QDRANT_COLECOES_OPERACIONAIS
 COLECOES_SOLICITANTE = frozenset({
-    "problema", "local_endereco", "modelo_equipamento",
+    "problema", configuracao.QDRANT_COLECAO_LOCAL, "modelo_equipamento",
     "categoria_equipamento", "marca_equipamento",
 })
 COLECAO_GLOBAL = "marca_equipamento"

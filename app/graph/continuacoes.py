@@ -3,7 +3,7 @@
 from app.core.confirmacoes import classificar_manifestacao, normalizar_mensagem
 from app.memory.persistencia import atualizar_acao, atualizar_rascunho_solicitacao
 
-STATUS_RASCUNHO = {"aguardando_confirmacao", "aguardando_imagem", "erro_api"}
+STATUS_RASCUNHO = {"coletando_dados", "aguardando_confirmacao", "aguardando_imagem", "erro_api"}
 STATUS_ACAO = {"aguardando_confirmacao", "aguardando_imagem"}
 
 

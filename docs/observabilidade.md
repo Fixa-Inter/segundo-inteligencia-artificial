@@ -18,6 +18,7 @@ O Prometheus está configurado para buscar a API em `host.docker.internal:8000`.
 
 - **Estimativa para 100/1.000 usuários ativos por semana:** usuários × mensagens por usuário/semana × custo estimado por mensagem. Os padrões são 4 mensagens por usuário, 6.000 tokens de entrada e 1.600 de saída por mensagem. Com os preços configurados para `gpt-6-luna` (US$ 0,10 / milhão de tokens de entrada e US$ 0,50 / milhão de saída), isso resulta em cerca de **US$ 0,56/semana para 100 usuários** e **US$ 5,60/semana para 1.000**. É uma projeção só do modelo principal, não uma medição de tráfego; chamadas de fallback não entram nesses dois cenários.
 - **Latência por agente:** duração de cada nó do LangGraph. O gráfico mostra p95 por nó, que ajuda a identificar em que etapa o fluxo demora. O tempo total no chat é medido no serviço, desde o processamento da mensagem até a resposta preparada pela API; não inclui a autenticação anterior à rota nem o transporte de rede até o cliente.
+- **Chamadas ao JEV:** `fixa_jev_request_seconds` e `fixa_jev_requests_total` medem o julgamento e a classificação de problemas por duração e resultado. Os tokens reportados pelo JEV entram em `fixa_llm_tokens_total` com o provedor `typesafe`. A latência do orquestrador aparece no nó `supervisor` do grafo.
 - **Índice de erros:** requisições que chegaram ao serviço de chat e terminaram com exceção ou estado de erro no grafo, dividido pelo total processado. Falhas anteriores à chamada do serviço (por exemplo, autenticação) ficam fora desse indicador. Bloqueios normais de segurança e respostas fora do escopo não contam como erro técnico.
 - **Custo por resolução:** o denominador é uma ocorrência de manutenção registrada com sucesso pelo fluxo do técnico (manutenção já realizada). O painel calcula a média do custo de LLM da requisição que registrou essa ocorrência, em uma janela de 7 dias. Não inclui o custo de conversas anteriores da mesma tarefa.
 - **ROI estimado:** `(valor atribuído às resoluções − custo de LLM convertido para BRL) ÷ custo de LLM convertido para BRL × 100`. A cotação configurada é uma referência PTAX arredondada e deve ser atualizada; o valor por resolução continua em branco até haver uma estimativa de benefício. O painel de ROI fica sem dados enquanto faltar qualquer uma dessas duas premissas.
@@ -32,13 +33,11 @@ OBSERVABILITY_ESTIMATED_INPUT_TOKENS_PER_MESSAGE=6000
 OBSERVABILITY_ESTIMATED_OUTPUT_TOKENS_PER_MESSAGE=1600
 OBSERVABILITY_OPENAI_INPUT_USD_PER_MILLION=0.10
 OBSERVABILITY_OPENAI_OUTPUT_USD_PER_MILLION=0.50
-OBSERVABILITY_GROQ_INPUT_USD_PER_MILLION=0.15
-OBSERVABILITY_GROQ_OUTPUT_USD_PER_MILLION=0.60
 OBSERVABILITY_BRL_PER_USD=5.01
 # Defina um valor estimado somente quando houver uma base para ele.
 OBSERVABILITY_VALUE_PER_RESOLUTION_BRL=
 ```
 
-O custo medido vem dos tokens reportados pelo modelo nas respostas de LLM. O fallback usado pelo juiz está precificado conforme a tarifa pública atual do Groq para `openai/gpt-oss-120b`; confirme a tarifa da sua conta. O cálculo usa a tarifa cheia de entrada, sem descontar tokens em cache, então pode superestimar essas chamadas. Custos de embeddings, banco, Qdrant, imagens, hospedagem e o próprio Grafana/Prometheus não estão incluídos no custo de LLM.
+O custo medido vem dos tokens reportados pelo modelo nas respostas de LLM. O JEV tem tokens e latência medidos, mas seu custo ainda não entra no valor em USD nem no ROI porque não há tarifa TypeSafe configurada. Custos de embeddings, banco, Qdrant, imagens, hospedagem e o próprio Grafana/Prometheus também não estão incluídos.
 
 As métricas são agregadas e usam rótulos de baixa cardinalidade (nome de agente, provedor, modelo e resultado); prompts, respostas, IDs de usuário e IDs de sessão não são exportados.

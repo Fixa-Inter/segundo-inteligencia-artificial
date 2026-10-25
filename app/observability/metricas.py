@@ -26,6 +26,13 @@ DURACAO_NO_GRAFO = Histogram(
 EXECUCOES_NO_GRAFO = Counter(
     "fixa_graph_node_runs_total", "Execuções de nós do LangGraph", ["node", "outcome"]
 )
+DURACAO_JEV = Histogram(
+    "fixa_jev_request_seconds", "Duração das chamadas ao JEV", ["operation"],
+    buckets=(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30, 60),
+)
+REQUISICOES_JEV = Counter(
+    "fixa_jev_requests_total", "Chamadas ao JEV", ["operation", "outcome"]
+)
 TOKENS_MODELO = Counter(
     "fixa_llm_tokens_total", "Tokens reportados pelos provedores de LLM", ["provider", "model", "kind"]
 )

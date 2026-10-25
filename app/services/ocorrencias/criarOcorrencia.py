@@ -16,7 +16,6 @@ async def adicionar_ocorrencia(
     if not isinstance(imagens, list) or not imagens or any(not isinstance(url, str) or not url.strip() for url in imagens):
         return {"status": "AGUARDANDO_INFORMACAO", "mensagem": "Envie pelo menos uma foto da ocorrência."}
     corpo = {
-        "usuarioId": usuario_id,
         "localUnidadeId": ocorrencia.local_endereco_id,
         "categoriaEquipamentoId": ocorrencia.categoria_equipamento_id,
         "categoriaProblemaId": ocorrencia.categoria_problema_id,
