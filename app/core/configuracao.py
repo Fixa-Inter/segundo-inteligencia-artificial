@@ -24,6 +24,7 @@ BANCO_URL_GESTOR = os.getenv("DATABASE_URL_GESTOR")
 # ==================== CONFIGURAÇÕES DO QDRANT ====================
 QDRANT_CHAVE_API = os.getenv("QDRANT_API_KEY")
 QDRANT_URL = os.getenv("QDRANT_URL")
+QDRANT_TIMEOUT_SECONDS = float(os.getenv("QDRANT_TIMEOUT_SECONDS", "30"))
 QDRANT_COLECAO_CATEGORIA = "categoria_equipamento"
 QDRANT_COLECAO_LOCAL = "local_unidade"
 QDRANT_COLECOES_OPERACIONAIS = frozenset({

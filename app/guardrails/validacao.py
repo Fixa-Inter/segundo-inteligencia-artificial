@@ -4,7 +4,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from app.agents.modelos import llm_rapido
 
 
 PII = [
@@ -82,9 +81,15 @@ class ClassificacaoSeguranca(BaseModel):
     )
 
 
-classificador_seguranca = llm_rapido.with_structured_output(
-    ClassificacaoSeguranca
-)
+class _ClassificadorSeguranca:
+    def invoke(self, entrada):
+        # O histórico e a saúde do serviço não precisam inicializar o modelo.
+        # A proteção continua obrigatória quando uma mensagem é processada.
+        from app.agents.modelos import llm_rapido
+        return llm_rapido.with_structured_output(ClassificacaoSeguranca).invoke(entrada)
+
+
+classificador_seguranca = _ClassificadorSeguranca()
 
 
 PROMPT_CLASSIFICADOR = """
