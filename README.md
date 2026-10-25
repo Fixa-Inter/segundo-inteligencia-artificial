@@ -52,7 +52,3 @@ O comando da seleção interna está em [docs/validacao_fluxo.md](docs/validacao
 Os testes em `app/tests/test_orquestrador.py` verificam o roteamento e a continuidade dos rascunhos; `app/tests/test_jev_fluxos.py` verifica o cliente JEV e o julgamento sem acesso externo. O cliente JEV registra duração, resultado, modelo resolvido e tokens; os limiares de julgamento devem ser acompanhados com casos reais anonimizados antes de alterações de versão do modelo.
 
 Para Prometheus e Grafana, consulte [docs/observabilidade.md](docs/observabilidade.md).
-
-## Cliente web e execução local
-
-Consulte [a compatibilidade com a web, endpoints de histórico e variáveis](docs/INTEGRACAO_MANU_WEB.md). A inferência exige chaves reais; saúde e histórico não inicializam os modelos.

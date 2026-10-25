@@ -5,8 +5,7 @@ from app.schemas import UsuarioContexto
 from app.schemas import ConversaEntrada, ConversaSaida
 from app.services.chat import processar_chat
 
-from fastapi import APIRouter, Depends, Path, Query
-from app.services.historico_web import (listar_conversas_web, obter_conversa_web, ResumoConversaWeb, HistoricoConversaWeb)
+from fastapi import APIRouter, Depends, Path
 
 from app.schemas import (
     EncerrarSessaoSaida,
@@ -58,18 +57,3 @@ async def encerrar_conversa(
         thread_id=thread_id,
         usuario=usuario,
     )
-
-@router.get("/sessions", response_model=list[ResumoConversaWeb])
-async def listar_conversas(
-    usuario: Annotated[UsuarioContexto, Depends(obter_usuario_atual)],
-    limite: Annotated[int, Query(ge=1, le=50)] = 50,
-):
-    return await listar_conversas_web(usuario.usuario_id, limite)
-
-
-@router.get("/sessions/{thread_id}", response_model=HistoricoConversaWeb)
-async def consultar_conversa(
-    thread_id: Annotated[str, Path(min_length=1, max_length=100)],
-    usuario: Annotated[UsuarioContexto, Depends(obter_usuario_atual)],
-):
-    return await obter_conversa_web(thread_id, usuario.usuario_id)

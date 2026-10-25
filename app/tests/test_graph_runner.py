@@ -23,7 +23,6 @@ def criar_usuario() -> UsuarioContexto:
 def test_executar_grafo_inicializa_estado_e_contexto(
     monkeypatch,
 ) -> None:
-    monkeypatch.setattr(executor, "obter_quantidade_anexos_pendentes", AsyncMock(return_value=0))
     ainvoke = AsyncMock(
         return_value={
             "resposta_final": "Resposta de teste",

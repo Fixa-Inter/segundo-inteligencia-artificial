@@ -199,7 +199,6 @@ def test_apresentacao_registrada_somente_depois_resposta_persistida(monkeypatch,
     monkeypatch.setattr(executor, "recuperar_mensagens", AsyncMock(return_value=[]))
     monkeypatch.setattr(executor, "obter_rascunho_solicitacao", AsyncMock(return_value=None))
     monkeypatch.setattr(executor, "obter_acao", AsyncMock(return_value=None))
-    monkeypatch.setattr(executor, "obter_quantidade_anexos_pendentes", AsyncMock(return_value=0))
 
     async def salvar(sessao, papel, *args, **kwargs):
         eventos.append(papel)
@@ -248,7 +247,6 @@ def test_reapresentacao_da_proposta_controla_botao_de_confirmacao(
     monkeypatch.setattr(executor, "recuperar_mensagens", AsyncMock(return_value=[]))
     monkeypatch.setattr(executor, "obter_rascunho_solicitacao", AsyncMock(return_value=None))
     monkeypatch.setattr(executor, "obter_acao", AsyncMock(return_value=None))
-    monkeypatch.setattr(executor, "obter_quantidade_anexos_pendentes", AsyncMock(return_value=0))
     monkeypatch.setattr(executor, "salvar_mensagem", AsyncMock())
     monkeypatch.setattr(executor, "atualizar_rascunho_solicitacao", AsyncMock())
 

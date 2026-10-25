@@ -8,7 +8,6 @@ from fastapi.security import (
 from pydantic import ValidationError
 
 from app.schemas import UsuarioContexto
-from app.services.gerais.perfil_web import completar_perfil
 from app.services.gerais.perfil import (
     ErroConsultaPerfil,
     consultar_perfil,
@@ -58,7 +57,6 @@ async def obter_usuario_atual(
         ) from erro
     
     try:
-        perfil = await completar_perfil(perfil)
         return UsuarioContexto(
             access_token=access_token,
             usuario_id=perfil["id"],
@@ -70,7 +68,7 @@ async def obter_usuario_atual(
             cnpj_endereco=perfil["cnpjUnidade"],
         )
 
-    except (KeyError, TypeError, ValueError, ValidationError):
+    except (KeyError, TypeError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=(

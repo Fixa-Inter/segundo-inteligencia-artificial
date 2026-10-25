@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from app.agents.modelos import llm_rapido
 
 _PROMPT_RESUMO = """\
 Você resume conversas de usuários do FIXA, um sistema de gestão de manutenção.
@@ -31,7 +32,6 @@ def _formatar_conversa(mensagens: list[dict]) -> str:
 
 async def gerar_resumo(mensagens: list[dict]) -> str:
     """Chama o LLM para gerar o resumo da sessão."""
-    from app.agents.modelos import llm_rapido
     conversa = _formatar_conversa(mensagens)
     resposta = await llm_rapido.ainvoke(
         _PROMPT_RESUMO.format(conversa=conversa)

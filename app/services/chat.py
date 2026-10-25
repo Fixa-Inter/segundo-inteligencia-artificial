@@ -1,14 +1,7 @@
 import uuid
 import time
 from fastapi import HTTPException, status
-from app.services.disponibilidade import validar_chaves_ia
-from app.services.historico_web import obter_conversa_web, atualizar_estado_conversa
-
-PERFIS_VALIDOS = {"solicitante", "tecnico", "gestor"}
-
-async def executar_grafo(**kwargs):
-    from app.graph.executor import executar_grafo as executar
-    return await executar(**kwargs)
+from app.graph.executor import PERFIS_VALIDOS, executar_grafo
 from app.schemas import UsuarioContexto
 from app.schemas import ConversaEntrada, ConversaSaida
 from app.core import Emocao
@@ -38,16 +31,11 @@ async def _processar_chat(
             detail="Perfil sem permissão de acesso ao chat.",
         )
 
-    validar_chaves_ia()
-
     if dados.thread_id is None:
         sessao_id = str(uuid.uuid4())
         dados.thread_id = sessao_id
         await iniciar_sessao(sessao_id=sessao_id,usuario_id=usuario.usuario_id)
     else:
-        historico = await obter_conversa_web(dados.thread_id, usuario.usuario_id)
-        if historico.closed:
-            raise HTTPException(409, "Esta conversa foi encerrada. Inicie uma nova conversa.")
         documento_id = await obter_documento_sessao_id(
             sessao_id=dados.thread_id,
             usuario_id=usuario.usuario_id,
@@ -65,8 +53,6 @@ async def _processar_chat(
         thread_id=dados.thread_id,
         imagens=dados.imagens,
     )
-
-    await atualizar_estado_conversa(dados.thread_id, usuario.usuario_id, confirmacao=resultado.get("confirmacao", "nao"))
 
     return ConversaSaida(
         thread_id=dados.thread_id,
