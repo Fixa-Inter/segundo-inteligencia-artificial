@@ -15,6 +15,12 @@ GEMINI_CHAVE_API = os.getenv("GEMINI_API_KEY")
 OPENAI_CHAVE_API = os.getenv("OPENAI_API_KEY")
 FIXA_URL_BASE_API = os.getenv("FIXA_API_BASE_URL")
 
+# ==================== CONFIGURAÇÕES DO DATABRICKS ====================
+DATABRICKS_HOST = os.getenv("DATABRICKS_HOST")
+DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
+DATABRICKS_WAREHOUSE_ID = os.getenv("DATABRICKS_WAREHOUSE_ID")
+# ================== FIM DAS CONFIGURAÇÕES DO DATABRICKS ==================
+
 # ==================== CONFIGURAÇÕES DO POSTGRES ====================
 BANCO_URL_SOLICITANTE = os.getenv("DATABASE_URL_SOLICITANTE")
 BANCO_URL_TECNICO = os.getenv("DATABASE_URL_TECNICO")

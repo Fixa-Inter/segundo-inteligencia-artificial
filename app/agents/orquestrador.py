@@ -73,7 +73,21 @@ Intenções:
 - fora_de_escopo: assunto sem relação com a aplicação.
 
 Analise a mensagem atual, a pergunta anterior do assistente, o histórico e os
-rascunhos do MongoDB. Uma resposta curta como um local, equipamento ou detalhe
+rascunhos do MongoDB.
+
+Distinga consultas de registros de perguntas analiticas. Perguntas por totais,
+contagens agregadas, taxas, medias, distribuicoes por unidade/local/categoria,
+evolucao temporal, carga ou produtividade pertencem a analytics. Isso inclui
+"quantas solicitacoes estao pendentes?", "qual a taxa de aprovacao?" e
+"quantas OS foram finalizadas em outubro?".
+Pedidos para localizar, listar ou explicar registros individuais existentes
+pertencem a ajuda_geral. Isso inclui "quais solicitacoes estao pendentes?",
+"minhas ocorrencias", "liste as OS abertas" e detalhes de uma OS especifica.
+Em resumo, perguntas sobre agregados sao analytics; pedidos de registros
+individuais sao ajuda_geral. A mesma entidade (solicitacao, ocorrencia ou OS)
+pode seguir qualquer caminho, conforme o tipo de resposta pedida.
+
+Uma resposta curta como um local, equipamento ou detalhe
 do serviço pode continuar uma solicitação ou ocorrência mesmo sem mencionar
 seu nome. Nesse caso, mantenha a intenção da proposta e marque
 continua_pendente=true. Isso também vale enquanto os dados ainda estão sendo
