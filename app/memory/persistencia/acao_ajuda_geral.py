@@ -19,7 +19,8 @@ async def obter_acao(sessao_id: str, usuario_id: int) -> dict | None:
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
-            {"_id": documento_id, "user_id": usuario_id}, {"ajuda_geral_pendente": 1},
+            {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
+            {"ajuda_geral_pendente": 1},
         )
     return (documento or {}).get("ajuda_geral_pendente")
 
@@ -37,7 +38,7 @@ async def salvar_acao(sessao_id: str, usuario_id: int, dados: dict) -> dict:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         resultado = await colecao.update_one(
             {
-                "_id": documento_id, "user_id": usuario_id,
+                "_id": documento_id, "user_id": usuario_id, "esta_ativo": True,
                 "ajuda_geral_pendente.status": {"$nin": ["executando", "resultado_indeterminado"]},
             },
             {"$set": {"ajuda_geral_pendente": acao, "atualizada_em": _agora()}},
@@ -58,7 +59,7 @@ async def atualizar_acao(
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         resultado = await colecao.update_one(
             {
-                "_id": documento_id, "user_id": usuario_id,
+                "_id": documento_id, "user_id": usuario_id, "esta_ativo": True,
                 "ajuda_geral_pendente.id": acao_id,
                 "ajuda_geral_pendente.status": status,
             },

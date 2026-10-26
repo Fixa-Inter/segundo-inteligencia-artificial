@@ -1,5 +1,9 @@
 import uuid
-from app.memory.persistencia.utilitarios import obter_documento_sessao_id, agora, sessoes_ativas
+from app.memory.persistencia.utilitarios import (
+    obter_documento_sessao_id,
+    agora,
+    sessoes_ativas,
+)
 from app.core.clients.mongo import abrir_cliente_mongo
 from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
 
@@ -22,6 +26,7 @@ async def iniciar_sessao(
             "user_id":       usuario_id,
             "iniciada_em":   agora_val,
             "atualizada_em": agora_val,
+            "esta_ativo":   True,
             "resumo":        "",
             "mensagens":     [],
             "anexos_pendentes": [],

@@ -1,18 +1,12 @@
 from typing import Annotated
 
 from app.api.dependencies.auth import obter_usuario_atual
-from app.schemas import UsuarioContexto
+from app.schemas import UsuarioContexto, EncerrarSessaoSaida
 from app.schemas import ConversaEntrada, ConversaSaida
 from app.services.chat import processar_chat
+from app.services.sessao import finalizar_sessao_chat
 
 from fastapi import APIRouter, Depends, Path
-
-from app.schemas import (
-    EncerrarSessaoSaida,
-)
-from app.services.sessao import (
-    finalizar_sessao_chat,
-)
 
 router = APIRouter(
     prefix="/chat",
@@ -36,6 +30,7 @@ async def conversar(
         usuario=usuario,
     )
 
+
 @router.delete(
     "/sessions/{thread_id}",
     response_model=EncerrarSessaoSaida,
@@ -43,10 +38,7 @@ async def conversar(
 async def encerrar_conversa(
     thread_id: Annotated[
         str,
-        Path(
-            min_length=1,
-            max_length=100,
-        ),
+        Path(min_length=1, max_length=100),
     ],
     usuario: Annotated[
         UsuarioContexto,

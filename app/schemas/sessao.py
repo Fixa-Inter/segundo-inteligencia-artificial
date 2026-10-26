@@ -13,6 +13,12 @@ class EncerrarSessaoSaida(BaseModel):
     resumo: str | None = None
 
 
+class ExcluirConversaSaida(BaseModel):
+    session_id: str
+    status: Literal["EXCLUIDA"]
+    mensagem: str
+
+
 class ConversaEspecificaEntrada(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

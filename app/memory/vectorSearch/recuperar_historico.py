@@ -34,19 +34,44 @@ async def recuperar_historico(
             )
 
             if resultados.points:
-                return [
-                    {
-                        "doc_id":      ponto.id,
-                        "iniciada_em": ponto.payload.get("iniciada_em", ""),
-                        "resumo":      ponto.payload["resumo"],
-                    }
+                session_ids = [
+                    ponto.payload.get("session_id")
                     for ponto in resultados.points
+                    if ponto.payload.get("session_id")
                 ]
+                async with abrir_cliente_mongo() as cliente_mongo:
+                    colecao = cliente_mongo[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
+                    cursor = colecao.find(
+                        {
+                            "user_id": usuario_id,
+                            "session_id": {"$in": session_ids},
+                            "esta_ativo": True,
+                        },
+                        {"session_id": 1},
+                    )
+                    sessoes_ativas = {
+                        documento["session_id"]
+                        for documento in await cursor.to_list(length=None)
+                    }
+
+                pontos_ativos = [
+                    ponto for ponto in resultados.points
+                    if ponto.payload.get("session_id") in sessoes_ativas
+                ]
+                if pontos_ativos:
+                    return [
+                        {
+                            "doc_id": ponto.id,
+                            "iniciada_em": ponto.payload.get("iniciada_em", ""),
+                            "resumo": ponto.payload["resumo"],
+                        }
+                        for ponto in pontos_ativos
+                    ]
 
     async with abrir_cliente_mongo() as cliente:
         banco = cliente[MONGO_BANCO_DADOS]
         colecao_sessoes = banco[MONGO_COLECAO_SESSOES]
-        filtro = {"user_id": usuario_id}
+        filtro = {"user_id": usuario_id, "esta_ativo": True}
         documentos = (
             colecao_sessoes
             .find(filtro, {"resumo": 1, "iniciada_em": 1, "mensagens": 1})

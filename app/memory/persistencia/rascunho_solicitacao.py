@@ -47,7 +47,8 @@ async def obter_quantidade_anexos_pendentes(sessao_id: str, usuario_id: int) -> 
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
-            {"_id": documento_id, "user_id": usuario_id}, {"anexos_pendentes": 1},
+            {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
+            {"anexos_pendentes": 1},
         )
     return len(_urls_validas((documento or {}).get("anexos_pendentes", [])))
 
@@ -68,7 +69,7 @@ async def registrar_coleta_parcial(
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
-            {"_id": documento_id, "user_id": usuario_id},
+            {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
             {campo: 1, outro_campo: 1, "anexos_pendentes": 1},
         )
         if not documento:
@@ -86,7 +87,12 @@ async def registrar_coleta_parcial(
             novo = {**atual, "relatos": [*atual.get("relatos", []), relato_turno],
                     "atualizada_em": _agora()}
             resultado = await colecao.update_one(
-                {"_id": documento_id, "user_id": usuario_id, campo: documento.get(campo)},
+                {
+                    "_id": documento_id,
+                    "user_id": usuario_id,
+                    "esta_ativo": True,
+                    campo: documento.get(campo),
+                },
                 {"$set": {campo: novo, "atualizada_em": novo["atualizada_em"]}},
             )
             if resultado.matched_count != 1:
@@ -116,7 +122,12 @@ async def registrar_coleta_parcial(
         elif atual:
             atualizacao["$push"] = {"rascunhos_arquivados": atual}
         resultado = await colecao.update_one(
-            {"_id": documento_id, "user_id": usuario_id, campo: documento.get(campo)},
+            {
+                "_id": documento_id,
+                "user_id": usuario_id,
+                "esta_ativo": True,
+                campo: documento.get(campo),
+            },
             atualizacao,
         )
         if resultado.matched_count != 1:
@@ -141,7 +152,7 @@ async def adicionar_imagens_sessao(
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
-            {"_id": documento_id, "user_id": usuario_id},
+            {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
             {"solicitacao_pendente": 1, "ocorrencia_pendente": 1},
         )
         ativos = [
@@ -160,7 +171,7 @@ async def adicionar_imagens_sessao(
             caminho = "anexos_pendentes"
 
         await colecao.update_one(
-            {"_id": documento_id, "user_id": usuario_id},
+            {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
             {
                 "$addToSet": {caminho: {"$each": urls}},
                 "$set": {"atualizada_em": _agora()},
@@ -186,7 +197,7 @@ async def salvar_rascunho_solicitacao(
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
-            {"_id": documento_id, "user_id": usuario_id},
+            {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
             {campo: 1, outro_campo: 1, "anexos_pendentes": 1},
         )
         if not documento:
@@ -249,7 +260,12 @@ async def salvar_rascunho_solicitacao(
             atualizacao["$push"] = {"rascunhos_arquivados": atual}
 
         resultado = await colecao.update_one(
-            {"_id": documento_id, "user_id": usuario_id, campo: documento.get(campo)},
+            {
+                "_id": documento_id,
+                "user_id": usuario_id,
+                "esta_ativo": True,
+                campo: documento.get(campo),
+            },
             atualizacao,
         )
         if resultado.matched_count != 1:
@@ -270,7 +286,7 @@ async def obter_rascunho_solicitacao(
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
-            {"_id": documento_id, "user_id": usuario_id},
+            {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
             {campo: 1},
         )
         if not documento:
@@ -302,7 +318,11 @@ async def atualizar_rascunho_solicitacao(
     atualizacoes[f"{campo}.atualizada_em"] = agora
     atualizacoes["atualizada_em"] = agora
 
-    filtro: dict[str, Any] = {"_id": documento_id, "user_id": usuario_id}
+    filtro: dict[str, Any] = {
+        "_id": documento_id,
+        "user_id": usuario_id,
+        "esta_ativo": True,
+    }
     if exigir_ativo:
         filtro[f"{campo}.pausado"] = {"$ne": True}
     if rascunho_id is not None:

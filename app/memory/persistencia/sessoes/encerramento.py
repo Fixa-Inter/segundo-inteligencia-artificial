@@ -1,5 +1,9 @@
 from qdrant_client import models
-from app.memory.persistencia.utilitarios import obter_documento_sessao_id, sessoes_ativas, agora
+from app.memory.persistencia.utilitarios import (
+    obter_documento_sessao_id,
+    sessoes_ativas,
+    agora,
+)
 from app.memory.persistencia.gerar_resumo import gerar_resumo
 from app.core.clients.mongo import abrir_cliente_mongo
 from app.core.clients.qdrant import abrir_cliente_qdrant
@@ -18,7 +22,9 @@ async def encerrar_sessao(sessao_id: str, usuario_id: int) -> str:
         banco = cliente[MONGO_BANCO_DADOS]
         colecao_sessoes = banco[MONGO_COLECAO_SESSOES]
 
-        documento = await colecao_sessoes.find_one({"_id": documento_id, "user_id": usuario_id})
+        documento = await colecao_sessoes.find_one(
+            {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True}
+        )
 
         if not documento or not documento.get("mensagens"):
             sessoes_ativas.pop(chave, None)
@@ -27,11 +33,11 @@ async def encerrar_sessao(sessao_id: str, usuario_id: int) -> str:
         resumo = await gerar_resumo(documento["mensagens"])
 
         await colecao_sessoes.update_one(
-            {"_id": documento_id, "user_id": usuario_id},
+            {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
             {"$set": {"resumo": resumo, "atualizada_em": agora()}},
         )
-
         sessoes_ativas.pop(chave, None)
+
         vetor = await gerar_vetor_documento(resumo)
         async with abrir_cliente_qdrant() as cliente_qdrant:
             await cliente_qdrant.upsert(

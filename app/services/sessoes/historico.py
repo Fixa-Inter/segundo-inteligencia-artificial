@@ -5,6 +5,7 @@ from pymongo.errors import PyMongoError
 from app.core import Emocao
 from app.core.clients.mongo import abrir_cliente_mongo
 from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
+from app.memory.persistencia.utilitarios import sessoes_ativas
 
 
 class ErroConsultaHistorico(Exception):
@@ -68,13 +69,40 @@ def _formatar_conversa(documento: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+async def excluir_conversa(session_id: str, usuario_id: int) -> bool:
+    try:
+        async with abrir_cliente_mongo() as cliente:
+            colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
+            resultado = await colecao.update_many(
+                {
+                    "session_id": session_id,
+                    "user_id": usuario_id,
+                    "esta_ativo": True,
+                },
+                {"$set": {"esta_ativo": False}},
+            )
+    except (PyMongoError, TimeoutError, OSError):
+        raise ErroConsultaHistorico(
+            503, "O histórico de conversas está temporariamente indisponível."
+        ) from None
+    except RuntimeError:
+        raise ErroConsultaHistorico(
+            500, "O serviço de histórico de conversas não está configurado."
+        ) from None
+
+    if resultado.modified_count > 0:
+        sessoes_ativas.pop((usuario_id, session_id), None)
+        return True
+    return False
+
+
 async def buscar_conversas_usuario(usuario_id: int) -> list[dict[str, Any]]:
     try:
         async with abrir_cliente_mongo() as cliente:
             colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
-            cursor = colecao.find({"user_id": usuario_id}, _PROJECAO).sort(
-                "atualizada_em", -1
-            )
+            cursor = colecao.find(
+                {"user_id": usuario_id, "esta_ativo": True}, _PROJECAO
+            ).sort("atualizada_em", -1)
             documentos = await cursor.to_list(length=None)
     except (PyMongoError, TimeoutError, OSError):
         raise ErroConsultaHistorico(
@@ -100,7 +128,11 @@ async def buscar_conversa(
         async with abrir_cliente_mongo() as cliente:
             colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
             documento = await colecao.find_one(
-                {"session_id": session_id, "user_id": usuario_id},
+                {
+                    "session_id": session_id,
+                    "user_id": usuario_id,
+                    "esta_ativo": True,
+                },
                 _PROJECAO,
             )
     except (PyMongoError, TimeoutError, OSError):
