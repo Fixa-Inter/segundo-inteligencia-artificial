@@ -159,9 +159,49 @@ def test_resumo_conferido_juiz_antes_de_ser_marcado_apresentado(monkeypatch):
     monkeypatch.setattr(import_module("app.agents.juiz"), "consultar_jev", julgador)
     estado.update(asyncio.run(julgar_resposta(estado)))
     assert resumo["resumo_confirmacao"] in julgador.await_args.args[0]["resposta_candidata"]
+    assert julgador.await_args.args[0]["resposta_especialista"] == "Confira os detalhes."
+    assert julgador.await_args.args[0]["resumos_confirmacao"] == [resumo["resumo_confirmacao"]]
+    assert estado["resposta_especialista"] == "Confira os detalhes."
+    assert estado["resposta_candidata"].count(resumo["resumo_confirmacao"]) == 1
     assert validar_saida(estado)["propostas_apresentadas"] == [resumo]
     estado["veredito"] = "bloqueado"
     assert not validar_saida(estado).get("propostas_apresentadas")
+
+
+def test_revisao_altera_apenas_texto_e_mantem_resumo_uma_vez(monkeypatch):
+    from langchain_core.messages import HumanMessage
+    from app.agents.juiz import RespostaRevisada, julgar_resposta, revisar_resposta
+
+    resumo = metadados_proposta(proposta())
+    estado = {"perfil": "solicitante", "messages": [HumanMessage(content="Ventilador quebrado")],
+              "resposta_especialista": "Confira os detalhes.", "evidencias": [json.dumps({
+                  "ferramenta": "salvar_rascunho_solicitacao", "status_execucao": "success",
+                  "resultado": {"status": "RASCUNHO_SALVO", "proposta": resumo},
+              })]}
+    julgamento = AsyncMock(return_value={"model": "jev-teste", "answers": {
+        "veredito": {"type": "choice", "choice": "aprovado", "confidence": 0.95},
+        "motivo": {"type": "choice", "choice": "nenhum", "confidence": 0.95},
+        "afirmacao_sem_suporte": {"type": "noul", "noul": 0.05},
+        "correcao_textual": {"type": "noul", "noul": 0.05},
+        "risco_grave": {"type": "noul", "noul": 0.05},
+    }})
+    monkeypatch.setattr(import_module("app.agents.juiz"), "consultar_jev", julgamento)
+    modelo = Mock()
+    modelo.with_structured_output.return_value.ainvoke = AsyncMock(
+        return_value=RespostaRevisada(resposta="Confira os dados atualizados."),
+    )
+    monkeypatch.setattr(import_module("app.agents.modelos"), "llm_especialista", modelo)
+
+    estado.update(asyncio.run(julgar_resposta(estado)))
+    revisao = asyncio.run(revisar_resposta(estado))
+    entrada = json.loads(modelo.with_structured_output.return_value.ainvoke.await_args.args[0][1].content)
+    assert entrada["resposta_candidata"] == "Confira os detalhes."
+    assert entrada["resumos_confirmacao"] == [resumo["resumo_confirmacao"]]
+
+    estado.update(revisao)
+    estado.update(asyncio.run(julgar_resposta(estado)))
+    assert estado["resposta_candidata"].count(resumo["resumo_confirmacao"]) == 1
+    assert estado["resposta_candidata"].startswith("Confira os dados atualizados.")
 
 
 def test_contexto_temporal_converte_dia_timezone():

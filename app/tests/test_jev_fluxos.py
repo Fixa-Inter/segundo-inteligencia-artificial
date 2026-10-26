@@ -104,6 +104,24 @@ def test_juiz_bloqueia_risco_grave_mesmo_se_choice_aprova(monkeypatch):
     assert asyncio.run(juiz.julgar_resposta(estado_juiz()))["veredito"] == "bloqueado"
 
 
+def test_motivo_inconsistente_com_baixa_confianca_nao_bloqueia(monkeypatch):
+    resposta = respostas_juiz(motivo="clareza")
+    resposta["answers"]["motivo"]["confidence"] = 0.4
+    monkeypatch.setattr(juiz, "consultar_jev", AsyncMock(return_value=resposta))
+
+    resultado = asyncio.run(juiz.julgar_resposta(estado_juiz()))
+    assert resultado["veredito"] == "aprovado"
+
+
+def test_motivo_de_permissao_nao_e_ignorado_por_baixa_confianca(monkeypatch):
+    resposta = respostas_juiz(motivo="permissao")
+    resposta["answers"]["motivo"]["confidence"] = 0.4
+    monkeypatch.setattr(juiz, "consultar_jev", AsyncMock(return_value=resposta))
+
+    resultado = asyncio.run(juiz.julgar_resposta(estado_juiz()))
+    assert resultado["veredito"] == "bloqueado"
+
+
 def test_juiz_reavalia_uma_vez_bloqueio_sem_motivo(monkeypatch):
     consultar = AsyncMock(side_effect=[
         respostas_juiz(veredito="bloqueado", motivo="nenhum"),

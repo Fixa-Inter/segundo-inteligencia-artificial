@@ -134,3 +134,17 @@ def test_juiz_recebe_tabela_inteira_sem_repetir_linhas_estruturadas():
     assert preparada["status_operacao"] == "SUCESSO"
     assert preparada["resultado"]["tabela_markdown"].endswith("| dado |\n")
     assert "ocorrencias" not in preparada["resultado"]
+
+
+def test_juiz_preserva_evidencia_grande_como_dado_estruturado():
+    evidencia = json.dumps({
+        "ferramenta": "consulta",
+        "status_operacao": "SUCESSO",
+        "resultado": {"descricao": "x" * 5000, "total": 42},
+    })
+
+    preparada = juiz._evidencias_jev([evidencia])[0]
+    assert isinstance(preparada, dict)
+    assert preparada["status_operacao"] == "SUCESSO"
+    assert preparada["resultado"]["total"] == 42
+    assert len(preparada["resultado"]["descricao"]) == 5000

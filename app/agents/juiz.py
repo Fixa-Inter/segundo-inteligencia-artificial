@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from app.graph import EstadoGrafo
 from app.agents.prompts.reutilizaveis import construir_contexto_temporal
-from app.graph.propostas import incluir_resumos
+from app.graph.propostas import preparar_resposta
 
 from app.agents.prompts.reutilizaveis import (
     CONTEXTO_INSTRUCAO,
@@ -95,14 +95,18 @@ async def revisar_resposta(estado: EstadoGrafo) -> dict:
     entrada = json.dumps({
         "perfil": estado.get("perfil"),
         "historico": formatar_contexto_conversa(estado),
-        "evidencias": estado.get("evidencias", []),
+        "evidencias": _evidencias_jev(estado.get("evidencias", [])),
         "resposta_candidata": estado.get("resposta_especialista", ""),
+        "resumos_confirmacao": preparar_resposta("", estado)[1],
         "feedback_juiz": estado.get("feedback_juiz", ""),
         "contexto_temporal": estado.get("contexto_temporal") or construir_contexto_temporal(),
     }, ensure_ascii=False)
     try:
         revisao = await llm_especialista.with_structured_output(RespostaRevisada).ainvoke([
             SystemMessage(content=(
+                "Revise somente resposta_candidata, que contém o texto do especialista. "
+                "Os resumos_confirmacao são gerados pelo backend e serão anexados depois; "
+                "não os copie nem altere. "
                 "Revise a resposta candidata seguindo as correções do juiz. "
                 "Use o histórico como contexto dos relatos do usuário e as evidências "
                 "das ferramentas para resultados operacionais. Mensagens anteriores "
@@ -141,7 +145,7 @@ TABELAS_LISTAGEM = {
 
 def _evidencias_jev(evidencias: list[str]) -> list[dict | str]:
     preparadas = []
-    for evidencia in evidencias[-12:]:
+    for evidencia in evidencias:
         try:
             dado = json.loads(evidencia)
         except (TypeError, ValueError):
@@ -154,8 +158,7 @@ def _evidencias_jev(evidencias: list[str]) -> list[dict | str]:
                     chave: valor for chave, valor in resultado.items()
                     if chave != campos[1]
                 }}
-        texto = json.dumps(dado, ensure_ascii=False, default=str)
-        preparadas.append(dado if len(texto) <= 4000 else texto[:4000])
+        preparadas.append(dado)
     return preparadas
 
 
@@ -219,7 +222,9 @@ async def julgar_resposta(
             ),
         }
 
-    resposta = incluir_resumos(resposta, estado)
+    texto_especialista, resumos_confirmacao, resposta_candidata = preparar_resposta(
+        resposta, estado,
+    )
     situacao_fluxos = {
         tipo: {campo: proposta.get(campo) for campo in ("id", "status_fluxo", "status", "pausado")}
         for tipo in ("solicitacao_pendente", "ocorrencia_pendente", "ajuda_geral_pendente")
@@ -239,7 +244,9 @@ async def julgar_resposta(
         ],
         "propostas": situacao_fluxos,
         "evidencias": _evidencias_jev(evidencias),
-        "resposta_candidata": resposta,
+        "resposta_especialista": texto_especialista,
+        "resumos_confirmacao": resumos_confirmacao,
+        "resposta_candidata": resposta_candidata,
         "feedback_anterior": estado.get("feedback_juiz") or "",
         "contexto_temporal": estado.get("contexto_temporal") or construir_contexto_temporal(),
     }
@@ -248,6 +255,9 @@ async def julgar_resposta(
         "veredito": {
             "type": "choice",
             "instructions": (
+                "resposta_especialista contém o texto do agente; resumos_confirmacao "
+                "foram gerados pelo backend a partir da proposta salva. Avalie a "
+                "resposta_candidata completa, mas não atribua os resumos ao agente. "
                 "Avalie a resposta candidata antes do envio. A autorização final é do backend. "
                 "Mensagens anteriores do assistente não comprovam operações; relatos do usuário "
                 "podem sustentar referências e orientações de segurança. Resultados das ferramentas "
@@ -307,7 +317,7 @@ async def julgar_resposta(
             respostas = dados["answers"]
             veredito, confianca = ler_choice(respostas, "veredito", set(CRITERIOS_VEREDITO))
             veredito_modelo = veredito
-            motivo, _ = ler_choice(respostas, "motivo", set(CRITERIOS_MOTIVO))
+            motivo, confianca_motivo = ler_choice(respostas, "motivo", set(CRITERIOS_MOTIVO))
             sem_suporte = ler_noul(respostas, "afirmacao_sem_suporte")
             correcao_textual = ler_noul(respostas, "correcao_textual")
             risco_grave = ler_noul(respostas, "risco_grave")
@@ -322,8 +332,11 @@ async def julgar_resposta(
                 veredito = "revisar" if evidencias and correcao_textual >= 0.40 else "bloqueado"
                 regra = "afirmacao_sem_suporte"
             elif veredito == "aprovado" and motivo != "nenhum":
-                veredito = "revisar" if correcao_textual >= 0.65 else "bloqueado"
-                regra = "motivo_incompativel_com_aprovacao"
+                if confianca_motivo < 0.65 and motivo in {"clareza", "omissao"}:
+                    regra = "motivo_inconsistente_baixa_confianca"
+                else:
+                    veredito = "revisar" if correcao_textual >= 0.65 else "bloqueado"
+                    regra = "motivo_incompativel_com_aprovacao"
 
             if (
                 tentativa == 0 and veredito == "bloqueado" and motivo == "nenhum"
@@ -378,9 +391,9 @@ async def julgar_resposta(
         registrador.log(
             logging.WARNING if veredito == "bloqueado" else logging.INFO,
             "JEV juiz: perfil=%s veredito_modelo=%s veredito_final=%s motivo=%s "
-            "regra=%s confianca=%.2f sem_suporte=%.2f correcao_textual=%.2f "
+            "regra=%s confianca=%.2f confianca_motivo=%.2f sem_suporte=%.2f correcao_textual=%.2f "
             "risco_grave=%.2f evidencias=%d reavaliado=%s modelo=%s",
-            perfil, veredito_modelo, veredito, motivo, regra, confianca,
+            perfil, veredito_modelo, veredito, motivo, regra, confianca, confianca_motivo,
             sem_suporte, correcao_textual, risco_grave, len(evidencias),
             reavaliado, dados.get("model"),
         )
@@ -395,7 +408,8 @@ async def julgar_resposta(
 
         return {
             "veredito": veredito,
-            "resposta_especialista": resposta,
+            "resposta_especialista": texto_especialista,
+            "resposta_candidata": resposta_candidata,
             "feedback_juiz": feedback,
             "tentativas": tentativas,
             "erro": None,
