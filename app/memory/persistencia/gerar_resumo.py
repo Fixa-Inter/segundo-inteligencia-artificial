@@ -1,6 +1,10 @@
 from datetime import datetime, timezone
+import logging
 
 from app.agents.modelos import llm_rapido
+
+
+registrador = logging.getLogger(__name__)
 
 _PROMPT_RESUMO = """\
 Você resume conversas de usuários do FIXA, um sistema de gestão de manutenção.
@@ -36,4 +40,7 @@ async def gerar_resumo(mensagens: list[dict]) -> str:
     resposta = await llm_rapido.ainvoke(
         _PROMPT_RESUMO.format(conversa=conversa)
     )
-    return resposta.content.strip()
+    resumo = str(resposta.text).strip()
+    if not resumo:
+        registrador.warning("O modelo nao retornou texto para o resumo da sessao")
+    return resumo

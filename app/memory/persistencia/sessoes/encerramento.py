@@ -38,21 +38,22 @@ async def encerrar_sessao(sessao_id: str, usuario_id: int) -> str:
         )
         sessoes_ativas.pop(chave, None)
 
-        vetor = await gerar_vetor_documento(resumo)
-        async with abrir_cliente_qdrant() as cliente_qdrant:
-            await cliente_qdrant.upsert(
-                collection_name=QDRANT_COLECAO_HISTORICO,points=[
-                    models.PointStruct(
-                        id=documento_id,
-                        vector=vetor,
-                        payload={
-                            "user_id":     usuario_id,
-                            "session_id":  sessao_id,
-                            "resumo":      resumo,
-                            "iniciada_em": documento["iniciada_em"].isoformat(),
-                        },
-                    )
-                ],
-            )
+        if resumo:
+            vetor = await gerar_vetor_documento(resumo)
+            async with abrir_cliente_qdrant() as cliente_qdrant:
+                await cliente_qdrant.upsert(
+                    collection_name=QDRANT_COLECAO_HISTORICO,points=[
+                        models.PointStruct(
+                            id=documento_id,
+                            vector=vetor,
+                            payload={
+                                "user_id":     usuario_id,
+                                "session_id":  sessao_id,
+                                "resumo":      resumo,
+                                "iniciada_em": documento["iniciada_em"].isoformat(),
+                            },
+                        )
+                    ],
+                )
 
     return resumo
