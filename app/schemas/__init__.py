@@ -8,7 +8,8 @@ from .sessao import (
     ConversaEspecificaEntrada,
     ConversaEspecificaSaida,
     TodasConversasSaida,
+    ExcluirConversaSaida,
 )
 from .ClassificarProblema import ClassificarProblemaRequest, ClassificarProblemaResponse
 
-__all__ = ["UsuarioContexto", "ConversaEntrada", "ConversaSaida", "EncerrarSessaoSaida", "ConversaEspecificaEntrada", "ConversaEspecificaSaida", "TodasConversasSaida", "ClassificarProblemaRequest", "ClassificarProblemaResponse"]
+__all__ = ["UsuarioContexto", "ConversaEntrada", "ConversaSaida", "EncerrarSessaoSaida", "ConversaEspecificaEntrada", "ConversaEspecificaSaida", "TodasConversasSaida", "ExcluirConversaSaida", "ClassificarProblemaRequest", "ClassificarProblemaResponse"]

@@ -17,7 +17,11 @@ async def obter_documento_sessao_id(sessao_id: str, usuario_id: int) -> str | No
         banco = cliente[MONGO_BANCO_DADOS]
         colecao_sessoes = banco[MONGO_COLECAO_SESSOES]
         documento = await colecao_sessoes.find_one(
-            {"user_id": usuario_id, "session_id": sessao_id},
+            {
+                "user_id": usuario_id,
+                "session_id": sessao_id,
+                "esta_ativo": True,
+            },
             {"_id": 1},
             sort=[("iniciada_em", -1)],
         )

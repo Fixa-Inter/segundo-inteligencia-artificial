@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Path
 
 from app.api.dependencies.auth import obter_usuario_atual
 from app.schemas import UsuarioContexto
@@ -8,11 +8,13 @@ from app.schemas.sessao import (
     ConversaEspecificaEntrada,
     ConversaEspecificaSaida,
     TodasConversasSaida,
+    ExcluirConversaSaida,
 )
 from app.services.sessoes import (
     ErroConsultaHistorico,
     buscar_conversa,
     buscar_conversas_usuario,
+    excluir_conversa,
 )
 
 
@@ -21,6 +23,7 @@ router = APIRouter(prefix="/sessoes", tags=["Sessões"])
 
 def _traduzir_erro(erro: ErroConsultaHistorico) -> HTTPException:
     return HTTPException(status_code=erro.status_code, detail=erro.mensagem)
+
 
 
 @router.get("", response_model=TodasConversasSaida, response_model_exclude_none=True)
@@ -73,4 +76,41 @@ async def pegar_conversa_especifica(
         status="SUCESSO",
         mensagem="Conversa carregada com sucesso.",
         conversa=conversa,
+    )
+
+@router.delete(
+    "/conversa/{session_id}",
+    response_model=ExcluirConversaSaida,
+)
+async def excluir_conversa_historico(
+    session_id: Annotated[
+        str,
+        Path(
+            min_length=1,
+            max_length=100,
+        ),
+    ],
+    usuario: Annotated[
+        UsuarioContexto,
+        Depends(obter_usuario_atual),
+    ],
+) -> ExcluirConversaSaida:
+    try:
+        excluida = await excluir_conversa(
+            session_id=session_id,
+            usuario_id=usuario.usuario_id,
+        )
+    except ErroConsultaHistorico as erro:
+        raise _traduzir_erro(erro) from erro
+
+    if not excluida:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="A conversa solicitada não foi encontrada.",
+        )
+
+    return ExcluirConversaSaida(
+        session_id=session_id,
+        status="EXCLUIDA",
+        mensagem="Conversa removida do histórico.",
     )

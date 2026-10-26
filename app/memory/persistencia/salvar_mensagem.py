@@ -44,7 +44,7 @@ async def salvar_mensagem(
         banco = cliente[MONGO_BANCO_DADOS]
         colecao_sessoes = banco[MONGO_COLECAO_SESSOES]
         await colecao_sessoes.update_one(
-            {"_id": documento_id, "user_id": usuario_id},
+            {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
             {
                 "$push": {"mensagens": mensagem},
                 "$set":  {"atualizada_em": agora()},

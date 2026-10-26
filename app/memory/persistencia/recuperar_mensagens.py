@@ -6,7 +6,10 @@ async def recuperar_mensagens(documento_id: str, usuario_id: int) -> list[dict]:
     async with abrir_cliente_mongo() as cliente:
         banco = cliente[MONGO_BANCO_DADOS]
         colecao_sessoes = banco[MONGO_COLECAO_SESSOES]
-        documento = await colecao_sessoes.find_one({"_id": documento_id, "user_id": usuario_id}, {"mensagens": 1})
+        documento = await colecao_sessoes.find_one(
+            {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
+            {"mensagens": 1},
+        )
         mensagens = documento["mensagens"] if documento else []
         for mensagem in mensagens:
             if mensagem.get("role") == "assistant":
