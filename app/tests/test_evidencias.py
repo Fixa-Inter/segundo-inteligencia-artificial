@@ -93,3 +93,34 @@ def test_nova_mensagem_limpa_evidencias_do_checkpoint():
     estado_anterior = {"evidencias": ["consulta de outra rodada"]}
     estado_anterior.update(criar_estado_inicial([HumanMessage(content="Nova consulta")], usuario))
     assert estado_anterior["evidencias"] == []
+
+
+def test_no_solicitacoes_registra_estado_persistido_para_o_juiz(monkeypatch):
+    from app.graph import nos
+    from app.agents.agentsResult import SolicitacaoOcorrenciaResultado
+
+    agente = SimpleNamespace(ainvoke=AsyncMock(return_value={
+        "messages": [],
+        "structured_response": SolicitacaoOcorrenciaResultado(
+            agente="solicitacao", resposta="A foto foi recebida.", status="SUCESSO",
+        ),
+    }))
+    monkeypatch.setattr(nos, "solicitacoes_solicitante", agente)
+    monkeypatch.setattr(nos, "registrar_coleta_parcial", AsyncMock())
+    monkeypatch.setattr(nos, "obter_rascunho_solicitacao", AsyncMock(return_value={
+        "status_fluxo": "coletando_dados", "confirmado": False, "imagens": ["foto"],
+    }))
+    contexto = {
+        "session_id": "sessao", "turno_id": "turno", "mensagem_atual": "foto",
+        "usuario": SimpleNamespace(usuario_id=7), "imagens": [],
+    }
+
+    resultado = asyncio.run(nos.executar_solicitacao(
+        {"perfil": "solicitante", "intencao": "solicitacao", "cadastro_em_andamento": True,
+         "messages": [], "evidencias": []},
+        SimpleNamespace(context=contexto),
+    ))
+
+    evidencia = json.loads(resultado["evidencias"][0])
+    assert evidencia["ferramenta"] == "estado_rascunho_persistido"
+    assert evidencia["resultado"]["quantidade_imagens"] == 1

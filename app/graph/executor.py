@@ -65,6 +65,7 @@ def criar_estado_inicial(
         "emocao": Emocao.NEUTRO.value,
         "saida_bloqueada": False,
         "resposta_especialista": "",
+        "resposta_candidata": "",
         "feedback_juiz": "",
         "evidencias": [],
         "erro": None,

@@ -39,6 +39,7 @@ class EstadoGrafo(TypedDict, total=False):
 
     evidencias: list[str]
     resposta_especialista: str
+    resposta_candidata: str
 
     veredito: Literal[
         "aprovado",

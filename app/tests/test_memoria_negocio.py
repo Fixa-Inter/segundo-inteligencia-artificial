@@ -25,7 +25,7 @@ def test_salvar_mensagem_preserva_dono_e_anexos(monkeypatch):
     asyncio.run(modulo.salvar_mensagem("sessao", "human", "Texto anônimo", 7,
                                       imagens=[" https://exemplo.com/foto.jpg ", ""]))
     filtro, atualizacao = colecao.update_one.await_args.args
-    assert filtro == {"_id": "documento", "user_id": 7}
+    assert filtro == {"_id": "documento", "user_id": 7, "esta_ativo": True}
     assert atualizacao["$push"]["mensagens"] == {
         "role": "human", "content": "Texto anônimo", "imagens": ["https://exemplo.com/foto.jpg"],
     }
@@ -49,7 +49,7 @@ def test_acao_somente_inicia_se_ainda_aguarda_confirmacao(monkeypatch):
     monkeypatch.setattr(modulo, "obter_documento_sessao_id", AsyncMock(return_value="documento"))
     assert asyncio.run(modulo.iniciar_acao("sessao", 7, "proposta")) is True
     filtro, atualizacao = colecao.update_one.await_args.args
-    assert filtro == {"_id": "documento", "user_id": 7,
+    assert filtro == {"_id": "documento", "user_id": 7, "esta_ativo": True,
                       "ajuda_geral_pendente.id": "proposta",
                       "ajuda_geral_pendente.status": "aguardando_confirmacao"}
     assert atualizacao["$set"]["ajuda_geral_pendente.status"] == "executando"

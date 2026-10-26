@@ -26,9 +26,11 @@ def propostas_resposta(estado: dict) -> list[dict]:
     return list(propostas.values())
 
 
-def incluir_resumos(resposta: str, estado: dict) -> str:
-    for proposta in propostas_resposta(estado):
-        resumo = proposta["resumo_confirmacao"]
-        if resumo not in resposta:
-            resposta += "\n\n" + resumo
-    return resposta.strip()
+def preparar_resposta(resposta: str, estado: dict) -> tuple[str, list[str], str]:
+    """Separa o texto do agente dos resumos produzidos pelo backend."""
+    resumos = [proposta["resumo_confirmacao"] for proposta in propostas_resposta(estado)]
+    texto_especialista = resposta.strip()
+    for resumo in resumos:
+        texto_especialista = texto_especialista.replace(resumo, "").strip()
+    candidata = "\n\n".join(parte for parte in [texto_especialista, *resumos] if parte)
+    return texto_especialista, resumos, candidata

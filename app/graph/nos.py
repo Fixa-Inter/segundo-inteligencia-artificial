@@ -385,6 +385,20 @@ async def executar_solicitacao(
             estado_agente[f"{tipo_registro}_pendente"] = await obter_rascunho_solicitacao(
                 contexto_agente["session_id"], contexto_agente["usuario"].usuario_id, tipo=tipo_registro,
             )
+            rascunho_persistido = estado_agente[f"{tipo_registro}_pendente"]
+            if isinstance(rascunho_persistido, dict):
+                evidencias.append(json.dumps({
+                    "ferramenta": "estado_rascunho_persistido",
+                    "status_execucao": "success",
+                    "status_operacao": "CONSULTA_ESTADO",
+                    "resultado": {
+                        "tipo": tipo_registro,
+                        "status_fluxo": rascunho_persistido.get("status_fluxo"),
+                        "confirmado": bool(rascunho_persistido.get("confirmado")),
+                        "quantidade_imagens": len(rascunho_persistido.get("imagens") or []),
+                    },
+                }, ensure_ascii=False))
+                estado_agente["evidencias"] = evidencias
     except Exception as erro:
         registrador.exception("Falha ao preparar rascunho e anexos")
         return {"evidencias": evidencias, "resposta_especialista": "",
@@ -629,9 +643,8 @@ async def executar_retorno_usuario(
 def validar_saida(
     estado: EstadoGrafo,
 ) -> dict:
-    resposta = estado.get(
-        "resposta_especialista",
-        "",
+    resposta = (
+        estado.get("resposta_candidata") or estado.get("resposta_especialista", "")
     ).strip()
 
     if estado.get("veredito") != "aprovado":
