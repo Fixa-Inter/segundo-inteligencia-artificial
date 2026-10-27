@@ -2,6 +2,7 @@ import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import pytest
 from langchain_core.messages import HumanMessage
 
 from app.agents.agentsResult import (
@@ -74,6 +75,19 @@ def test_analytics_bloqueia_perfil_sem_permissao(
     agente.ainvoke.assert_not_awaited()
 
 
+def test_administrador_nao_acessa_indicadores_gerenciais(monkeypatch) -> None:
+    agente = SimpleNamespace(ainvoke=AsyncMock())
+    monkeypatch.setattr(nos, "indicadores_gestor", agente)
+
+    resultado = asyncio.run(nos.executar_indicadores(
+        criar_estado("administrador"), criar_runtime(),
+    ))
+
+    assert resultado["erro"] is None
+    assert "permissao" in resultado["resposta_especialista"]
+    agente.ainvoke.assert_not_awaited()
+
+
 def test_executar_visualizacao_gestor(monkeypatch) -> None:
     resposta = VisualizacaoResultado(
         agente="visualizacao",
@@ -102,15 +116,16 @@ def test_executar_visualizacao_gestor(monkeypatch) -> None:
     agente.ainvoke.assert_awaited_once()
 
 
+@pytest.mark.parametrize("perfil", ["tecnico", "administrador"])
 def test_visualizacao_bloqueia_perfil_sem_permissao(
-    monkeypatch,
+    monkeypatch, perfil,
 ) -> None:
     agente = SimpleNamespace(ainvoke=AsyncMock())
     monkeypatch.setattr(nos, "visualizacoes_gestor", agente)
 
     resultado = asyncio.run(
         nos.executar_visualizacao(
-            criar_estado("tecnico"),
+            criar_estado(perfil),
             criar_runtime(),
         )
     )

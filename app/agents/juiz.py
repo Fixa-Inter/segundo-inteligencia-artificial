@@ -15,6 +15,7 @@ from app.agents.prompts.reutilizaveis import (
     GLOSSARIO_INSTRUCAO,
     SOLICITANTE_INSTRUCAO,
     TECNICO_INSTRUCAO,
+    ADMINISTRADOR_INSTRUCAO,
 )
 from app.services.gerais.jev import consultar_jev, ler_choice, ler_noul
 
@@ -23,6 +24,7 @@ POLITICAS_PERFIL = {
     "solicitante": SOLICITANTE_INSTRUCAO,
     "tecnico": TECNICO_INSTRUCAO,
     "gestor": GESTOR_INSTRUCAO,
+    "administrador": ADMINISTRADOR_INSTRUCAO,
 }
 
 CRITERIOS_VEREDITO = {
@@ -165,6 +167,9 @@ def _evidencias_jev(evidencias: list[str]) -> list[dict | str]:
 async def julgar_resposta(
     estado: EstadoGrafo,
 ) -> dict:
+    if estado.get("intencao") == "analista_compras":
+        from app.agents.juiz_compras import julgar_compra
+        return await julgar_compra(estado)
     if estado.get("erro"):
         return {
             "veredito": "bloqueado",

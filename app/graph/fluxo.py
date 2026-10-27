@@ -18,6 +18,7 @@ from .nos import (
     executar_indicadores,
     executar_visualizacao,
     executar_retorno_usuario,
+    executar_analista_compras,
     validar_saida,
     tratar_erro,
 )
@@ -74,6 +75,7 @@ def construir_grafo():
     construtor.add_node("agente_analytics", _instrumentar_no("agente_analytics", executar_indicadores))
     construtor.add_node("agente_visualizacao", _instrumentar_no("agente_visualizacao", executar_visualizacao))
     construtor.add_node("agente_feedback", _instrumentar_no("agente_feedback", executar_retorno_usuario))
+    construtor.add_node("analista_compras", _instrumentar_no("analista_compras", executar_analista_compras))
     construtor.add_node("juiz", _instrumentar_no("juiz", julgar_resposta))
     construtor.add_node("revisar_resposta", _instrumentar_no("revisar_resposta", revisar_resposta))
     construtor.add_node("proteger_saida", _instrumentar_no("proteger_saida", validar_saida))
@@ -102,6 +104,7 @@ def construir_grafo():
             "analytics": "agente_analytics",
             "visualizacao": "agente_visualizacao",
             "feedback": "agente_feedback",
+            "analista_compras": "analista_compras",
             "fallback": "fallback",
             "esclarecimento": "juiz",
         },
@@ -113,6 +116,7 @@ def construir_grafo():
     construtor.add_edge("agente_analytics", "juiz")
     construtor.add_edge("agente_visualizacao", "juiz")
     construtor.add_edge("agente_feedback", "juiz")
+    construtor.add_edge("analista_compras", "juiz")
 
     construtor.add_conditional_edges(
         "juiz",

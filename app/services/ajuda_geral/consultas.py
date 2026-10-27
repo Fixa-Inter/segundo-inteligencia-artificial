@@ -81,7 +81,7 @@ def _validar_texto(texto: str, maximo: int = 500) -> str:
 
 def _validar_usuario(usuario: UsuarioContexto) -> None:
     if not isinstance(usuario, UsuarioContexto) or usuario.tipo_acesso not in {
-        "solicitante", "tecnico", "gestor",
+        "solicitante", "tecnico", "gestor", "administrador",
     }:
         raise PermissionError("Contexto de autenticação inválido.")
 

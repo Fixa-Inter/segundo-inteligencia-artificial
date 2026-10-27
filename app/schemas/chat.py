@@ -39,6 +39,7 @@ class ConversaSaida(BaseModel):
         "analytics",
         "visualizacao",
         "feedback",
+        "analista_compras",
         "fora_de_escopo",
     ] | None
 

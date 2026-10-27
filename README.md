@@ -52,3 +52,11 @@ O comando da seleção interna está em [docs/validacao_fluxo.md](docs/validacao
 Os testes em `app/tests/test_orquestrador.py` verificam o roteamento e a continuidade dos rascunhos; `app/tests/test_jev_fluxos.py` verifica o cliente JEV e o julgamento sem acesso externo. O cliente JEV registra duração, resultado, modelo resolvido e tokens; os limiares de julgamento devem ser acompanhados com casos reais anonimizados antes de alterações de versão do modelo.
 
 Para Prometheus e Grafana, consulte [docs/observabilidade.md](docs/observabilidade.md).
+
+## Pesquisa de compras
+
+Técnicos, administradores e gestores podem pedir lojas ou comparar materiais, peças e equipamentos. O fluxo `analista_compras` guarda `analise_compra_pendente` no documento MongoDB da sessão, pede item, requisitos obrigatórios e quantidade, e oferece aplicação, orçamento, preferências e exclusões uma vez. Se a pessoa dispensar os opcionais, a busca prossegue com os três campos prioritários. O MCP recebe somente esse resumo técnico.
+
+O cliente usa `https://www.buscazap.com.br/mcp` sem credencial por padrão. Para acesso contratado, configure `BUSCAZAP_MCP_TOKEN` no ambiente. As métricas `fixa_buscazap_requests_total` e `fixa_buscazap_access_total` mostram chamadas, erros e sinais do tier observado. Sem um tier informado pelo fornecedor, a métrica registra `unknown`; uma credencial configurada não comprova que o tier contratado foi usado.
+
+Os testes de contrato consomem a cota real do serviço e ficam desativados na suíte padrão. Para executá-los explicitamente no PowerShell, defina `RUN_BUSCAZAP_LIVE_TESTS=1` no ambiente e rode `python -m pytest tests/test_buscazap_mcp_contract.py -q`. Os testes locais de roteamento, coleta e erros estão em `tests/test_compras_unit.py`.

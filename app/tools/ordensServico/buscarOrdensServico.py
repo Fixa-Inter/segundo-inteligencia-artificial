@@ -52,7 +52,7 @@ async def buscar_ordem_servico(
         raise ValueError("Forneca UsuarioContexto em context['usuario'].")
 
     usuario = contexto["usuario"]
-    if usuario.tipo_acesso.lower() not in {"tecnico", "gestor"}:
+    if usuario.tipo_acesso.lower() not in {"tecnico", "gestor", "administrador"}:
         return {
             "status": "ACESSO_NEGADO",
             "mensagem": "Somente tecnicos e gestores podem consultar ordens de servico.",

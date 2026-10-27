@@ -1,6 +1,7 @@
 from datetime import date
 from unittest.mock import AsyncMock
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.api.dependencies.auth import obter_usuario_atual
@@ -12,22 +13,23 @@ from app.schemas.chat import ConversaSaida
 cliente = TestClient(app)
 
 
-def usuario_teste() -> UsuarioContexto:
+def usuario_teste(perfil: str = "solicitante") -> UsuarioContexto:
     return UsuarioContexto(
         access_token="token-teste",
         usuario_id=10,
         nome_completo="Usuário Teste",
         email="usuario@teste.com",
-        tipo_acesso="solicitante",
+        tipo_acesso=perfil,
         cargo="Solicitante",
         data_nascimento=date(2000, 1, 1),
         cnpj_endereco="12345678000190",
     )
 
 
-def test_chat(monkeypatch) -> None:
+@pytest.mark.parametrize("perfil", ["solicitante", "administrador"])
+def test_chat(monkeypatch, perfil) -> None:
     async def substituir_usuario():
-        return usuario_teste()
+        return usuario_teste(perfil)
 
     processar = AsyncMock(
         return_value=ConversaSaida(
@@ -66,3 +68,4 @@ def test_chat(monkeypatch) -> None:
         "emocao": "NEUTRO",
         "confirmacao": "nao",
     }
+    assert processar.await_args.kwargs["usuario"].tipo_acesso == perfil

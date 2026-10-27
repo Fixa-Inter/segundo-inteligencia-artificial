@@ -8,6 +8,7 @@ from langchain_core.messages import (
 )
 from langgraph.runtime import Runtime
 from app.agents.registro import (
+    ajuda_geral_administrador,
     selecionar_agente,
     ajuda_geral_gestor,
     ajuda_geral_solicitante,
@@ -16,10 +17,12 @@ from app.agents.registro import (
     faq_gestor,
     faq_solicitante,
     faq_tecnico,
+    faq_administrador,
     feedback,
     solicitacoes_gestor,
     solicitacoes_solicitante,
     solicitacoes_tecnico,
+    solicitacoes_administrador,
     visualizacoes_gestor,
 )
 from app.agents.agentsResult import (
@@ -30,6 +33,7 @@ from app.agents.agentsResult import (
     VisualizacaoResultado,
 )
 from app.agents.orquestrador import rotear_orquestrador
+from app.agents.analista_compras import executar as executar_compra
 from app.graph.contexto import ContextoGrafo
 from app.graph.evidencias import executar_com_evidencias
 from app.graph.estado import EstadoGrafo
@@ -118,6 +122,7 @@ def validar_entrada(
         "solicitante",
         "tecnico",
         "gestor",
+        "administrador",
     }:
         return {
             "entrada_valida": False,
@@ -192,7 +197,9 @@ async def supervisionar(
         )
         pausados = propostas_pendentes(estado, pausadas=True)
         if decisao.continua_pendente and decisao.intencao in pausados:
-            atualizacoes[f"{decisao.intencao}_pendente"] = await alterar_continuacao(
+            chave_pendente = ("analise_compra_pendente" if decisao.intencao == "analista_compras"
+                              else f"{decisao.intencao}_pendente")
+            atualizacoes[chave_pendente] = await alterar_continuacao(
                 decisao.intencao, pausados[decisao.intencao], runtime.context,
                 pausado=False,
             )
@@ -200,6 +207,7 @@ async def supervisionar(
             **atualizacoes,
             "intencao": decisao.intencao,
             "cadastro_em_andamento": getattr(decisao, "cadastro_em_andamento", False),
+            "continua_pendente": decisao.continua_pendente,
             "justificativa_roteamento": decisao.justificativa,
             "erro": None,
         }
@@ -217,6 +225,17 @@ async def supervisionar(
         }
 
 
+async def executar_analista_compras(
+    estado: EstadoGrafo,
+    runtime: Runtime[ContextoGrafo],
+) -> dict:
+    try:
+        return await executar_compra(estado, runtime.context)
+    except Exception as erro:
+        registrador.exception("Falha no analista de compras")
+        return {"resposta_especialista": "", "erro": f"Falha no analista de compras: {erro}"}
+
+
 async def executar_ajuda_geral(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo],
@@ -226,6 +245,7 @@ async def executar_ajuda_geral(
         "solicitante": ajuda_geral_solicitante,
         "tecnico": ajuda_geral_tecnico,
         "gestor": ajuda_geral_gestor,
+        "administrador": ajuda_geral_administrador,
     })
     if agente is None:
         return {"resposta_especialista": "", "erro": "Perfil sem agente ajuda_geral."}
@@ -282,6 +302,7 @@ async def executar_faq(
     agente = selecionar_agente("faq", perfil, {
         "solicitante": faq_solicitante,
         "tecnico": faq_tecnico,
+        "administrador": faq_administrador,
         "gestor": faq_gestor,
     })
 
@@ -341,6 +362,7 @@ async def executar_solicitacao(
     agente = selecionar_agente("solicitacao", perfil, {
         "solicitante": solicitacoes_solicitante,
         "tecnico": solicitacoes_tecnico,
+        "administrador": solicitacoes_administrador,
         "gestor": solicitacoes_gestor,
     })
 
@@ -366,8 +388,8 @@ async def executar_solicitacao(
                 and not rascunho_atual.get("pausado")
             )
             perfil_permitido = (
-                tipo_registro == "ocorrencia" and perfil in {"tecnico", "gestor"}
-                or tipo_registro == "solicitacao" and perfil in {"tecnico", "solicitante"}
+                tipo_registro == "ocorrencia" and perfil in {"tecnico", "gestor", "administrador"}
+                or tipo_registro == "solicitacao" and perfil in {"tecnico", "solicitante", "administrador"}
             )
             if cadastro and perfil_permitido:
                 await registrar_coleta_parcial(
@@ -678,6 +700,22 @@ def validar_saida(
             "erro": "Resposta final vazia.",
         }
 
+    links_preservados = {}
+    if estado.get("intencao") == "analista_compras":
+        for evidencia in estado.get("evidencias", []):
+            try:
+                registro = json.loads(evidencia)
+            except (TypeError, ValueError):
+                continue
+            if registro.get("ferramenta") != "buscar_produtos_por_contexto":
+                continue
+            for oferta in (registro.get("resultado") or {}).get("ofertas", []):
+                url = oferta.get("url") if isinstance(oferta, dict) else None
+                if isinstance(url, str) and url.startswith("https://") and url in resposta:
+                    marcador = f"__BUSCAZAP_LINK_{len(links_preservados)}__"
+                    links_preservados[marcador] = url
+                    resposta = resposta.replace(url, marcador)
+
     try:
         resultado = proteger_saida(
             resposta=resposta,
@@ -690,6 +728,8 @@ def validar_saida(
         resposta_final = resultado[
             "conteudo"
         ]
+        for marcador, url in links_preservados.items():
+            resposta_final = resposta_final.replace(marcador, url)
 
     except Exception:
         registrador.exception("Falha no guardrail de saída")

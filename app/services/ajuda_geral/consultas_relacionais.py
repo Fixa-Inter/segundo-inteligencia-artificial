@@ -23,7 +23,7 @@ from app.services.ajuda_geral.consultas import (
 
 
 def _somente_tecnico_gestor(usuario: UsuarioContexto) -> None:
-    if usuario.tipo_acesso not in {"tecnico", "gestor"}:
+    if usuario.tipo_acesso not in {"tecnico", "gestor", "administrador"}:
         raise PermissionError("Consulta disponível apenas para técnicos e gestores.")
 
 

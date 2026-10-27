@@ -17,6 +17,7 @@ class EstadoGrafo(TypedDict, total=False):
         "solicitante",
         "tecnico",
         "gestor",
+        "administrador"
     ]
 
     intencao: Literal[
@@ -27,6 +28,7 @@ class EstadoGrafo(TypedDict, total=False):
         "analytics",
         "visualizacao",
         "feedback",
+        "analista_compras",
         "fora_de_escopo",
     ] | None
 
@@ -58,9 +60,11 @@ class EstadoGrafo(TypedDict, total=False):
 
     ocorrencia_pendente: dict | None
     ajuda_geral_pendente: dict | None
+    analise_compra_pendente: dict | None
     imagens_recebidas: bool
     anexos_pendentes: int
     cadastro_em_andamento: bool
+    continua_pendente: bool
     esclarecimento_roteamento: bool
     propostas_apresentadas: list[dict]
     contexto_temporal: str
