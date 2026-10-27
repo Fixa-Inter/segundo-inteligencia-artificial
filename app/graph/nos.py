@@ -707,12 +707,12 @@ def validar_saida(
                 registro = json.loads(evidencia)
             except (TypeError, ValueError):
                 continue
-            if registro.get("ferramenta") != "buscar_produtos_por_contexto":
+            if registro.get("ferramenta") != "search_deals":
                 continue
             for oferta in (registro.get("resultado") or {}).get("ofertas", []):
                 url = oferta.get("url") if isinstance(oferta, dict) else None
                 if isinstance(url, str) and url.startswith("https://") and url in resposta:
-                    marcador = f"__BUSCAZAP_LINK_{len(links_preservados)}__"
+                    marcador = f"__PECHINCHA_LINK_{len(links_preservados)}__"
                     links_preservados[marcador] = url
                     resposta = resposta.replace(url, marcador)
 

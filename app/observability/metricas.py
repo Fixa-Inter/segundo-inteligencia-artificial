@@ -33,12 +33,8 @@ DURACAO_JEV = Histogram(
 REQUISICOES_JEV = Counter(
     "fixa_jev_requests_total", "Chamadas ao JEV", ["operation", "outcome"]
 )
-REQUISICOES_BUSCAZAP = Counter(
-    "fixa_buscazap_requests_total", "Chamadas ao MCP BuscaZap", ["operation", "outcome"]
-)
-ACESSO_BUSCAZAP = Counter(
-    "fixa_buscazap_access_total", "Sinais do tier usado pelo BuscaZap",
-    ["credential_configured", "observed_tier"],
+REQUISICOES_PECHINCHA = Counter(
+    "fixa_pechincha_requests_total", "Chamadas ao MCP Pechincha.ai", ["operation", "outcome"]
 )
 TOKENS_MODELO = Counter(
     "fixa_llm_tokens_total", "Tokens reportados pelos provedores de LLM", ["provider", "model", "kind"]
