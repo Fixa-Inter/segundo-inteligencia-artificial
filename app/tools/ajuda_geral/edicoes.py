@@ -50,7 +50,7 @@ def _contexto(runtime: ToolRuntime) -> tuple[dict, UsuarioContexto, str]:
     sessao = contexto.get("session_id")
     turno = contexto.get("turno_id")
     if not isinstance(usuario, UsuarioContexto) or usuario.tipo_acesso not in {
-        "solicitante", "tecnico", "gestor",
+        "solicitante", "tecnico", "gestor", "administrador",
     } or not isinstance(sessao, str) or not sessao or not isinstance(turno, str) or not turno:
         raise PermissionError("Contexto de autenticação ou sessão inválido.")
     return contexto, usuario, sessao

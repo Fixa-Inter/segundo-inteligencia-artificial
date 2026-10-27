@@ -20,7 +20,7 @@ Apresente a tabela Markdown e o periodo retornado sem inventar ordens."""
     
     usuario = contexto["usuario"]
 
-    if usuario.tipo_acesso.lower() not in ("tecnico", "gestor"):
+    if usuario.tipo_acesso.lower() not in ("tecnico", "gestor", "administrador"):
         return {
             "status": "ACESSO_NEGADO",
             "mensagem": "Somente técnicos e gestores podem consultar suas ordens de serviço.",

@@ -96,7 +96,7 @@ async def buscar_ordens_servico(
 ) -> dict:
     """Busca OS com filtros opcionais dentro do escopo do usuario autenticado."""
     perfil = usuario.tipo_acesso.lower()
-    if perfil not in {"tecnico", "gestor"}:
+    if perfil not in {"tecnico", "gestor", "administrador"}:
         return {
             "status": "ACESSO_NEGADO",
             "mensagem": "Somente tecnicos e gestores podem consultar ordens de servico.",
@@ -143,7 +143,7 @@ async def buscar_ordens_servico(
     parametros = {"usuario_id": usuario.usuario_id}
     filtros_legiveis = {}
 
-    if perfil == "tecnico":
+    if perfil in {"tecnico", "administrador"}:
         condicoes.append("os.usuario_id = :usuario_id")
 
     if status is not None:

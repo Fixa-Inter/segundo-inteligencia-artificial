@@ -17,7 +17,7 @@ async def buscar_opcoes_ocorrencia(equipamento: str, local: str, runtime: ToolRu
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
         raise ValueError("Forneça UsuarioContexto em context['usuario'].")
     usuario = contexto["usuario"]
-    if usuario.tipo_acesso not in {"tecnico", "gestor"}:
+    if usuario.tipo_acesso not in {"tecnico", "gestor", "administrador"}:
         return {"status": "ACESSO_NEGADO", "mensagem": "Somente técnicos e gestores podem preparar ocorrências."}
     unidade_id = await obter_unidade_id(usuario)
     async with abrir_cliente_qdrant() as cliente:

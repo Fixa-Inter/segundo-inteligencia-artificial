@@ -36,12 +36,12 @@ async def salvar_rascunho_ocorrencia(
     """Salva a proposta e associa fotos recebidas antes de pedir confirmação.
 
     Use IDs consultados no Qdrant, enums textuais, título até 100 caracteres
-    e descrições até 255. Exclusiva de técnicos e gestores.
+    e descrições até 255. Disponível para técnicos, administradores e gestores.
     """
     contexto, usuario, sessao_id = _contexto(runtime)
     if contexto.get("intencao_atual") not in {None, "ocorrencia"}:
         return {"status": "INTENCAO_DIVERGENTE", "mensagem": "Prepare o tipo de registro solicitado nesta mensagem."}
-    if usuario.tipo_acesso not in {"tecnico", "gestor"}:
+    if usuario.tipo_acesso not in {"tecnico", "gestor", "administrador"}:
         return {"status": "ACESSO_NEGADO", "mensagem": "Perfil sem permissão para ocorrências."}
     dados = CriarOcorrenciaEntrada(
         local_endereco_id=local_endereco_id, categoria_equipamento_id=categoria_equipamento_id,
@@ -68,7 +68,7 @@ async def criar_ocorrencia(runtime: ToolRuntime) -> dict:
     Não repita envios com resultado indeterminado.
     """
     contexto, usuario, sessao_id = _contexto(runtime)
-    if usuario.tipo_acesso not in {"tecnico", "gestor"}:
+    if usuario.tipo_acesso not in {"tecnico", "gestor", "administrador"}:
         return {"status": "ACESSO_NEGADO", "mensagem": "Perfil sem permissão para ocorrências."}
     rascunho = await obter_rascunho_solicitacao(sessao_id, usuario.usuario_id, tipo="ocorrencia")
     if not rascunho:

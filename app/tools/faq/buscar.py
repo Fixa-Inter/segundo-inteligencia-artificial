@@ -19,8 +19,10 @@ async def buscar_faq(pergunta: str, runtime: ToolRuntime) -> str:
     
     perfil = contexto["usuario"].tipo_acesso.lower()
 
-    if perfil not in {"solicitante", "tecnico", "gestor"}:
+    if perfil not in {"solicitante", "tecnico", "gestor", "administrador"}:
         raise ValueError("Perfil de FAQ inválido.")
+    # O administrador utiliza o mesmo conteúdo de FAQ do técnico.
+    perfil_faq = "tecnico" if perfil == "administrador" else perfil
     
     vetor = await gerar_vetor_documento(pergunta)
 
@@ -29,7 +31,7 @@ async def buscar_faq(pergunta: str, runtime: ToolRuntime) -> str:
             collection_name=QDRANT_COLECAO_FAQ,
             query=vetor,
             query_filter=models.Filter(must=[models.FieldCondition(
-                key="perfil", match=models.MatchValue(value=perfil),
+                key="perfil", match=models.MatchValue(value=perfil_faq),
             )]),
             with_payload=True,
             limit=6,

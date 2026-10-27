@@ -1,4 +1,4 @@
-from app.agents.prompts.reutilizaveis import CONTEXTO_INSTRUCAO, GLOSSARIO_INSTRUCAO, GESTOR_INSTRUCAO, SOLICITANTE_INSTRUCAO, TECNICO_INSTRUCAO
+from app.agents.prompts.reutilizaveis import CONTEXTO_INSTRUCAO, GLOSSARIO_INSTRUCAO, GESTOR_INSTRUCAO, SOLICITANTE_INSTRUCAO, TECNICO_INSTRUCAO, ADMINISTRADOR_INSTRUCAO
 from app.agents.prompts.reutilizaveis import MAPEAMENTO_CATEGORIA_PROBLEMA_INSTRUCAO
 from app.agents.prompts.especialistas import (
     AJUDA_GERAL_INSTRUCAO,
@@ -33,6 +33,12 @@ def construir_ajuda_geral_gestor() -> str:
         AJUDA_GERAL_INSTRUCAO_TECNICO_GESTOR, AJUDA_GERAL_INSTRUCAO_GESTOR,
     ])
 
+def construir_ajuda_geral_administrador() -> str:
+    return "\n".join([
+        CONTEXTO_INSTRUCAO, ADMINISTRADOR_INSTRUCAO, AJUDA_GERAL_INSTRUCAO,
+        AJUDA_GERAL_INSTRUCAO_SOLICITANTE_TECNICO, AJUDA_GERAL_INSTRUCAO_TECNICO_GESTOR,
+    ])
+
 def construir_retorno_usuario() -> str:
     return (
         GLOSSARIO_INSTRUCAO   +"\n"+
@@ -54,6 +60,12 @@ def construir_faq_tecnico() -> str:
 def construir_faq_gestor() -> str:
     return (
         GESTOR_INSTRUCAO      +"\n"+
+        FAQ_INSTRUCAO
+    )
+
+def construir_faq_administrador() -> str:
+    return (
+        ADMINISTRADOR_INSTRUCAO +"\n"+
         FAQ_INSTRUCAO
     )
 
@@ -83,6 +95,15 @@ def construir_solicitacoes_gestor() -> str:
         CONTEXTO_INSTRUCAO,
         GLOSSARIO_INSTRUCAO,
         GESTOR_INSTRUCAO,
+        SOLICITACOES_INSTRUCAO,
+        MAPEAMENTO_CATEGORIA_PROBLEMA_INSTRUCAO,
+    ])
+
+def construir_solicitacoes_administrador() -> str:
+    return "\n".join([
+        CONTEXTO_INSTRUCAO,
+        GLOSSARIO_INSTRUCAO,
+        ADMINISTRADOR_INSTRUCAO,
         SOLICITACOES_INSTRUCAO,
         MAPEAMENTO_CATEGORIA_PROBLEMA_INSTRUCAO,
     ])

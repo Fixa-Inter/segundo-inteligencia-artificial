@@ -8,6 +8,7 @@ from app.core import configuracao
 _URLS_POR_PERFIL = {
     "solicitante": configuracao.BANCO_URL_SOLICITANTE,
     "tecnico": configuracao.BANCO_URL_TECNICO,
+    "administrador": configuracao.BANCO_URL_TECNICO,
     "gestor": configuracao.BANCO_URL_GESTOR,
 }
 _MOTORES: dict[tuple[str, str], AsyncEngine] = {}

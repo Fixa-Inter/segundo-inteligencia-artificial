@@ -44,7 +44,7 @@ from app.tools.tecnicos import buscar_tecnicos_disponiveis
 
 
 def criar_agente_ajuda_geral(modelo, instrucao: str, *, perfil: str):
-    if perfil not in {"solicitante", "tecnico", "gestor"}:
+    if perfil not in {"solicitante", "tecnico", "gestor", "administrador"}:
         raise ValueError("Perfil inválido para o agente ajuda_geral.")
     ferramentas_genericas = [
         buscar_semanticamente_solicitante,
@@ -67,9 +67,9 @@ def criar_agente_ajuda_geral(modelo, instrucao: str, *, perfil: str):
         alterar_informacao_solicitacao,
         anexar_foto_solicitacao,
     ]
-    if perfil in {"solicitante", "tecnico"}:
+    if perfil in {"solicitante", "tecnico", "administrador"}:
         ferramentas.append(listar_minhas_solicitacoes)
-    if perfil in {"tecnico", "gestor"}:
+    if perfil in {"tecnico", "gestor", "administrador"}:
         ferramentas.extend([
             listar_minhas_ocorrencias,
             listar_minhas_ordens_servico,

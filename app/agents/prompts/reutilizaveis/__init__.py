@@ -5,6 +5,7 @@ from app.agents.prompts.reutilizaveis.gerais.mapeamento_categoria_problema impor
 from app.agents.prompts.reutilizaveis.usuarios.gestor import GESTOR_INSTRUCAO
 from app.agents.prompts.reutilizaveis.usuarios.solicitante import SOLICITANTE_INSTRUCAO
 from app.agents.prompts.reutilizaveis.usuarios.tecnico import TECNICO_INSTRUCAO
+from app.agents.prompts.reutilizaveis.usuarios.administrador import ADMINISTRADOR_INSTRUCAO
 
 __all__ = [
     "construir_contexto_temporal"
@@ -13,5 +14,6 @@ __all__ = [
     ,"GESTOR_INSTRUCAO"
     ,"SOLICITANTE_INSTRUCAO"
     ,"TECNICO_INSTRUCAO"
+    ,"ADMINISTRADOR_INSTRUCAO"
     ,"MAPEAMENTO_CATEGORIA_PROBLEMA_INSTRUCAO"
 ]

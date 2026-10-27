@@ -11,7 +11,7 @@ _SQL_CRIAR_FEEDBACK = """
     VALUES (:usuario_id, :comentario, :ideia_central)
     RETURNING id, data_criacao
 """
-_PERFIS_COM_ACESSO = {"solicitante", "tecnico", "gestor"}
+_PERFIS_COM_ACESSO = {"solicitante", "tecnico", "gestor", "administrador"}
 
 
 async def criar_feedback(

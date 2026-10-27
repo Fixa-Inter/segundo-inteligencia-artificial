@@ -15,7 +15,7 @@ Apresente integralmente a tabela retornada."""
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
         raise ValueError("Forneça uma instância de UsuarioContexto em context['usuario'].")
     usuario = contexto["usuario"]
-    if usuario.tipo_acesso.lower() not in ("tecnico", "gestor"):
+    if usuario.tipo_acesso.lower() not in ("tecnico", "gestor", "administrador"):
         return {
             "status": "ACESSO_NEGADO",
             "mensagem": "Somente técnicos e gestores podem consultar suas ocorrências.",

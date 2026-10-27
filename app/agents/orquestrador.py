@@ -1,6 +1,8 @@
 """Orquestrador de intenção e continuidade do chat."""
 
 import json
+import re
+import unicodedata
 from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -13,7 +15,7 @@ from app.graph.continuacoes import propostas_pendentes
 class DecisaoRoteamento(BaseModel):
     intencao: Literal[
         "ajuda_geral", "faq", "solicitacao", "ocorrencia", "analytics",
-        "visualizacao", "feedback", "fora_de_escopo",
+        "visualizacao", "feedback", "analista_compras", "fora_de_escopo",
     ]
     continua_pendente: bool = Field(
         description="A mensagem continua uma proposta existente ou a coleta de dados iniciada na conversa."
@@ -31,11 +33,27 @@ class DecisaoRoteamento(BaseModel):
 roteador_estruturado = llm_rapido.with_structured_output(DecisaoRoteamento)
 
 
+def pedido_compra_explicito(pergunta: str) -> bool:
+    texto = "".join(
+        caractere for caractere in unicodedata.normalize("NFKD", pergunta.lower())
+        if not unicodedata.combining(caractere)
+    )
+    padroes = (
+        r"\bonde (?:posso |consigo )?comprar\b", r"\b(?:quero|preciso|vamos) comprar\b",
+        r"\bcompar(?:e|ar) (?:precos|ofertas|lojas)\b", r"\bquanto custa\b",
+        r"\b(?:cotacao|cotar) (?:de |do |da )?(?:precos?|pecas?|materiais?|equipamentos?)\b",
+        r"\bqual (?:loja|site) vende\b", r"\bmais barato\b",
+        r"\bquais lojas\b",
+    )
+    return any(re.search(padrao, texto) for padrao in padroes)
+
+
 def _resumir_propostas(estado: dict, *, pausadas: bool = False) -> dict:
     return {
         tipo: {
             "status": proposta.get("status" if tipo == "ajuda_geral" else "status_fluxo"),
             "dados": proposta.get("dados", {}),
+            "pergunta_pendente": proposta.get("pergunta_pendente") if tipo == "analista_compras" else None,
             "rotulos": proposta.get("rotulos", {}),
             "confirmado": proposta.get("confirmado", False),
             "quantidade_imagens": len(proposta.get("imagens", [])),
@@ -46,6 +64,12 @@ def _resumir_propostas(estado: dict, *, pausadas: bool = False) -> dict:
 
 
 async def rotear_orquestrador(estado: dict, pergunta: str) -> DecisaoRoteamento:
+    if pedido_compra_explicito(pergunta) and "analista_compras" not in propostas_pendentes(estado):
+        return DecisaoRoteamento(
+            intencao="analista_compras", continua_pendente=False,
+            precisa_esclarecimento=False, cadastro_em_andamento=False,
+            justificativa="Pedido explícito de pesquisa ou comparação de compra.",
+        )
     contexto = {
         "mensagem_atual": pergunta,
         "historico": [
@@ -70,6 +94,8 @@ Intenções:
 - analytics: métricas e análises;
 - visualizacao: gráficos;
 - feedback: crítica, elogio ou sugestão;
+- analista_compras: pesquisar onde comprar ou comparar ofertas de materiais, peças,
+  ferramentas e equipamentos; não é cadastro de solicitação;
 - fora_de_escopo: assunto sem relação com a aplicação.
 
 Analise a mensagem atual, a pergunta anterior do assistente, o histórico e os

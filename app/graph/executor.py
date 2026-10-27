@@ -16,6 +16,7 @@ from app.memory.persistencia import (
     obter_quantidade_anexos_pendentes,
 )
 from app.memory.persistencia import obter_acao
+from app.memory.persistencia.analise_compra import obter_analise_compra
 from app.memory.persistencia import atualizar_rascunho_solicitacao
 
 from app.guardrails import anonimizar_entrada
@@ -32,12 +33,14 @@ Perfil = Literal[
     "solicitante",
     "tecnico",
     "gestor",
+    "administrador"
 ]
 
 PERFIS_VALIDOS = {
     "solicitante",
     "tecnico",
     "gestor",
+    "administrador"
 }
 
 
@@ -76,9 +79,11 @@ def criar_estado_inicial(
         "justificativa_roteamento": "",
         "veredito": None,
         "intencao": None,
+        "analise_compra_pendente": None,
         "esclarecimento_roteamento": False,
         "propostas_apresentadas": [],
         "cadastro_em_andamento": False,
+        "continua_pendente": False,
         "contexto_temporal": construir_contexto_temporal(),
     }
 
@@ -149,6 +154,7 @@ async def executar_grafo(
         thread_id, usuario_id, tipo="ocorrencia",
     )
     estado_inicial["ajuda_geral_pendente"] = await obter_acao(thread_id, usuario_id)
+    estado_inicial["analise_compra_pendente"] = await obter_analise_compra(thread_id, usuario_id)
     estado_inicial["imagens_recebidas"] = bool(imagens)
     estado_inicial["anexos_pendentes"] = await obter_quantidade_anexos_pendentes(
         thread_id, usuario_id,
