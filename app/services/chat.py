@@ -55,14 +55,18 @@ async def _processar_chat(
         imagens=dados.imagens,
     )
 
+    resposta = resultado.get("resposta_final")
+    if not isinstance(resposta, str) or not resposta.strip():
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="A Manu não conseguiu gerar uma resposta. Sua mensagem foi preservada na conversa.",
+        )
+
     return ConversaSaida(
         thread_id=dados.thread_id,
         emocao=resultado.get("emocao", Emocao.NEUTRO),
         intencao=resultado.get("intencao"),
-        resposta=resultado.get(
-            "resposta_final",
-            "Não foi possível produzir uma resposta.",
-        ),
+        resposta=resposta,
         confirmacao=resultado.get("confirmacao", "nao"),
     )
 

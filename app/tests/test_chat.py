@@ -69,3 +69,26 @@ def test_chat(monkeypatch, perfil) -> None:
         "confirmacao": "nao",
     }
     assert processar.await_args.kwargs["usuario"].tipo_acesso == perfil
+
+
+@pytest.mark.parametrize("resposta_final", ["", "   ", "\t\n"])
+def test_chat_rejeita_resposta_vazia_sem_reenvio(monkeypatch, resposta_final) -> None:
+    async def substituir_usuario():
+        return usuario_teste()
+
+    executar = AsyncMock(return_value={"resposta_final": resposta_final})
+    monkeypatch.setattr("app.services.chat.sessao_acessivel", AsyncMock(return_value=True))
+    monkeypatch.setattr("app.services.chat.executar_grafo", executar)
+    app.dependency_overrides[obter_usuario_atual] = substituir_usuario
+
+    try:
+        resposta = cliente.post(
+            "/api/v1/chat",
+            json={"mensagem": "Como acompanho?", "thread_id": "conversa-1", "imagens": []},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert resposta.status_code == 502
+    assert "Manu não conseguiu gerar uma resposta" in resposta.json()["detail"]
+    executar.assert_awaited_once()

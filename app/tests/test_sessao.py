@@ -88,6 +88,39 @@ def test_encerrar_sessao_sem_autenticacao():
 
 
 @pytest.mark.parametrize(
+    "thread_id,status_esperado",
+    [("%20", 422), ("00000000-0000-4000-8000-000000000001", 404)],
+)
+def test_encerrar_com_bearer_valido_rejeita_id_invalido_ou_inexistente(
+    monkeypatch, thread_id, status_esperado,
+):
+    auth = import_module("app.api.dependencies.auth")
+    consultar_perfil = AsyncMock(return_value={
+        "id": 123,
+        "nomeCompleto": "Usuário Teste",
+        "email": "usuario@teste.com",
+        "tipoAcesso": "solicitante",
+        "cnpjUnidade": "12345678000199",
+    })
+    encerrar = AsyncMock(return_value=None)
+    monkeypatch.setattr(auth, "consultar_perfil", consultar_perfil)
+    monkeypatch.setattr(servico_sessao, "encerrar_sessao", encerrar)
+    app.dependency_overrides.clear()
+
+    resposta = cliente.delete(
+        f"/api/v1/chat/sessions/{thread_id}",
+        headers={"Authorization": "Bearer token-qa-valido"},
+    )
+
+    assert resposta.status_code == status_esperado
+    consultar_perfil.assert_awaited_once_with(access_token="token-qa-valido")
+    if status_esperado == 422:
+        encerrar.assert_not_awaited()
+    else:
+        encerrar.assert_awaited_once_with(sessao_id=thread_id, usuario_id=123)
+
+
+@pytest.mark.parametrize(
     "rota",
     ["/api/v1/chat/sessions/", "/api/v1/sessoes/conversa/"],
 )

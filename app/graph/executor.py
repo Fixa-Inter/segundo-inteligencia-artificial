@@ -2,6 +2,7 @@ from typing import Literal, cast
 from uuid import uuid4
 
 from langchain_core.messages import HumanMessage, AIMessage
+from fastapi import HTTPException, status
 
 from app.graph.contexto import ContextoGrafo
 from app.graph.estado import EstadoGrafo
@@ -181,6 +182,13 @@ async def executar_grafo(
 
     if resultado.get("erro"):
         marcar_falha_requisicao()
+
+    if not isinstance(resultado.get("resposta_final"), str) or not resultado["resposta_final"].strip():
+        marcar_falha_requisicao()
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="A Manu não conseguiu gerar uma resposta. Sua mensagem foi preservada na conversa.",
+        )
 
     await salvar_mensagem(
         thread_id, "assistant", resultado["resposta_final"], usuario_id,
