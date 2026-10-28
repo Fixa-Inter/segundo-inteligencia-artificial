@@ -2,6 +2,7 @@ from typing import Literal, cast
 from uuid import uuid4
 
 from langchain_core.messages import HumanMessage, AIMessage
+from fastapi import HTTPException, status
 
 from app.graph.contexto import ContextoGrafo
 from app.graph.estado import EstadoGrafo
@@ -9,6 +10,7 @@ from app.graph.fluxo import grafo
 from app.schemas import UsuarioContexto
 from app.core import Emocao
 from app.memory.persistencia import salvar_mensagem
+from app.memory.persistencia.salvar_mensagem import marcar_confirmacao_mensagem
 from app.memory.persistencia import recuperar_mensagens
 from app.memory.persistencia import obter_documento_sessao_id
 from app.memory.persistencia import (
@@ -181,9 +183,17 @@ async def executar_grafo(
     if resultado.get("erro"):
         marcar_falha_requisicao()
 
+    if not isinstance(resultado.get("resposta_final"), str) or not resultado["resposta_final"].strip():
+        marcar_falha_requisicao()
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="A Manu não conseguiu gerar uma resposta. Sua mensagem foi preservada na conversa.",
+        )
+
     await salvar_mensagem(
         thread_id, "assistant", resultado["resposta_final"], usuario_id,
         emocao=resultado.get("emocao", Emocao.NEUTRO),
+        turno_id=contexto["turno_id"],
     )
     propostas_apresentadas = resultado.get("propostas_apresentadas", [])
     resultado["confirmacao"] = "nao"
@@ -213,5 +223,8 @@ async def executar_grafo(
             and resumo_confirmacao(rascunho) in resultado["resposta_final"]
         ):
             resultado["confirmacao"] = "sim"
+
+    if resultado["confirmacao"] == "sim":
+        await marcar_confirmacao_mensagem(thread_id, usuario_id, contexto["turno_id"])
 
     return resultado

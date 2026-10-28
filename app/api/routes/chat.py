@@ -6,7 +6,9 @@ from app.schemas import ConversaEntrada, ConversaSaida
 from app.services.chat import processar_chat
 from app.services.sessao import finalizar_sessao_chat
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.schemas.id_sessao import IdSessaoCaminho
 
 router = APIRouter(
     prefix="/chat",
@@ -36,16 +38,19 @@ async def conversar(
     response_model=EncerrarSessaoSaida,
 )
 async def encerrar_conversa(
-    thread_id: Annotated[
-        str,
-        Path(min_length=1, max_length=100),
-    ],
+    thread_id: IdSessaoCaminho,
     usuario: Annotated[
         UsuarioContexto,
         Depends(obter_usuario_atual),
     ],
 ) -> EncerrarSessaoSaida:
-    return await finalizar_sessao_chat(
-        thread_id=thread_id,
-        usuario=usuario,
-    )
+    try:
+        return await finalizar_sessao_chat(
+            thread_id=thread_id,
+            usuario=usuario,
+        )
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(erro),
+        ) from erro

@@ -27,6 +27,7 @@ async def iniciar_sessao(
             "iniciada_em":   agora_val,
             "atualizada_em": agora_val,
             "esta_ativo":   True,
+            "titulo":        "",
             "resumo":        "",
             "mensagens":     [],
             "anexos_pendentes": [],

@@ -20,17 +20,10 @@ _PROJECAO = {
     "session_id": 1,
     "iniciada_em": 1,
     "atualizada_em": 1,
+    "titulo": 1,
     "resumo": 1,
     "mensagens": 1,
 }
-
-
-def _separar_resumo(resumo: Any) -> tuple[str, str]:
-    if not isinstance(resumo, str) or not resumo.strip():
-        return "", ""
-
-    linhas = resumo.strip().splitlines()
-    return linhas[0].strip(), "\n".join(linhas[1:]).strip()
 
 
 def _formatar_mensagens(mensagens: Any) -> list[dict[str, Any]]:
@@ -48,6 +41,7 @@ def _formatar_mensagens(mensagens: Any) -> list[dict[str, Any]]:
             continue
 
         item = {"role": role, "mensagem": conteudo}
+        item["confirmacao"] = "sim" if role == "assistant" and mensagem.get("confirmacao") == "sim" else "nao"
         if role == "assistant":
             emocao = mensagem.get("emocao", Emocao.NEUTRO.value)
             item["emocao"] = (
@@ -58,13 +52,14 @@ def _formatar_mensagens(mensagens: Any) -> list[dict[str, Any]]:
 
 
 def _formatar_conversa(documento: dict[str, Any]) -> dict[str, Any]:
-    titulo, resumo = _separar_resumo(documento.get("resumo"))
+    titulo = documento.get("titulo")
+    resumo = documento.get("resumo")
     return {
         "session_id": documento["session_id"],
         "iniciada_em": documento["iniciada_em"],
         "atualizada_em": documento["atualizada_em"],
-        "titulo": titulo,
-        "resumo": resumo,
+        "titulo": titulo if isinstance(titulo, str) else "",
+        "resumo": resumo if isinstance(resumo, str) else "",
         "mensagens": _formatar_mensagens(documento.get("mensagens", [])),
     }
 

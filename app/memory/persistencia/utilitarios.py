@@ -30,3 +30,19 @@ async def obter_documento_sessao_id(sessao_id: str, usuario_id: int) -> str | No
 
         sessoes_ativas[chave] = documento["_id"]
         return documento["_id"]
+
+
+async def sessao_acessivel(sessao_id: str, usuario_id: int) -> bool:
+    """Confirma no Mongo que a conversa pertence ao usuário e está no histórico."""
+    async with abrir_cliente_mongo() as cliente:
+        colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
+        documento = await colecao.find_one(
+            {
+                "user_id": usuario_id,
+                "session_id": sessao_id,
+                "esta_ativo": True,
+            },
+            {"_id": 1},
+            sort=[("iniciada_em", -1)],
+        )
+    return documento is not None

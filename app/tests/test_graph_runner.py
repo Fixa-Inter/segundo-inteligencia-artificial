@@ -3,6 +3,9 @@ from datetime import date
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import pytest
+from fastapi import HTTPException
+
 from app.graph import executor
 from app.schemas import UsuarioContexto
 
@@ -94,3 +97,28 @@ def test_executar_grafo_inicializa_estado_e_contexto(
     ]
 
     assert salvar_mensagem.await_count == 2
+
+
+@pytest.mark.parametrize("resposta_final", ["", " \t\n "])
+def test_resposta_vazia_nao_e_persistida(monkeypatch, resposta_final) -> None:
+    monkeypatch.setattr(executor, "grafo", SimpleNamespace(
+        get_state=lambda _: SimpleNamespace(values={}),
+        ainvoke=AsyncMock(return_value={"resposta_final": resposta_final}),
+    ))
+    monkeypatch.setattr(executor, "obter_documento_sessao_id", AsyncMock(return_value="documento"))
+    monkeypatch.setattr(executor, "recuperar_mensagens", AsyncMock(return_value=[]))
+    monkeypatch.setattr(executor, "obter_rascunho_solicitacao", AsyncMock(return_value=None))
+    monkeypatch.setattr(executor, "obter_acao", AsyncMock(return_value=None))
+    salvar_mensagem = AsyncMock()
+    monkeypatch.setattr(executor, "salvar_mensagem", salvar_mensagem)
+    atualizar_proposta = AsyncMock()
+    monkeypatch.setattr(executor, "atualizar_rascunho_solicitacao", atualizar_proposta)
+
+    with pytest.raises(HTTPException) as erro:
+        asyncio.run(executor.executar_grafo("Minha dúvida", criar_usuario(), "conversa-123"))
+
+    assert erro.value.status_code == 502
+    assert "mensagem foi preservada" in erro.value.detail
+    assert salvar_mensagem.await_count == 1
+    assert salvar_mensagem.await_args.args[1] == "human"
+    atualizar_proposta.assert_not_awaited()

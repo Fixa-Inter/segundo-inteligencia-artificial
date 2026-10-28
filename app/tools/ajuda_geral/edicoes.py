@@ -3,7 +3,6 @@
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Literal
-from urllib.parse import urlparse
 
 from langchain.tools import ToolRuntime, tool
 from pydantic import Field
@@ -13,6 +12,7 @@ from app.memory.persistencia import (
     atualizar_acao, iniciar_acao, obter_acao, salvar_acao,
 )
 from app.schemas import UsuarioContexto
+from app.schemas.imagem import LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem
 from app.services.ajuda_geral import edicoes as servico
 from app.tools.ajuda_geral.consultas import _Argumentos
 
@@ -58,16 +58,11 @@ def _contexto(runtime: ToolRuntime) -> tuple[dict, UsuarioContexto, str]:
 
 def _imagens(contexto: dict) -> list[str]:
     bruto = contexto.get("imagens", [])
-    if not isinstance(bruto, list) or len(bruto) > 5:
-        raise ValueError("Envie no máximo cinco imagens.")
+    if not isinstance(bruto, list) or len(bruto) > LIMITE_IMAGENS_POR_MENSAGEM:
+        raise ValueError("Envie no máximo três imagens.")
     urls = []
     for imagem in bruto:
-        if not isinstance(imagem, str):
-            raise ValueError("Imagem inválida.")
-        url = imagem.strip()
-        partes = urlparse(url)
-        if len(url) > 255 or partes.scheme not in {"https", "http"} or not partes.netloc or partes.username:
-            raise ValueError("A imagem deve ter uma URL HTTP(S) válida de até 255 caracteres.")
+        url = validar_url_imagem(imagem)
         if url not in urls:
             urls.append(url)
     return urls

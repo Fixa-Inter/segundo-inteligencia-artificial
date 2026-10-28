@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 from app.core import Emocao
+from app.schemas.id_sessao import LIMITE_ID_SESSAO
+from app.schemas.imagem import LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem
 
 
 class ConversaEntrada(BaseModel):
@@ -13,11 +15,12 @@ class ConversaEntrada(BaseModel):
     thread_id: str | None = Field(
         default=None,
         min_length=1,
-        max_length=100,
+        max_length=LIMITE_ID_SESSAO,
     )
 
     imagens: list[str] = Field(
         default_factory=list,
+        max_length=LIMITE_IMAGENS_POR_MENSAGEM,
     )
 
     @field_validator("mensagem", "thread_id", mode="before")
@@ -26,6 +29,11 @@ class ConversaEntrada(BaseModel):
         if isinstance(valor, str):
             return valor.strip()
         return valor
+
+    @field_validator("imagens")
+    @classmethod
+    def validar_imagens(cls, imagens: list[str]) -> list[str]:
+        return [validar_url_imagem(imagem) for imagem in imagens]
 
 
 class ConversaSaida(BaseModel):

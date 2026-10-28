@@ -17,6 +17,7 @@ async def salvar_mensagem(
     imagens: list[str] | None = None,
     *, associar_imagens: bool = True,
     emocao: Emocao | str | None = None,
+    turno_id: str | None = None,
 ) -> None:
 
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
@@ -32,6 +33,9 @@ async def salvar_mensagem(
     mensagem = {"role": papel, "content": conteudo}
     if papel == "assistant":
         mensagem["emocao"] = Emocao(emocao or Emocao.NEUTRO).value
+        mensagem["confirmacao"] = "nao"
+        if turno_id:
+            mensagem["turno_id"] = turno_id
     imagens_validas = [
         url.strip()
         for url in (imagens or [])
@@ -57,3 +61,25 @@ async def salvar_mensagem(
             usuario_id=usuario_id,
             imagens=imagens_validas,
         )
+
+
+async def marcar_confirmacao_mensagem(
+    sessao_id: str, usuario_id: int, turno_id: str,
+) -> None:
+    documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
+    if not documento_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversa não encontrada.")
+
+    async with abrir_cliente_mongo() as cliente:
+        colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
+        resultado = await colecao.update_one(
+            {
+                "_id": documento_id,
+                "user_id": usuario_id,
+                "esta_ativo": True,
+                "mensagens": {"$elemMatch": {"role": "assistant", "turno_id": turno_id}},
+            },
+            {"$set": {"mensagens.$.confirmacao": "sim"}},
+        )
+    if resultado.matched_count == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversa não encontrada.")

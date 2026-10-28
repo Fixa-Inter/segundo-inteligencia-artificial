@@ -6,7 +6,7 @@ from app.schemas import UsuarioContexto
 from app.schemas import ConversaEntrada, ConversaSaida
 from app.core import Emocao
 from app.memory.persistencia.sessoes import iniciar_sessao
-from app.memory.persistencia import obter_documento_sessao_id
+from app.memory.persistencia.utilitarios import sessao_acessivel
 from app.observability.metricas import (
     DURACAO_RESPOSTA_CONVERSA,
     REQUISICOES_CONVERSA,
@@ -36,16 +36,17 @@ async def _processar_chat(
         dados.thread_id = sessao_id
         await iniciar_sessao(sessao_id=sessao_id,usuario_id=usuario.usuario_id)
     else:
-        documento_id = await obter_documento_sessao_id(
+        acessivel = await sessao_acessivel(
             sessao_id=dados.thread_id,
             usuario_id=usuario.usuario_id,
         )
 
-        if documento_id is None:
+        if not acessivel:
             raise HTTPException(
                 status_code=404,
                 detail="Conversa não encontrada.",
             )
+
     
     resultado = await executar_grafo(
         mensagem=dados.mensagem,
@@ -54,14 +55,18 @@ async def _processar_chat(
         imagens=dados.imagens,
     )
 
+    resposta = resultado.get("resposta_final")
+    if not isinstance(resposta, str) or not resposta.strip():
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="A Manu não conseguiu gerar uma resposta. Sua mensagem foi preservada na conversa.",
+        )
+
     return ConversaSaida(
         thread_id=dados.thread_id,
         emocao=resultado.get("emocao", Emocao.NEUTRO),
         intencao=resultado.get("intencao"),
-        resposta=resultado.get(
-            "resposta_final",
-            "Não foi possível produzir uma resposta.",
-        ),
+        resposta=resposta,
         confirmacao=resultado.get("confirmacao", "nao"),
     )
 
