@@ -4,6 +4,7 @@ from sqlalchemy import text
 
 from app.core.clients.postgres import executar_consulta, obter_motor
 from app.schemas import UsuarioContexto
+from app.schemas.imagem import LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem
 from app.services.gerais import obter_unidade_id
 
 
@@ -168,8 +169,9 @@ async def anexar_fotos(
     _validar_id(registro_id)
     if tipo not in FKS_FOTO:
         raise ValueError("Tipo de foto não permitido.")
-    if not urls or len(urls) > 5:
-        raise ValueError("Envie de uma a cinco imagens.")
+    if not urls or len(urls) > LIMITE_IMAGENS_POR_MENSAGEM:
+        raise ValueError("Envie de uma a três imagens.")
+    urls = [validar_url_imagem(url) for url in urls]
     unidade_id = await obter_unidade_id(usuario)
     parametros = {
         "registro_id": registro_id, "usuario_id": usuario.usuario_id,

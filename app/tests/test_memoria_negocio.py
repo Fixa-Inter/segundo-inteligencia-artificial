@@ -6,6 +6,8 @@ from importlib import import_module
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
+import pytest
+
 
 def preparar_cliente(monkeypatch, modulo, colecao):
     @asynccontextmanager
@@ -40,6 +42,46 @@ def test_sessao_existente_nao_cria_segundo_documento(monkeypatch):
     monkeypatch.setattr(modulo, "obter_documento_sessao_id", AsyncMock(return_value="existente"))
     asyncio.run(modulo.iniciar_sessao("sessao", 7))
     colecao.insert_one.assert_not_awaited()
+
+
+def test_sessao_nova_fica_ativa_no_historico(monkeypatch):
+    modulo = import_module("app.memory.persistencia.sessoes.inicio")
+    colecao = SimpleNamespace(insert_one=AsyncMock())
+    preparar_cliente(monkeypatch, modulo, colecao)
+    monkeypatch.setattr(modulo, "obter_documento_sessao_id", AsyncMock(return_value=None))
+    monkeypatch.setattr(modulo, "sessoes_ativas", {})
+
+    asyncio.run(modulo.iniciar_sessao("nova", 7))
+
+    documento = colecao.insert_one.await_args.args[0]
+    assert documento["session_id"] == "nova"
+    assert documento["user_id"] == 7
+    assert documento["esta_ativo"] is True
+    assert documento["titulo"] == ""
+
+
+@pytest.mark.parametrize(
+    "documento,esperado",
+    [
+        ({"_id": "documento", "resumo": "Resumo antigo"}, True),
+        (None, False),
+    ],
+)
+def test_sessao_acessivel_respeita_dono_e_estado_ativo(
+    monkeypatch, documento, esperado,
+):
+    modulo = import_module("app.memory.persistencia.utilitarios")
+    colecao = SimpleNamespace(find_one=AsyncMock(return_value=documento))
+    preparar_cliente(monkeypatch, modulo, colecao)
+
+    resultado = asyncio.run(modulo.sessao_acessivel("sessao", 7))
+
+    assert resultado is esperado
+    colecao.find_one.assert_awaited_once_with(
+        {"user_id": 7, "session_id": "sessao", "esta_ativo": True},
+        {"_id": 1},
+        sort=[("iniciada_em", -1)],
+    )
 
 
 def test_acao_somente_inicia_se_ainda_aguarda_confirmacao(monkeypatch):

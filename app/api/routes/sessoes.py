@@ -1,9 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status, Path
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies.auth import obter_usuario_atual
 from app.schemas import UsuarioContexto
+from app.schemas.id_sessao import IdSessaoCaminho
 from app.schemas.sessao import (
     ConversaEspecificaEntrada,
     ConversaEspecificaSaida,
@@ -83,13 +84,7 @@ async def pegar_conversa_especifica(
     response_model=ExcluirConversaSaida,
 )
 async def excluir_conversa_historico(
-    session_id: Annotated[
-        str,
-        Path(
-            min_length=1,
-            max_length=100,
-        ),
-    ],
+    session_id: IdSessaoCaminho,
     usuario: Annotated[
         UsuarioContexto,
         Depends(obter_usuario_atual),

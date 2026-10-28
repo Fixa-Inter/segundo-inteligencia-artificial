@@ -11,12 +11,12 @@ from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES, QDRA
 from app.memory.embedding import gerar_vetor_documento
 
 
-async def encerrar_sessao(sessao_id: str, usuario_id: int) -> str:
+async def encerrar_sessao(sessao_id: str, usuario_id: int) -> dict[str, str] | None:
     chave = (usuario_id, sessao_id)
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
 
-    if not documento_id:
-        return ""
+    if documento_id is None:
+        return None
 
     async with abrir_cliente_mongo() as cliente:
         banco = cliente[MONGO_BANCO_DADOS]
@@ -26,17 +26,24 @@ async def encerrar_sessao(sessao_id: str, usuario_id: int) -> str:
             {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True}
         )
 
-        if not documento or not documento.get("mensagens"):
+        if documento is None:
             sessoes_ativas.pop(chave, None)
-            return ""
+            return None
 
-        resumo = await gerar_resumo(documento["mensagens"])
+        if documento.get("mensagens"):
+            gerado = await gerar_resumo(documento["mensagens"])
+            titulo, resumo = gerado.titulo, gerado.resumo
+        else:
+            titulo, resumo = "", ""
 
-        await colecao_sessoes.update_one(
+        atualizacao = await colecao_sessoes.update_one(
             {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
-            {"$set": {"resumo": resumo, "atualizada_em": agora()}},
+            {"$set": {"titulo": titulo, "resumo": resumo, "atualizada_em": agora()}},
         )
         sessoes_ativas.pop(chave, None)
+
+        if atualizacao.matched_count == 0:
+            return None
 
         if resumo:
             vetor = await gerar_vetor_documento(resumo)
@@ -49,6 +56,7 @@ async def encerrar_sessao(sessao_id: str, usuario_id: int) -> str:
                             payload={
                                 "user_id":     usuario_id,
                                 "session_id":  sessao_id,
+                                "titulo":     titulo,
                                 "resumo":      resumo,
                                 "iniciada_em": documento["iniciada_em"].isoformat(),
                             },
@@ -56,4 +64,4 @@ async def encerrar_sessao(sessao_id: str, usuario_id: int) -> str:
                     ],
                 )
 
-    return resumo
+    return {"titulo": titulo, "resumo": resumo}
