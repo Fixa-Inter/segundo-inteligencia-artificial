@@ -41,6 +41,7 @@ def _formatar_mensagens(mensagens: Any) -> list[dict[str, Any]]:
             continue
 
         item = {"role": role, "mensagem": conteudo}
+        item["confirmacao"] = "sim" if role == "assistant" and mensagem.get("confirmacao") == "sim" else "nao"
         if role == "assistant":
             emocao = mensagem.get("emocao", Emocao.NEUTRO.value)
             item["emocao"] = (

@@ -36,6 +36,7 @@ class MensagemHistorico(BaseModel):
     role: Literal["human", "assistant"]
     mensagem: str
     emocao: Emocao | None = None
+    confirmacao: Literal["sim", "nao"] = "nao"
 
 
 class ConversaHistorico(BaseModel):

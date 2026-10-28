@@ -253,6 +253,8 @@ def test_apresentacao_registrada_somente_depois_resposta_persistida(monkeypatch,
         return marcada
 
     monkeypatch.setattr(executor, "salvar_mensagem", salvar)
+    marcar_confirmacao = AsyncMock()
+    monkeypatch.setattr(executor, "marcar_confirmacao_mensagem", marcar_confirmacao)
     atualizar = AsyncMock(side_effect=marcar)
     monkeypatch.setattr(executor, "atualizar_rascunho_solicitacao", atualizar)
     chamada = executor.executar_grafo("Ventilador quebrado", SimpleNamespace(usuario_id=7, tipo_acesso="tecnico"), "sessao")
@@ -264,6 +266,10 @@ def test_apresentacao_registrada_somente_depois_resposta_persistida(monkeypatch,
         resultado = asyncio.run(chamada)
         assert eventos == ["human", "assistant", "apresentacao"]
         assert resultado["confirmacao"] == ("sim" if marcada else "nao")
+        if marcada:
+            marcar_confirmacao.assert_awaited_once()
+        else:
+            marcar_confirmacao.assert_not_awaited()
 
 
 @pytest.mark.parametrize("pausado,mostrar_resumo,esperado", [
@@ -288,6 +294,8 @@ def test_reapresentacao_da_proposta_controla_botao_de_confirmacao(
     monkeypatch.setattr(executor, "obter_rascunho_solicitacao", AsyncMock(return_value=None))
     monkeypatch.setattr(executor, "obter_acao", AsyncMock(return_value=None))
     monkeypatch.setattr(executor, "salvar_mensagem", AsyncMock())
+    marcar_confirmacao = AsyncMock()
+    monkeypatch.setattr(executor, "marcar_confirmacao_mensagem", marcar_confirmacao)
     monkeypatch.setattr(executor, "atualizar_rascunho_solicitacao", AsyncMock())
 
     resultado = asyncio.run(executor.executar_grafo(
@@ -295,6 +303,7 @@ def test_reapresentacao_da_proposta_controla_botao_de_confirmacao(
         "sessao",
     ))
     assert resultado["confirmacao"] == esperado
+    assert marcar_confirmacao.await_count == (1 if esperado == "sim" else 0)
 
 
 def test_referencia_temporal_renovada_entre_invocacoes(monkeypatch):

@@ -35,6 +35,36 @@ def test_salvar_mensagem_preserva_dono_e_anexos(monkeypatch):
                                    imagens=["https://exemplo.com/foto.jpg"])
 
 
+def test_confirmacao_da_resposta_persiste_e_aparece_no_historico(monkeypatch):
+    modulo = import_module("app.memory.persistencia.salvar_mensagem")
+    historico = import_module("app.services.sessoes.historico")
+    colecao = SimpleNamespace(update_one=AsyncMock(return_value=SimpleNamespace(matched_count=1)))
+    preparar_cliente(monkeypatch, modulo, colecao)
+    monkeypatch.setattr(modulo, "obter_documento_sessao_id", AsyncMock(return_value="documento"))
+
+    asyncio.run(modulo.salvar_mensagem(
+        "sessao", "assistant", "Confira os dados.", 7, turno_id="turno-1",
+    ))
+    mensagem = colecao.update_one.await_args.args[1]["$push"]["mensagens"]
+    assert mensagem["confirmacao"] == "nao"
+    assert historico._formatar_mensagens([mensagem])[0]["confirmacao"] == "nao"
+
+    asyncio.run(modulo.marcar_confirmacao_mensagem("sessao", 7, "turno-1"))
+    filtro, atualizacao = colecao.update_one.await_args.args
+    assert filtro == {
+        "_id": "documento", "user_id": 7, "esta_ativo": True,
+        "mensagens": {"$elemMatch": {"role": "assistant", "turno_id": "turno-1"}},
+    }
+    assert atualizacao == {"$set": {"mensagens.$.confirmacao": "sim"}}
+    assert historico._formatar_mensagens([
+        {**mensagem, "confirmacao": "sim"},
+        {"role": "human", "content": "Sim"},
+    ]) == [
+        {"role": "assistant", "mensagem": "Confira os dados.", "emocao": "NEUTRO", "confirmacao": "sim"},
+        {"role": "human", "mensagem": "Sim", "confirmacao": "nao"},
+    ]
+
+
 def test_sessao_existente_nao_cria_segundo_documento(monkeypatch):
     modulo = import_module("app.memory.persistencia.sessoes.inicio")
     colecao = SimpleNamespace(insert_one=AsyncMock())
