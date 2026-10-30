@@ -10,6 +10,7 @@ from app.services.indicadores.gerais.databricks import (
     TimeoutConsultaDatabricks,
     executar_consulta,
 )
+from app.services.indicadores.gerais.unidade import validar_unidade_id
 
 
 registrador = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ async def _consultar(
         linhas = await executar_consulta(
             sql,
             parametros,
-            tipos_parametros=tipos_parametros or {"inicio": "DATE", "fim": "DATE"},
+            tipos_parametros=tipos_parametros or {"inicio": "DATE", "fim": "DATE", "unidade_id": "BIGINT"},
         )
     except TimeoutConsultaDatabricks:
         return {
@@ -78,19 +79,23 @@ async def _consultar(
     return linhas if retornar_linhas else linhas[0]
 
 
-async def obter_total_ocorrencias(inicio: date, fim: date) -> dict:
+async def obter_total_ocorrencias(inicio: date, fim: date, *, unidade_id: int) -> dict:
     """Soma ocorrências criadas no período [início, fim)."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
     linha = await _consultar(
         """
         SELECT COALESCE(SUM(qtd_ocorrencias), 0) AS total_ocorrencias
-        FROM workspace.gold.kpi_ocorrencias_diario
-        WHERE data_referencia >= CAST(:inicio AS DATE)
+        FROM workspace.fixa_pipeline.gold_kpi_ocorrencias_diario
+        WHERE unidade_id = :unidade_id
+          AND data_referencia >= CAST(:inicio AS DATE)
           AND data_referencia < CAST(:fim AS DATE)
         """,
-        {"inicio": inicio, "fim": fim},
+        {"inicio": inicio, "fim": fim, "unidade_id": unidade_id},
     )
     if isinstance(linha, dict) and linha.get("status"):
         return linha
@@ -106,22 +111,27 @@ async def _obter_por_dimensao(
     inicio: date,
     fim: date,
     *,
+    unidade_id: int,
     dimensao: str,
     indicador: str,
 ) -> dict:
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
     linhas = await _consultar(
         f"""
         SELECT {dimensao}, SUM(qtd_ocorrencias) AS ocorrencias
-        FROM workspace.gold.kpi_ocorrencias_diario
-        WHERE data_referencia >= CAST(:inicio AS DATE)
+        FROM workspace.fixa_pipeline.gold_kpi_ocorrencias_diario
+        WHERE unidade_id = :unidade_id
+          AND data_referencia >= CAST(:inicio AS DATE)
           AND data_referencia < CAST(:fim AS DATE)
         GROUP BY {dimensao}
         ORDER BY ocorrencias DESC, {dimensao}
         """,
-        {"inicio": inicio, "fim": fim},
+        {"inicio": inicio, "fim": fim, "unidade_id": unidade_id},
         retornar_linhas=True,
     )
     if isinstance(linhas, dict):
@@ -134,33 +144,34 @@ async def _obter_por_dimensao(
     }
 
 
-async def obter_ocorrencias_por_tecnico(inicio: date, fim: date) -> dict:
+async def obter_ocorrencias_por_tecnico(inicio: date, fim: date, *, unidade_id: int) -> dict:
     """Agrupa ocorrências criadas no período por técnico."""
     return await _obter_por_dimensao(
-        inicio, fim, dimensao="tecnico_id", indicador="Ocorrências por técnico",
+        inicio, fim, unidade_id=unidade_id, dimensao="tecnico_id", indicador="Ocorrências por técnico",
     )
 
 
-async def obter_ocorrencias_por_unidade(inicio: date, fim: date) -> dict:
-    """Agrupa ocorrências criadas no período por unidade."""
+async def obter_ocorrencias_por_unidade(inicio: date, fim: date, *, unidade_id: int) -> dict:
+    """Retorna apenas a unidade autenticada para as ocorrências do período."""
     return await _obter_por_dimensao(
-        inicio, fim, dimensao="unidade_id", indicador="Ocorrências por unidade",
+        inicio, fim, unidade_id=unidade_id, dimensao="unidade_id", indicador="Ocorrências por unidade",
     )
 
 
-async def obter_ocorrencias_por_local(inicio: date, fim: date) -> dict:
+async def obter_ocorrencias_por_local(inicio: date, fim: date, *, unidade_id: int) -> dict:
     """Agrupa ocorrências criadas no período por local."""
     return await _obter_por_dimensao(
-        inicio, fim, dimensao="local_id", indicador="Ocorrências por local",
+        inicio, fim, unidade_id=unidade_id, dimensao="local_id", indicador="Ocorrências por local",
     )
 
 
 async def obter_ocorrencias_por_categoria_problema(
     inicio: date, fim: date,
+    *, unidade_id: int,
 ) -> dict:
     """Agrupa ocorrências por categoria de problema, não de equipamento."""
     return await _obter_por_dimensao(
-        inicio, fim,
+        inicio, fim, unidade_id=unidade_id,
         dimensao="categoria_problema_id",
         indicador="Ocorrências por categoria de problema",
     )
@@ -168,30 +179,35 @@ async def obter_ocorrencias_por_categoria_problema(
 
 async def obter_ocorrencias_por_categoria_equipamento(
     inicio: date, fim: date,
+    *, unidade_id: int,
 ) -> dict:
     """Agrupa ocorrências criadas no período por categoria de equipamento."""
     return await _obter_por_dimensao(
-        inicio, fim,
+        inicio, fim, unidade_id=unidade_id,
         dimensao="categoria_equipamento_id",
         indicador="Ocorrências por categoria de equipamento",
     )
 
 
-async def obter_ocorrencias_por_prioridade(inicio: date, fim: date) -> dict:
+async def obter_ocorrencias_por_prioridade(inicio: date, fim: date, *, unidade_id: int) -> dict:
     """Agrupa ocorrências por código de prioridade: alta 0, média 1, baixa 2."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
     linhas = await _consultar(
         """
         SELECT prioridade, SUM(qtd_ocorrencias) AS ocorrencias
-        FROM workspace.gold.kpi_ocorrencias_diario
-        WHERE data_referencia >= CAST(:inicio AS DATE)
+        FROM workspace.fixa_pipeline.gold_kpi_ocorrencias_diario
+        WHERE unidade_id = :unidade_id
+          AND data_referencia >= CAST(:inicio AS DATE)
           AND data_referencia < CAST(:fim AS DATE)
         GROUP BY prioridade
         ORDER BY prioridade
         """,
-        {"inicio": inicio, "fim": fim},
+        {"inicio": inicio, "fim": fim, "unidade_id": unidade_id},
         retornar_linhas=True,
     )
     if isinstance(linhas, dict):
@@ -204,36 +220,45 @@ async def obter_ocorrencias_por_prioridade(inicio: date, fim: date) -> dict:
     }
 
 
-async def obter_ocorrencias_ativas(inicio: date, fim: date) -> dict:
-    """Soma o indicador cadastral ativo para as ocorrências da coorte."""
+async def obter_ocorrencias_ativas(inicio: date, fim: date, *, unidade_id: int) -> dict:
+    """Soma ocorrências do período aguardando revisão/aprovação do gestor."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
     linha = await _consultar(
         """
         SELECT COALESCE(SUM(qtd_ocorrencias_ativas), 0) AS ocorrencias_ativas
-        FROM workspace.gold.kpi_ocorrencias_diario
-        WHERE data_referencia >= CAST(:inicio AS DATE)
+        FROM workspace.fixa_pipeline.gold_kpi_ocorrencias_diario
+        WHERE unidade_id = :unidade_id
+          AND data_referencia >= CAST(:inicio AS DATE)
           AND data_referencia < CAST(:fim AS DATE)
         """,
-        {"inicio": inicio, "fim": fim},
+        {"inicio": inicio, "fim": fim, "unidade_id": unidade_id},
     )
     if isinstance(linha, dict) and linha.get("status"):
         return linha
     return {
         "status": "SUCESSO",
-        "indicador": "Ocorrências ativas",
+        "indicador": "Ocorrências aguardando revisão/aprovação do gestor",
         "resultado": linha,
         "periodo": _periodo(inicio, fim),
         "observacao": (
-            "Interpreta ativas como estado cadastral atual da coorte; "
-            "a definição física da gold precisa confirmar essa semântica."
+            "Ocorrências do período aguardando revisão/aprovação do gestor, "
+            "conforme a última atualização disponível. Os status são atualizados "
+            "sem repetir as pendências nos dias seguintes; o resultado não "
+            "reconstitui a situação ao final de cada dia passado."
         ),
     }
 
 
-async def obter_taxa_ocorrencias_alta_prioridade(inicio: date, fim: date) -> dict:
+async def obter_taxa_ocorrencias_alta_prioridade(inicio: date, fim: date, *, unidade_id: int) -> dict:
     """Calcula ocorrências de prioridade zero sobre o total da coorte."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
@@ -245,11 +270,12 @@ async def obter_taxa_ocorrencias_alta_prioridade(inicio: date, fim: date) -> dic
                100.0 * SUM(CASE WHEN prioridade = 0
                                 THEN qtd_ocorrencias ELSE 0 END)
                    / NULLIF(SUM(qtd_ocorrencias), 0) AS taxa_pct
-        FROM workspace.gold.kpi_ocorrencias_diario
-        WHERE data_referencia >= CAST(:inicio AS DATE)
+        FROM workspace.fixa_pipeline.gold_kpi_ocorrencias_diario
+        WHERE unidade_id = :unidade_id
+          AND data_referencia >= CAST(:inicio AS DATE)
           AND data_referencia < CAST(:fim AS DATE)
         """,
-        {"inicio": inicio, "fim": fim},
+        {"inicio": inicio, "fim": fim, "unidade_id": unidade_id},
     )
     if isinstance(linha, dict) and linha.get("status"):
         return linha
@@ -266,8 +292,12 @@ async def obter_taxa_ocorrencias_alta_prioridade(inicio: date, fim: date) -> dic
 
 async def obter_ocorrencias_por_periodo(
     inicio: date, fim: date, granularidade: str,
+    *, unidade_id: int,
 ) -> dict:
     """Agrupa ocorrências criadas por dia, mês ou ano."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
@@ -284,16 +314,18 @@ async def obter_ocorrencias_por_periodo(
                  WHEN 'ano' THEN TRUNC(data_referencia, 'YYYY')
                END AS periodo,
                SUM(qtd_ocorrencias) AS ocorrencias
-        FROM workspace.gold.kpi_ocorrencias_diario
-        WHERE data_referencia >= CAST(:inicio AS DATE)
+        FROM workspace.fixa_pipeline.gold_kpi_ocorrencias_diario
+        WHERE unidade_id = :unidade_id
+          AND data_referencia >= CAST(:inicio AS DATE)
           AND data_referencia < CAST(:fim AS DATE)
         GROUP BY 1
         ORDER BY 1
         """,
-        {"inicio": inicio, "fim": fim, "granularidade": granularidade},
+        {"inicio": inicio, "fim": fim, "granularidade": granularidade, "unidade_id": unidade_id},
         retornar_linhas=True,
         tipos_parametros={
             "inicio": "DATE", "fim": "DATE", "granularidade": "STRING",
+            "unidade_id": "BIGINT",
         },
     )
     if isinstance(linhas, dict):

@@ -41,30 +41,35 @@ def construir_ajuda_geral_administrador() -> str:
 
 def construir_retorno_usuario() -> str:
     return (
+        CONTEXTO_INSTRUCAO + "\n" +
         GLOSSARIO_INSTRUCAO   +"\n"+
         RETORNO_USUARIO_INSTRUCAO
     )
 
 def construir_faq_solicitante() -> str:
     return (
+        CONTEXTO_INSTRUCAO + "\n" +
         SOLICITANTE_INSTRUCAO +"\n"+
         FAQ_INSTRUCAO
     )
 
 def construir_faq_tecnico() -> str:
     return (
+        CONTEXTO_INSTRUCAO + "\n" +
         TECNICO_INSTRUCAO     +"\n"+
         FAQ_INSTRUCAO
     )
 
 def construir_faq_gestor() -> str:
     return (
+        CONTEXTO_INSTRUCAO + "\n" +
         GESTOR_INSTRUCAO      +"\n"+
         FAQ_INSTRUCAO
     )
 
 def construir_faq_administrador() -> str:
     return (
+        CONTEXTO_INSTRUCAO + "\n" +
         ADMINISTRADOR_INSTRUCAO +"\n"+
         FAQ_INSTRUCAO
     )

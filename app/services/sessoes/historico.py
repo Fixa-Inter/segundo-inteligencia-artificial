@@ -6,6 +6,7 @@ from app.core import Emocao
 from app.core.clients.mongo import abrir_cliente_mongo
 from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
 from app.memory.persistencia.utilitarios import sessoes_ativas
+from app.schemas import imagem
 
 
 class ErroConsultaHistorico(Exception):
@@ -31,16 +32,18 @@ def _formatar_mensagens(mensagens: Any) -> list[dict[str, Any]]:
         return []
 
     resultado = []
+    print(resultado)
     for mensagem in mensagens:
         if not isinstance(mensagem, dict):
             continue
 
         role = mensagem.get("role")
         conteudo = mensagem.get("content")
+        imagens = mensagem.get("imagens")
+        print(imagens)
         if role not in {"human", "assistant"} or not isinstance(conteudo, str):
             continue
-
-        item = {"role": role, "mensagem": conteudo}
+        item = {"role": role, "mensagem": conteudo, "imagens": imagens}
         item["confirmacao"] = "sim" if role == "assistant" and mensagem.get("confirmacao") == "sim" else "nao"
         if role == "assistant":
             emocao = mensagem.get("emocao", Emocao.NEUTRO.value)
@@ -48,6 +51,7 @@ def _formatar_mensagens(mensagens: Any) -> list[dict[str, Any]]:
                 emocao if emocao in Emocao._value2member_map_ else Emocao.NEUTRO.value
             )
         resultado.append(item)
+    print(resultado)
     return resultado
 
 

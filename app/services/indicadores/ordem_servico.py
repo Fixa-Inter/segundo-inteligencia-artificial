@@ -10,6 +10,7 @@ from app.services.indicadores.gerais.databricks import (
     TimeoutConsultaDatabricks,
     executar_consulta,
 )
+from app.services.indicadores.gerais.unidade import validar_unidade_id
 
 
 registrador = logging.getLogger(__name__)
@@ -119,8 +120,11 @@ async def _consultar(
     return linhas[0]
 
 
-async def obter_total_os(inicio: date, fim: date) -> dict:
+async def obter_total_os(inicio: date, fim: date, *, unidade_id: int) -> dict:
     """Conta OS criadas no período `[início, fim)`."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
@@ -128,12 +132,13 @@ async def obter_total_os(inicio: date, fim: date) -> dict:
     linha = await _consultar(
         """
         SELECT COALESCE(SUM(qtd_os_criadas), 0) AS total_os
-        FROM workspace.gold.kpi_os_criacao_diario
-        WHERE data_referencia >= CAST(:inicio AS DATE)
+        FROM workspace.fixa_pipeline.gold_kpi_os_criacao_diario
+        WHERE unidade_id = :unidade_id
+          AND data_referencia >= CAST(:inicio AS DATE)
           AND data_referencia < CAST(:fim AS DATE)
         """,
-        _parametros_periodo(inicio, fim),
-        tipos_parametros={"inicio": "DATE", "fim": "DATE"},
+        {**_parametros_periodo(inicio, fim), "unidade_id": unidade_id},
+        tipos_parametros={"inicio": "DATE", "fim": "DATE", "unidade_id": "BIGINT"},
     )
     if linha.get("status"):
         return linha
@@ -142,36 +147,51 @@ async def obter_total_os(inicio: date, fim: date) -> dict:
     )
 
 
-async def obter_os_abertas() -> dict:
+async def obter_os_abertas(*, unidade_id: int) -> dict:
     """Conta OS atualmente abertas (status 1, 2 ou 3), sem filtro de criação."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     linha = await _consultar(
         """
         SELECT COALESCE(SUM(qtd_os), 0) AS os_abertas
-        FROM workspace.gold.os_por_status
-        WHERE status_id IN (1, 2, 3)
+        FROM workspace.fixa_pipeline.gold_os_por_status
+        WHERE unidade_id = :unidade_id
+          AND status_id IN (1, 2, 3)
         """,
+        {"unidade_id": unidade_id},
+        tipos_parametros={"unidade_id": "BIGINT"},
     )
     if linha.get("status"):
         return linha
     return _resposta("OS abertas", linha)
 
 
-async def obter_os_atrasadas() -> dict:
+async def obter_os_atrasadas(*, unidade_id: int) -> dict:
     """Conta OS atualmente classificadas como Atrasada (status 1)."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     linha = await _consultar(
         """
         SELECT COALESCE(SUM(qtd_os), 0) AS os_atrasadas
-        FROM workspace.gold.os_por_status
-        WHERE status_id = 1
+        FROM workspace.fixa_pipeline.gold_os_por_status
+        WHERE unidade_id = :unidade_id
+          AND status_id = 1
         """,
+        {"unidade_id": unidade_id},
+        tipos_parametros={"unidade_id": "BIGINT"},
     )
     if linha.get("status"):
         return linha
     return _resposta("OS atrasadas", linha)
 
 
-async def obter_taxa_atraso_os() -> dict:
+async def obter_taxa_atraso_os(*, unidade_id: int) -> dict:
     """Calcula a parcela de OS atrasadas entre as OS abertas no snapshot atual."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     linha = await _consultar(
         """
         SELECT
@@ -182,16 +202,22 @@ async def obter_taxa_atraso_os() -> dict:
             100.0 * SUM(CASE WHEN status_id = 1 THEN qtd_os ELSE 0 END)
                 / NULLIF(SUM(CASE WHEN status_id IN (1, 2, 3) THEN qtd_os ELSE 0 END), 0)
                 AS taxa_pct
-        FROM workspace.gold.os_por_status
+        FROM workspace.fixa_pipeline.gold_os_por_status
+        WHERE unidade_id = :unidade_id
         """,
+        {"unidade_id": unidade_id},
+        tipos_parametros={"unidade_id": "BIGINT"},
     )
     if linha.get("status"):
         return linha
     return _resposta("Taxa de atraso de OS", linha, campo_sem_base="taxa_pct")
 
 
-async def obter_os_finalizadas(inicio: date, fim: date) -> dict:
+async def obter_os_finalizadas(inicio: date, fim: date, *, unidade_id: int) -> dict:
     """Conta OS atualmente finalizadas, por data de conclusão em `[início, fim)`."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
@@ -199,12 +225,13 @@ async def obter_os_finalizadas(inicio: date, fim: date) -> dict:
     linha = await _consultar(
         """
         SELECT COALESCE(SUM(qtd_os_finalizadas), 0) AS os_finalizadas
-        FROM workspace.gold.kpi_os_conclusao_diario
-        WHERE data_referencia >= CAST(:inicio AS DATE)
+        FROM workspace.fixa_pipeline.gold_kpi_os_conclusao_diario
+        WHERE unidade_id = :unidade_id
+          AND data_referencia >= CAST(:inicio AS DATE)
           AND data_referencia < CAST(:fim AS DATE)
         """,
-        _parametros_periodo(inicio, fim),
-        tipos_parametros={"inicio": "DATE", "fim": "DATE"},
+        {**_parametros_periodo(inicio, fim), "unidade_id": unidade_id},
+        tipos_parametros={"inicio": "DATE", "fim": "DATE", "unidade_id": "BIGINT"},
     )
     if linha.get("status"):
         return linha
@@ -213,8 +240,11 @@ async def obter_os_finalizadas(inicio: date, fim: date) -> dict:
     )
 
 
-async def obter_taxa_conclusao_prazo(inicio: date, fim: date) -> dict:
+async def obter_taxa_conclusao_prazo(inicio: date, fim: date, *, unidade_id: int) -> dict:
     """Calcula a conclusão no prazo entre OS finalizadas elegíveis no período."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
@@ -227,12 +257,13 @@ async def obter_taxa_conclusao_prazo(inicio: date, fim: date) -> dict:
             COALESCE(SUM(qtd_os_concluidas_no_prazo), 0) AS no_prazo,
             100.0 * SUM(qtd_os_concluidas_no_prazo)
                 / NULLIF(SUM(qtd_os_com_prazo_valido), 0) AS taxa_pct
-        FROM workspace.gold.kpi_os_conclusao_diario
-        WHERE data_referencia >= CAST(:inicio AS DATE)
+        FROM workspace.fixa_pipeline.gold_kpi_os_conclusao_diario
+        WHERE unidade_id = :unidade_id
+          AND data_referencia >= CAST(:inicio AS DATE)
           AND data_referencia < CAST(:fim AS DATE)
         """,
-        _parametros_periodo(inicio, fim),
-        tipos_parametros={"inicio": "DATE", "fim": "DATE"},
+        {**_parametros_periodo(inicio, fim), "unidade_id": unidade_id},
+        tipos_parametros={"inicio": "DATE", "fim": "DATE", "unidade_id": "BIGINT"},
     )
     if linha.get("status"):
         return linha
@@ -244,8 +275,11 @@ async def obter_taxa_conclusao_prazo(inicio: date, fim: date) -> dict:
     )
 
 
-async def obter_tempo_medio_espera_os(inicio: date, fim: date) -> dict:
+async def obter_tempo_medio_espera_os(inicio: date, fim: date, *, unidade_id: int) -> dict:
     """Calcula a espera válida até o início das OS criadas no período."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
@@ -256,13 +290,14 @@ async def obter_tempo_medio_espera_os(inicio: date, fim: date) -> dict:
         """
         SELECT COUNT(*) AS os_com_espera_valida,
                AVG(tempo_espera_minutos) AS media_minutos
-        FROM workspace.gold.os_tempos
-        WHERE data_criacao >= :inicio AND data_criacao < :fim
+        FROM workspace.fixa_pipeline.gold_os_tempos
+        WHERE unidade_id = :unidade_id
+          AND data_criacao >= :inicio AND data_criacao < :fim
           AND data_inicio >= data_criacao
           AND tempo_espera_minutos IS NOT NULL AND tempo_espera_minutos >= 0
         """,
-        {"inicio": inicio_timestamp, "fim": fim_timestamp},
-        tipos_parametros={"inicio": "TIMESTAMP", "fim": "TIMESTAMP"},
+        {"inicio": inicio_timestamp, "fim": fim_timestamp, "unidade_id": unidade_id},
+        tipos_parametros={"inicio": "TIMESTAMP", "fim": "TIMESTAMP", "unidade_id": "BIGINT"},
     )
     if linha.get("status"):
         return linha
@@ -272,8 +307,11 @@ async def obter_tempo_medio_espera_os(inicio: date, fim: date) -> dict:
         periodo=_periodo_legivel(inicio, fim),
         campo_sem_base="media_minutos",
     )
-async def obter_tempo_medio_resolucao_os(inicio: date, fim: date) -> dict:
+async def obter_tempo_medio_resolucao_os(inicio: date, fim: date, *, unidade_id: int) -> dict:
     """Calcula a resolucao valida das OS concluidas no periodo."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
@@ -283,14 +321,15 @@ async def obter_tempo_medio_resolucao_os(inicio: date, fim: date) -> dict:
         """
         SELECT COUNT(*) AS os_com_resolucao_valida,
                AVG(tempo_resolucao_minutos) AS media_minutos
-        FROM workspace.gold.os_tempos
-        WHERE data_conclusao >= :inicio AND data_conclusao < :fim
+        FROM workspace.fixa_pipeline.gold_os_tempos
+        WHERE unidade_id = :unidade_id
+          AND data_conclusao >= :inicio AND data_conclusao < :fim
           AND status_id = 4
           AND data_inicio >= data_criacao AND data_conclusao >= data_inicio
           AND tempo_resolucao_minutos IS NOT NULL AND tempo_resolucao_minutos >= 0
         """,
-        {"inicio": inicio_ts, "fim": fim_ts},
-        tipos_parametros={"inicio": "TIMESTAMP", "fim": "TIMESTAMP"},
+        {"inicio": inicio_ts, "fim": fim_ts, "unidade_id": unidade_id},
+        tipos_parametros={"inicio": "TIMESTAMP", "fim": "TIMESTAMP", "unidade_id": "BIGINT"},
     )
     if linha.get("status"):
         return linha
@@ -298,8 +337,11 @@ async def obter_tempo_medio_resolucao_os(inicio: date, fim: date) -> dict:
         periodo=_periodo_legivel(inicio, fim), campo_sem_base="media_minutos")
 
 
-async def obter_tempo_medio_pausado_os(inicio: date, fim: date) -> dict:
+async def obter_tempo_medio_pausado_os(inicio: date, fim: date, *, unidade_id: int) -> dict:
     """Calcula tempo pausado valido nas OS criadas no periodo, incluindo zero."""
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
@@ -309,12 +351,13 @@ async def obter_tempo_medio_pausado_os(inicio: date, fim: date) -> dict:
         """
         SELECT COUNT(*) AS os_com_tempo_pausado_valido,
                AVG(tempo_pausado_minutos) AS media_minutos
-        FROM workspace.gold.os_tempos
-        WHERE data_criacao >= :inicio AND data_criacao < :fim
+        FROM workspace.fixa_pipeline.gold_os_tempos
+        WHERE unidade_id = :unidade_id
+          AND data_criacao >= :inicio AND data_criacao < :fim
           AND tempo_pausado_minutos IS NOT NULL AND tempo_pausado_minutos >= 0
         """,
-        {"inicio": inicio_ts, "fim": fim_ts},
-        tipos_parametros={"inicio": "TIMESTAMP", "fim": "TIMESTAMP"},
+        {"inicio": inicio_ts, "fim": fim_ts, "unidade_id": unidade_id},
+        tipos_parametros={"inicio": "TIMESTAMP", "fim": "TIMESTAMP", "unidade_id": "BIGINT"},
     )
     if linha.get("status"):
         return linha
@@ -322,7 +365,12 @@ async def obter_tempo_medio_pausado_os(inicio: date, fim: date) -> dict:
         periodo=_periodo_legivel(inicio, fim), campo_sem_base="media_minutos")
 
 
-async def _obter_taxa_coorte(inicio: date, fim: date, campo: str, indicador: str) -> dict:
+async def _obter_taxa_coorte(
+    inicio: date, fim: date, campo: str, indicador: str, *, unidade_id: int,
+) -> dict:
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
@@ -331,12 +379,13 @@ async def _obter_taxa_coorte(inicio: date, fim: date, campo: str, indicador: str
         SELECT COALESCE(SUM({campo}), 0) AS numerador,
                COALESCE(SUM(qtd_os_criadas), 0) AS os_criadas,
                100.0 * SUM({campo}) / NULLIF(SUM(qtd_os_criadas), 0) AS taxa_pct
-        FROM workspace.gold.kpi_os_criacao_diario
-        WHERE data_referencia >= CAST(:inicio AS DATE)
+        FROM workspace.fixa_pipeline.gold_kpi_os_criacao_diario
+        WHERE unidade_id = :unidade_id
+          AND data_referencia >= CAST(:inicio AS DATE)
           AND data_referencia < CAST(:fim AS DATE)
         """,
-        _parametros_periodo(inicio, fim),
-        tipos_parametros={"inicio": "DATE", "fim": "DATE"},
+        {**_parametros_periodo(inicio, fim), "unidade_id": unidade_id},
+        tipos_parametros={"inicio": "DATE", "fim": "DATE", "unidade_id": "BIGINT"},
     )
     if linha.get("status"):
         return linha
@@ -344,30 +393,45 @@ async def _obter_taxa_coorte(inicio: date, fim: date, campo: str, indicador: str
         campo_sem_base="taxa_pct")
 
 
-async def obter_taxa_reabertura_os(inicio: date, fim: date) -> dict:
-    return await _obter_taxa_coorte(inicio, fim, "qtd_os_reabertas", "Taxa de reabertura de OS")
+async def obter_taxa_reabertura_os(inicio: date, fim: date, *, unidade_id: int) -> dict:
+    return await _obter_taxa_coorte(
+        inicio, fim, "qtd_os_reabertas", "Taxa de reabertura de OS",
+        unidade_id=unidade_id,
+    )
 
 
-async def obter_taxa_reatribuicao_os(inicio: date, fim: date) -> dict:
-    return await _obter_taxa_coorte(inicio, fim, "qtd_os_reatribuidas", "Taxa de reatribuicao de OS")
+async def obter_taxa_reatribuicao_os(inicio: date, fim: date, *, unidade_id: int) -> dict:
+    return await _obter_taxa_coorte(
+        inicio, fim, "qtd_os_reatribuidas", "Taxa de reatribuicao de OS",
+        unidade_id=unidade_id,
+    )
 
 
-async def obter_carga_ativa_tecnicos() -> dict:
+async def obter_carga_ativa_tecnicos(*, unidade_id: int) -> dict:
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     linhas = await _consultar_linhas(
         """
         SELECT tecnico_id, tecnico_nome,
                COALESCE(SUM(qtd_os_ativas), 0) AS os_abertas
-        FROM workspace.gold.kpi_carga_ativa_tecnico
+        FROM workspace.fixa_pipeline.gold_kpi_carga_ativa_tecnico
+        WHERE unidade_id = :unidade_id
         GROUP BY tecnico_id, tecnico_nome
         ORDER BY os_abertas DESC, tecnico_id
         """,
+        {"unidade_id": unidade_id},
+        tipos_parametros={"unidade_id": "BIGINT"},
     )
     if isinstance(linhas, dict):
         return linhas
     return _resposta("Carga ativa por tecnico", linhas)
 
 
-async def obter_produtividade_tecnicos(inicio: date, fim: date) -> dict:
+async def obter_produtividade_tecnicos(inicio: date, fim: date, *, unidade_id: int) -> dict:
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
@@ -375,14 +439,15 @@ async def obter_produtividade_tecnicos(inicio: date, fim: date) -> dict:
         """
         SELECT tecnico_id, tecnico_nome,
                COALESCE(SUM(qtd_os_finalizadas), 0) AS os_finalizadas
-        FROM workspace.gold.kpi_produtividade_tecnico
-        WHERE data_referencia >= CAST(:inicio AS DATE)
+        FROM workspace.fixa_pipeline.gold_kpi_produtividade_tecnico
+        WHERE unidade_id = :unidade_id
+          AND data_referencia >= CAST(:inicio AS DATE)
           AND data_referencia < CAST(:fim AS DATE)
         GROUP BY tecnico_id, tecnico_nome
         ORDER BY os_finalizadas DESC, tecnico_id
         """,
-        _parametros_periodo(inicio, fim),
-        tipos_parametros={"inicio": "DATE", "fim": "DATE"},
+        {**_parametros_periodo(inicio, fim), "unidade_id": unidade_id},
+        tipos_parametros={"inicio": "DATE", "fim": "DATE", "unidade_id": "BIGINT"},
     )
     if isinstance(linhas, dict):
         return linhas
@@ -390,32 +455,20 @@ async def obter_produtividade_tecnicos(inicio: date, fim: date) -> dict:
         periodo=_periodo_legivel(inicio, fim))
 
 
-async def obter_media_tarefas_por_os(inicio: date, fim: date) -> dict:
+async def obter_media_tarefas_por_os(inicio: date, fim: date, *, unidade_id: int) -> dict:
+    erro_unidade = validar_unidade_id(unidade_id)
+    if erro_unidade:
+        return erro_unidade
     erro = _validar_periodo(inicio, fim)
     if erro:
         return erro
-    linha = await _consultar(
-        """
-        SELECT SUM(qtd_os_criadas) AS os_criadas,
-               CASE
-                 WHEN SUM(CASE WHEN qtd_os_criadas > 0
-                                AND media_tarefas_por_os IS NULL THEN 1 ELSE 0 END) > 0
-                   THEN NULL
-                 ELSE SUM(media_tarefas_por_os * qtd_os_criadas)
-                      / NULLIF(SUM(qtd_os_criadas), 0)
-               END AS media_tarefas_por_os
-        FROM workspace.gold.kpi_os_criacao_diario
-        WHERE data_referencia >= CAST(:inicio AS DATE)
-          AND data_referencia < CAST(:fim AS DATE)
-        """,
-        _parametros_periodo(inicio, fim),
-        tipos_parametros={"inicio": "DATE", "fim": "DATE"},
-    )
-    if linha.get("status"):
-        return linha
-    resposta = _resposta("Media de tarefas por OS", linha,
-        periodo=_periodo_legivel(inicio, fim), campo_sem_base="media_tarefas_por_os")
-    resposta["observacao"] = (
-        "Exata somente se a media diaria incluir OS com zero tarefas."
-    )
-    return resposta
+    return {
+        "status": "INDICADOR_INDISPONIVEL",
+        "indicador": "Média de tarefas por OS com tarefas",
+        "resultado": {"os_criadas": None, "media_tarefas_por_os": None},
+        "periodo": _periodo_legivel(inicio, fim),
+        "mensagem": (
+            "A média consolidada de tarefas por OS está indisponível até a "
+            "publicação das contagens de tarefas e de OS com tarefas pelo BI."
+        ),
+    }
