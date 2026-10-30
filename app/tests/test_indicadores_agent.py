@@ -10,7 +10,7 @@ from app.agents.prompts.construtor import construir_indicadores_gestor
 from app.tools.metricas_kpis import FERRAMENTAS_INDICADORES
 
 
-def test_agente_indicadores_recebe_inventario_gold_sem_duplicatas(monkeypatch):
+def test_agente_indicadores_recebe_36_tools_sem_unidade_editavel(monkeypatch):
     monkeypatch.setattr(indicadores, "create_agent", lambda **kwargs: kwargs)
 
     agente = indicadores.criar_agente_indicadores(object(), "prompt")
@@ -25,6 +25,10 @@ def test_agente_indicadores_recebe_inventario_gold_sem_duplicatas(monkeypatch):
     assert "obter_taxa_ocorrencias_alta_prioridade" in nomes
     assert "obter_taxa_recorrencia_local_categoria" in nomes
     assert "obter_taxa_tarefas_concluidas" not in nomes
+    assert all(
+        "unidade_id" not in ferramenta.tool_call_schema.model_json_schema()["properties"]
+        for ferramenta in FERRAMENTAS_INDICADORES
+    )
 
 
 def test_agente_permanece_com_resposta_estruturada(monkeypatch):
@@ -44,6 +48,19 @@ def test_prompt_indica_tools_fronteiras_e_metricas_nao_disponiveis():
     assert "ajuda_geral" in prompt
     assert "OS-15" in prompt
     assert "não há dados" in prompt
+    assert "revisão/aprovação do gestor" in prompt
+    assert "ativos no cadastro" not in prompt
+    assert "unidade vinculada ao gestor autenticado" in prompt
+    assert "não escolhe outra unidade" in prompt
+    assert "buscar_historico` apenas para entender o contexto" in prompt
+    assert "exigem consulta" in prompt
+    assert "INDICADOR_INDISPONIVEL" in prompt
+    assert "consulte a tool" in prompt
+    assert "não está disponível" in prompt
+    assert "não apresente ranking entre unidades" in prompt
+    assert "sem prometer tempo real" in prompt
+    assert "24 horas" not in prompt
+    assert "30 dias" not in prompt
 
 
 def test_roteador_distingue_contagem_analytics_de_lista_de_registros(monkeypatch):
