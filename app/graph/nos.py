@@ -9,6 +9,7 @@ from langchain_core.messages import (
 from langgraph.runtime import Runtime
 from app.services.visualizacoes.captura import CapturaExecucaoVisualizacao
 from app.services.visualizacoes.aprovacao import possui_visualizacao, liberar_visualizacao
+from app.services.visualizacoes import PERFIS_VISUALIZACOES
 from app.tools.visualizacoes.contexto import (
     MENSAGEM_BLOQUEIO_MOBILE,
     validar_acesso as validar_acesso_visualizacao,
@@ -22,6 +23,7 @@ from app.agents.registro import (
     ajuda_geral_solicitante,
     ajuda_geral_tecnico,
     indicadores_gestor,
+    indicadores_administrador,
     faq_gestor,
     faq_solicitante,
     faq_tecnico,
@@ -32,6 +34,7 @@ from app.agents.registro import (
     solicitacoes_tecnico,
     solicitacoes_administrador,
     visualizacoes_gestor,
+    visualizacoes_administrador,
 )
 from app.agents.agentsResult import (
     IndicadoresResultado,
@@ -401,7 +404,7 @@ async def executar_solicitacao(
             )
             perfil_permitido = (
                 tipo_registro == "ocorrencia" and perfil in {"tecnico", "gestor", "administrador"}
-                or tipo_registro == "solicitacao" and perfil in {"tecnico", "solicitante", "administrador"}
+                or tipo_registro == "solicitacao" and perfil in {"tecnico", "solicitante"}
             )
             if cadastro and perfil_permitido:
                 await registrar_coleta_parcial(
@@ -531,7 +534,7 @@ async def executar_indicadores(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo],
 ) -> dict:
-    if estado.get("perfil") != "gestor":
+    if estado.get("perfil") not in {"gestor", "administrador"}:
         return {
             "resposta_especialista": (
                 "Seu perfil nao possui permissao para "
@@ -542,8 +545,12 @@ async def executar_indicadores(
 
     evidencias = list(estado.get("evidencias", []))
     try:
+        agente = selecionar_agente("analytics", estado["perfil"], {
+            "gestor": indicadores_gestor,
+            "administrador": indicadores_administrador,
+        })
         resultado, evidencias = await executar_com_evidencias(
-            indicadores_gestor, estado, runtime.context, IndicadoresResultado,
+            agente, estado, runtime.context, IndicadoresResultado,
         )
 
         resposta_estruturada = resultado.get(
@@ -597,7 +604,11 @@ async def executar_visualizacao(
             "veredito": "bloqueado",
             "erro": None,
         }
-    if estado.get("perfil") != "gestor" or validar_acesso_visualizacao(runtime) is not None:
+    if (
+        estado.get("perfil") not in PERFIS_VISUALIZACOES
+        or validar_acesso_visualizacao(runtime) is not None
+        or estado.get("perfil") != runtime.context["usuario"].tipo_acesso.strip().lower()
+    ):
         return {
             **limpo,
             "visualizacao_status": "ACESSO_NEGADO",
@@ -624,8 +635,12 @@ async def executar_visualizacao(
             ids_anteriores=frozenset(ids_chamadas(estado.get("messages", []))),
         )
         contexto = {**runtime.context, "captura_visualizacao": captura}
+        agente = selecionar_agente("visualizacao", estado["perfil"], {
+            "gestor": visualizacoes_gestor,
+            "administrador": visualizacoes_administrador,
+        })
         resultado, evidencias = await executar_com_evidencias(
-            visualizacoes_gestor, estado, contexto, VisualizacaoResultado,
+            agente, estado, contexto, VisualizacaoResultado,
         )
 
         resposta_estruturada = resultado.get(

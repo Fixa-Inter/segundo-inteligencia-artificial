@@ -8,7 +8,7 @@ from app.observability.metricas import BYTES_VISUALIZACAO
 
 from app.schemas import UsuarioContexto
 from app.schemas.visualizacao import AprovacaoVisualizacao, ConsultaVisualizacaoCapturada, StatusVisualizacao
-from . import FILTROS_POR_FONTE, obter_analise
+from . import FILTROS_POR_FONTE, obter_analise, PERFIS_VISUALIZACOES
 from .limites import MAXIMO_CONSULTAS_POR_EXECUCAO
 from .validacao import validar_argumentos_analise, validar_resultado_consulta
 
@@ -47,8 +47,8 @@ def validar_candidata(estado, contexto) -> ConsultaVisualizacaoCapturada | None:
         if (
             not isinstance(usuario, UsuarioContexto)
             or type(usuario.usuario_id) is not int or usuario.usuario_id <= 0
-            or usuario.tipo_acesso.strip().lower() != "gestor"
-            or estado.get("perfil") != "gestor"
+            or usuario.tipo_acesso.strip().lower() not in PERFIS_VISUALIZACOES
+            or estado.get("perfil") != usuario.tipo_acesso.strip().lower()
             or type(estado.get("user_id")) is not int or estado["user_id"] != usuario.usuario_id
         ):
             raise ValueError("Contexto autenticado incompatível com a captura.")

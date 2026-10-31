@@ -93,7 +93,7 @@ def criar_tool(dominio):
         )),
     )
     descricao = (
-        "Consulta dados analíticos de visualização da unidade autenticada do gestor. "
+        "Consulta dados analíticos de visualização da unidade autenticada do gestor ou administrador. "
         + ("Snapshot atual, sem período ou granularidade. " if snapshot else
            "Informe período com início inclusivo e fim exclusivo; séries exigem dia, semana ou mes. ")
         + "Análises: " + "; ".join(f"{a.id}: {a.titulo}" for a in dominio.ANALISES)

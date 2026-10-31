@@ -152,6 +152,7 @@ def integrado(monkeypatch, mongo):
             status=resultado["status"], visualizacao={"analise_id": a.id, "consulta_id": resultado["metadados"]["consulta_id"]} if sucesso else None,
         )}
     monkeypatch.setattr(nos, "visualizacoes_gestor", SimpleNamespace(ainvoke=AsyncMock(side_effect=agente)))
+    monkeypatch.setattr(nos, "visualizacoes_administrador", SimpleNamespace(ainvoke=AsyncMock(side_effect=agente)))
     async def supervisionar(_estado): return {"intencao": "visualizacao", "erro": None}
     async def emocao(_estado): return {"emocao": "NEUTRO"}
     monkeypatch.setattr(fluxo, "supervisionar", supervisionar)
@@ -170,7 +171,8 @@ def integrado(monkeypatch, mongo):
     try:
         yield SimpleNamespace(config=configuracao, dados=dados, banco=banco, unidade=unidade, mongo=mongo,
                               cliente=TestClient(app), chamadas=chamadas, julgar=julgar,
-                              agente=nos.visualizacoes_gestor.ainvoke)
+                              agente=nos.visualizacoes_gestor.ainvoke,
+                              agente_administrador=nos.visualizacoes_administrador.ainvoke)
     finally: app.dependency_overrides.clear()
 
 
@@ -186,14 +188,17 @@ CASOS = [(i, "dia") for i in sorted(ANALISES)] + [
 
 
 @pytest.mark.parametrize("identificador", ["VIS-01", "VIS-03", "VIS-09", "VIS-12", "VIS-15", "VIS-22"])
-def test_mobile_bloqueia_antes_do_agente_e_das_consultas(integrado, identificador):
+@pytest.mark.parametrize("perfil", ["gestor", "administrador"])
+def test_mobile_bloqueia_antes_do_agente_e_das_consultas(integrado, identificador, perfil):
     c = integrado
+    c.config["perfil"] = perfil
     resposta = chamar(c, identificador, plataforma="mobile")
     assert resposta.status_code == 200, resposta.text
     assert resposta.json()["resposta"] == MENSAGEM_BLOQUEIO_MOBILE
     assert resposta.json()["intencao"] == "visualizacao"
     assert "visualizacao" not in resposta.json()
     c.agente.assert_not_awaited()
+    c.agente_administrador.assert_not_awaited()
     c.unidade.assert_not_awaited()
     c.banco.assert_not_awaited()
     c.julgar.assert_not_awaited()
@@ -241,8 +246,10 @@ def test_alternar_plataforma_na_mesma_conversa_nao_reutiliza_grafico(integrado):
 
 
 @pytest.mark.parametrize("identificador,granularidade", CASOS)
-def test_27_analises_e_calendarios_ate_o_historico(integrado, identificador, granularidade):
+@pytest.mark.parametrize("perfil", ["gestor", "administrador"])
+def test_27_analises_e_calendarios_ate_o_historico(integrado, identificador, granularidade, perfil):
     c = integrado
+    c.config["perfil"] = perfil
     resposta = chamar(c, identificador, granularidade)
     assert resposta.status_code == 200, resposta.text
     assert "visualizacao" in resposta.json(), resposta.text
@@ -301,7 +308,7 @@ def test_falhas_de_conclusao_nao_publicam_grafico(integrado, identificador, falh
     assert "token-privado-integracao" not in resposta.text
 
 
-@pytest.mark.parametrize("perfil", ["tecnico", "solicitante", "administrador"])
+@pytest.mark.parametrize("perfil", ["tecnico", "solicitante"])
 def test_perfil_sem_acesso_nao_executa_consulta(integrado, perfil):
     integrado.config["perfil"] = perfil
     resposta = chamar(integrado, "VIS-03")

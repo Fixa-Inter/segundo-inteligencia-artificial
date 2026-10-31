@@ -253,7 +253,7 @@ def test_falha_de_agente_limpa_candidata_sem_vazar_excecao(monkeypatch, caplog, 
     assert "segredo-token" not in json.dumps(saida) + caplog.text
 
 
-@pytest.mark.parametrize("perfil", ["tecnico", "solicitante", "administrador"])
+@pytest.mark.parametrize("perfil", ["tecnico", "solicitante"])
 def test_estado_gestor_nao_sobrepoe_perfil_autenticado(monkeypatch, bancos, perfil):
     agente = AsyncMock()
     saida, invocado = executar(monkeypatch, agente, ctx=contexto(perfil=perfil))
@@ -262,6 +262,16 @@ def test_estado_gestor_nao_sobrepoe_perfil_autenticado(monkeypatch, bancos, perf
     invocado.ainvoke.assert_not_awaited()
     bancos[0].assert_not_awaited()
     bancos[1].assert_not_awaited()
+
+
+@pytest.mark.parametrize("perfil_estado,perfil_autenticado", [("gestor", "administrador"), ("administrador", "gestor")])
+def test_estado_nao_pode_trocar_perfil_autenticado(monkeypatch, bancos, perfil_estado, perfil_autenticado):
+    entrada = {**estado(), "perfil": perfil_estado}
+    saida, agente = executar(monkeypatch, AsyncMock(), entrada=entrada, ctx=contexto(perfil=perfil_autenticado))
+    assert saida["visualizacao_status"] == "ACESSO_NEGADO"
+    agente.ainvoke.assert_not_awaited()
+    for banco in bancos:
+        banco.assert_not_awaited()
 
 
 def test_mobile_descarta_captura_anterior_sem_invocar_agente(monkeypatch, bancos):

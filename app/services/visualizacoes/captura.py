@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from uuid import uuid4
 
 from app.schemas.visualizacao import ConsultaVisualizacaoCapturada, ReferenciaVisualizacao
-from . import obter_analise, FILTROS_POR_FONTE
+from . import obter_analise, FILTROS_POR_FONTE, PERFIS_VISUALIZACOES
 from .limites import MAXIMO_CONSULTAS_POR_EXECUCAO
 from .validacao import validar_argumentos_analise, validar_resultado_consulta
 
@@ -26,7 +26,7 @@ class CapturaExecucaoVisualizacao:
             if (
                 contexto.get("captura_visualizacao") is not self
                 or getattr(usuario, "usuario_id", None) != self.usuario_id
-                or getattr(usuario, "tipo_acesso", "").strip().lower() != "gestor"
+                or getattr(usuario, "tipo_acesso", "").strip().lower() not in PERFIS_VISUALIZACOES
                 or contexto.get("session_id") != self.sessao_id
                 or contexto.get("turno_id") != self.turno_id
                 or type(chamada_id) is not str or not chamada_id.strip()

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies.auth import obter_usuario_atual
 from app.schemas import UsuarioContexto
+from app.services.visualizacoes import PERFIS_VISUALIZACOES
 from app.schemas.id_sessao import IdSessaoCaminho
 from app.schemas.sessao import (
     ConversaEspecificaEntrada,
@@ -33,7 +34,7 @@ async def pegar_todas_conversas_usuario(
 ) -> TodasConversasSaida:
     try:
         conversas = await buscar_conversas_usuario(
-            usuario.usuario_id, incluir_visualizacoes=usuario.tipo_acesso.strip().lower() == "gestor",
+            usuario.usuario_id, incluir_visualizacoes=usuario.tipo_acesso.strip().lower() in PERFIS_VISUALIZACOES,
         )
     except ErroConsultaHistorico as erro:
         raise _traduzir_erro(erro) from erro
@@ -64,7 +65,7 @@ async def pegar_conversa_especifica(
         conversa = await buscar_conversa(
             session_id=dados.session_id,
             usuario_id=usuario.usuario_id,
-            incluir_visualizacoes=usuario.tipo_acesso.strip().lower() == "gestor",
+            incluir_visualizacoes=usuario.tipo_acesso.strip().lower() in PERFIS_VISUALIZACOES,
         )
     except ErroConsultaHistorico as erro:
         raise _traduzir_erro(erro) from erro

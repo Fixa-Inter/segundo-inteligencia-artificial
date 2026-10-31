@@ -143,7 +143,7 @@ async def buscar_ordens_servico(
     parametros = {"usuario_id": usuario.usuario_id}
     filtros_legiveis = {}
 
-    if perfil in {"tecnico", "administrador"}:
+    if perfil == "tecnico":
         condicoes.append("os.usuario_id = :usuario_id")
 
     if status is not None:
@@ -320,8 +320,8 @@ async def consultar_minhas_ordens_servico(usuario: UsuarioContexto) -> dict:
 
 async def consultar_todas_ordens_servico(usuario: UsuarioContexto) -> dict:
     """Consulta OS do endereco do gestor nos ultimos tres meses."""
-    if usuario.tipo_acesso != "gestor":
-        return {"status": "ACESSO_NEGADO", "mensagem": "Consulta exclusiva para gestores."}
+    if usuario.tipo_acesso not in {"gestor", "administrador"}:
+        return {"status": "ACESSO_NEGADO", "mensagem": "Consulta exclusiva para gestores e administradores."}
     return await _consultar_ordens_servico(usuario, somente_usuario=False)
 
 

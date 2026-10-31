@@ -57,15 +57,15 @@ _SQL_TECNICOS_DISPONIVEIS = """
 
 async def buscar_tecnicos_disponiveis(usuario: UsuarioContexto) -> dict:
     """Seleciona tecnicos livres ou, se nao houver, os de menor carga aberta."""
-    if usuario.tipo_acesso.lower() != "gestor":
+    if usuario.tipo_acesso.lower() not in {"gestor", "administrador"}:
         return {
             "status": "ACESSO_NEGADO",
-            "mensagem": "Somente gestores podem consultar tecnicos disponiveis.",
+            "mensagem": "Somente gestores e administradores podem consultar tecnicos disponiveis.",
         }
 
     try:
         tecnicos = await executar_consulta(
-            "gestor",
+            usuario.tipo_acesso,
             _SQL_TECNICOS_DISPONIVEIS,
             {"usuario_id": usuario.usuario_id},
         )

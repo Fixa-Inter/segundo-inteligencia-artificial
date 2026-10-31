@@ -274,7 +274,7 @@ def test_api_preserva_nulos_e_mesmo_payload(monkeypatch, origem, mongo, rota):
     assert dado == origem.grafico
 
 
-@pytest.mark.parametrize("perfil", ["tecnico", "solicitante", "administrador"])
+@pytest.mark.parametrize("perfil", ["tecnico", "solicitante"])
 def test_api_historico_so_expoe_grafico_ao_gestor_dono(monkeypatch, origem, mongo, perfil):
     asyncio.run(gravar(origem))
     usuario = origem.usuario.model_copy(update={"tipo_acesso": perfil})

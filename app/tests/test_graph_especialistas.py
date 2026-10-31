@@ -76,17 +76,18 @@ def test_analytics_bloqueia_perfil_sem_permissao(
     agente.ainvoke.assert_not_awaited()
 
 
-def test_administrador_nao_acessa_indicadores_gerenciais(monkeypatch) -> None:
-    agente = SimpleNamespace(ainvoke=AsyncMock())
-    monkeypatch.setattr(nos, "indicadores_gestor", agente)
+def test_administrador_acessa_indicadores_gerenciais(monkeypatch) -> None:
+    resposta = IndicadoresResultado(agente="analytics", resposta="Há 10 OS na unidade.", status="SUCESSO")
+    agente = SimpleNamespace(ainvoke=AsyncMock(return_value={"structured_response": resposta}))
+    monkeypatch.setattr(nos, "indicadores_administrador", agente)
 
     resultado = asyncio.run(nos.executar_indicadores(
         criar_estado("administrador"), criar_runtime(),
     ))
 
     assert resultado["erro"] is None
-    assert "permissao" in resultado["resposta_especialista"]
-    agente.ainvoke.assert_not_awaited()
+    assert resultado["resposta_especialista"] == resposta.resposta
+    agente.ainvoke.assert_awaited_once()
 
 
 def test_visualizacao_rejeita_sucesso_sem_consulta_executada(monkeypatch) -> None:

@@ -128,9 +128,10 @@ def test_schema_mostra_so_argumentos_e_analises_da_fonte(fonte):
 
 
 @pytest.mark.parametrize("fonte,analise_id", MATRIZ)
-def test_27_analises_resolvem_unidade_no_servidor_e_despacham_no_dominio(dependencias, fonte, analise_id):
+@pytest.mark.parametrize("perfil", ["gestor", "administrador"])
+def test_27_analises_resolvem_unidade_no_servidor_e_despacham_no_dominio(dependencias, fonte, analise_id, perfil):
     resolver, servicos, banco, _ = dependencias
-    contexto_runtime = runtime()
+    contexto_runtime = runtime(perfil)
     resultado = invocar(fonte, argumentos(analise_id), contexto_runtime)
     assert resultado["status"] == "SEM_RESULTADO"
     assert resultado["metadados"]["filtros_aplicados"]["unidade_id"] == 7
@@ -159,7 +160,7 @@ def test_analise_de_outra_fonte_e_rejeitada_antes_da_unidade(dependencias, fonte
     servicos[fonte].assert_not_awaited()
 
 
-@pytest.mark.parametrize("perfil", ["solicitante", "tecnico", "administrador", "desconhecido"])
+@pytest.mark.parametrize("perfil", ["solicitante", "tecnico", "desconhecido"])
 def test_outros_perfis_nao_sao_autorizados_pelo_estado_que_diz_gestor(dependencias, perfil):
     resolver, servicos, banco, _ = dependencias
     assert invocar(contexto_runtime=runtime(perfil))["status"] == "ACESSO_NEGADO"
