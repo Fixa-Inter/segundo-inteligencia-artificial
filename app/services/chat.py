@@ -1,10 +1,12 @@
 import uuid
 import time
+from app.observability.tracing import somente_metricas
 from fastapi import HTTPException, status
 from app.graph.executor import PERFIS_VALIDOS, executar_grafo
 from app.schemas import UsuarioContexto
 from app.schemas import ConversaEntrada, ConversaSaida
 from app.core import Emocao
+from app.services.visualizacoes.publicacao import validar_visualizacao_publica
 from app.memory.persistencia.sessoes import iniciar_sessao
 from app.memory.persistencia.utilitarios import sessao_acessivel
 from app.observability.metricas import (
@@ -53,6 +55,7 @@ async def _processar_chat(
         usuario=usuario,
         thread_id=dados.thread_id,
         imagens=dados.imagens,
+        plataforma=dados.plataforma,
     )
 
     resposta = resultado.get("resposta_final")
@@ -62,15 +65,26 @@ async def _processar_chat(
             detail="A Manu não conseguiu gerar uma resposta. Sua mensagem foi preservada na conversa.",
         )
 
+    visualizacao = resultado.get("visualizacao_publica")
+    if visualizacao is not None:
+        if (
+            usuario.tipo_acesso.strip().lower() != "gestor"
+            or resultado.get("intencao") != "visualizacao"
+            or resultado.get("erro") or resultado.get("saida_bloqueada")
+        ):
+            raise HTTPException(status_code=502, detail="Visualização indisponível para esta resposta.")
+        visualizacao = validar_visualizacao_publica(visualizacao)
     return ConversaSaida(
         thread_id=dados.thread_id,
         emocao=resultado.get("emocao", Emocao.NEUTRO),
         intencao=resultado.get("intencao"),
         resposta=resposta,
         confirmacao=resultado.get("confirmacao", "nao"),
+        visualizacao=visualizacao,
     )
 
 
+@somente_metricas
 async def processar_chat(
     dados: ConversaEntrada,
     usuario: UsuarioContexto,

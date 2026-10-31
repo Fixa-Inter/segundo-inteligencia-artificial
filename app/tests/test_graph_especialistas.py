@@ -11,6 +11,7 @@ from app.agents.agentsResult import (
     VisualizacaoResultado,
 )
 from app.graph import nos
+from app.schemas import UsuarioContexto
 
 
 def criar_runtime():
@@ -88,11 +89,12 @@ def test_administrador_nao_acessa_indicadores_gerenciais(monkeypatch) -> None:
     agente.ainvoke.assert_not_awaited()
 
 
-def test_executar_visualizacao_gestor(monkeypatch) -> None:
+def test_visualizacao_rejeita_sucesso_sem_consulta_executada(monkeypatch) -> None:
     resposta = VisualizacaoResultado(
         agente="visualizacao",
         resposta="Use um grafico de barras.",
         status="SUCESSO",
+        visualizacao={"analise_id": "VIS-08", "consulta_id": "consulta-teste"},
     )
     agente = SimpleNamespace(
         ainvoke=AsyncMock(
@@ -100,19 +102,25 @@ def test_executar_visualizacao_gestor(monkeypatch) -> None:
         )
     )
     monkeypatch.setattr(nos, "visualizacoes_gestor", agente)
+    runtime = criar_runtime()
+    runtime.context.update({
+        "usuario": UsuarioContexto(
+            access_token="token-teste", usuario_id=10, nome_completo="Gestor",
+            email="teste@example.com", tipo_acesso="gestor", cnpj_endereco="12345678000195",
+        ),
+        "session_id": "sessao-teste", "turno_id": "turno-teste",
+    })
 
     resultado = asyncio.run(
         nos.executar_visualizacao(
             criar_estado(),
-            criar_runtime(),
+            runtime,
         )
     )
 
-    assert resultado == {
-        "evidencias": [],
-        "resposta_especialista": resposta.resposta,
-        "erro": None,
-    }
+    assert resultado["erro"]
+    assert resultado["visualizacao_candidata"] is None
+    assert resultado["resposta_especialista"] == ""
     agente.ainvoke.assert_awaited_once()
 
 

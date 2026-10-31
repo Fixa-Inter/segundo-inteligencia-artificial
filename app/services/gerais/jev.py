@@ -7,6 +7,7 @@ import math
 import time
 
 import httpx
+from app.observability.tracing import somente_metricas
 
 from app.core.configuracao import JEV_MODELO, JEV_URL, TYPESAFE_API_KEY
 from app.observability.metricas import DURACAO_JEV, REQUISICOES_JEV, registrar_uso_modelo
@@ -23,6 +24,7 @@ class DecisaoIncertaJEV(ErroJEV):
     """A resposta válida não teve certeza suficiente para alterar o fluxo."""
 
 
+@somente_metricas
 async def consultar_jev(estado: dict, perguntas: dict, *, operacao: str = "outra") -> dict:
     inicio = time.perf_counter()
     resultado = "error"

@@ -1,0 +1,10 @@
+groups:
+  - name: fixa_visualizacoes
+    interval: 15s
+    rules:
+      - record: fixa:visualization_service_calls:rate5m
+        expr: sum by (analysis, outcome) (rate(fixa_visualization_service_calls_total{job="fixa-api"}[5m]))
+      - record: fixa:visualization_service_seconds:p95_5m
+        expr: histogram_quantile(0.95, sum by (le, analysis) (rate(fixa_visualization_service_seconds_bucket{job="fixa-api"}[5m])))
+      - record: fixa:visualization_json_bytes:p95_5m
+        expr: histogram_quantile(0.95, sum by (le, stage) (rate(fixa_visualization_json_bytes_bucket{job="fixa-api"}[5m])))

@@ -1,11 +1,12 @@
 from typing import Literal, cast
 from uuid import uuid4
+from app.observability.tracing import somente_metricas
 
 from langchain_core.messages import HumanMessage, AIMessage
 from fastapi import HTTPException, status
 
 from app.graph.contexto import ContextoGrafo
-from app.graph.estado import EstadoGrafo
+from app.graph.estado import EstadoGrafo, limpar_visualizacao
 from app.graph.fluxo import grafo
 from app.schemas import UsuarioContexto
 from app.core import Emocao
@@ -24,6 +25,7 @@ from app.memory.persistencia import atualizar_rascunho_solicitacao
 from app.guardrails import anonimizar_entrada
 from app.core.propostas import campos_pendentes, resumo_confirmacao
 from app.agents.prompts.reutilizaveis import construir_contexto_temporal
+from app.services.visualizacoes.publicacao import publicar_visualizacao, LimiteVisualizacaoExcedido
 from app.observability.metricas import (
     MonitorMetricas,
     finalizar_resolucoes,
@@ -62,6 +64,7 @@ def criar_estado_inicial(
     perfil = cast(Perfil, perfil_normalizado)
 
     return {
+        **limpar_visualizacao(),
         "messages": mensagens,
         "user_id": usuario.usuario_id,
         "perfil": perfil,
@@ -90,11 +93,13 @@ def criar_estado_inicial(
     }
 
 
+@somente_metricas
 async def executar_grafo(
     mensagem: str,
     usuario: UsuarioContexto,
     thread_id: str,
     imagens: list[str] | None = None,
+    plataforma: Literal["web", "mobile"] = "web",
 ) -> EstadoGrafo:
     usuario_id = usuario.usuario_id
 
@@ -169,6 +174,7 @@ async def executar_grafo(
         "mensagem_atual": mensagem_anonimizada,
         "turno_id": str(uuid4()),
         "contexto_temporal": estado_inicial["contexto_temporal"],
+        "plataforma": plataforma,
     }
 
     try:
@@ -190,11 +196,21 @@ async def executar_grafo(
             detail="A Manu não conseguiu gerar uma resposta. Sua mensagem foi preservada na conversa.",
         )
 
+    try:
+        visualizacao = publicar_visualizacao(resultado, contexto)
+    except LimiteVisualizacaoExcedido as erro:
+        raise HTTPException(status_code=413, detail=str(erro)) from None
+    except (ValueError, TypeError, KeyError):
+        raise HTTPException(status_code=502, detail="Não foi possível validar a visualização para entrega.") from None
+    visualizacao_json = visualizacao.model_dump(mode="json") if visualizacao is not None else None
     await salvar_mensagem(
         thread_id, "assistant", resultado["resposta_final"], usuario_id,
         emocao=resultado.get("emocao", Emocao.NEUTRO),
         turno_id=contexto["turno_id"],
+        **({"visualizacao": visualizacao_json} if visualizacao_json is not None else {}),
     )
+    # Só fica disponível à API depois de confirmar a persistência da mensagem.
+    resultado["visualizacao_publica"] = visualizacao_json
     propostas_apresentadas = resultado.get("propostas_apresentadas", [])
     resultado["confirmacao"] = "nao"
     for proposta in propostas_apresentadas:

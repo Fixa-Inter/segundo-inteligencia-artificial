@@ -1,25 +1,651 @@
 {
   "uid": "fixa-observability",
   "title": "FIXA | Observabilidade multiagente",
-  "tags": ["fixa", "langgraph", "prometheus"],
+  "tags": [
+    "fixa",
+    "langgraph",
+    "prometheus"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "15s",
-  "time": {"from": "now-7d", "to": "now"},
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
   "panels": [
-    {"id": 1, "type": "stat", "title": "Custo semanal | 100 usuários (USD)", "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "fixa_weekly_estimated_cost_usd{weekly_active_users=\"100\"}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 4}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "area"}},
-    {"id": 2, "type": "stat", "title": "Custo semanal | 1.000 usuários (USD)", "gridPos": {"h": 5, "w": 6, "x": 6, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "fixa_weekly_estimated_cost_usd{weekly_active_users=\"1000\"}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 4}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value", "graphMode": "area"}},
-    {"id": 3, "type": "stat", "title": "Tempo total de resposta (p95)", "gridPos": {"h": 5, "w": 6, "x": 12, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "histogram_quantile(0.95, sum(rate(fixa_chat_response_seconds_bucket[5m])) by (le))", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"}},
-    {"id": 4, "type": "stat", "title": "Índice de erros de chat (5 min)", "gridPos": {"h": 5, "w": 6, "x": 18, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "100 * sum(rate(fixa_chat_requests_total{outcome=\"error\"}[5m])) / clamp_min(sum(rate(fixa_chat_requests_total[5m])), 0.000001)", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "percent", "decimals": 2}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"}},
-    {"id": 5, "type": "timeseries", "title": "Latência por agente/nó (p95)", "gridPos": {"h": 9, "w": 12, "x": 0, "y": 5}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "histogram_quantile(0.95, sum(rate(fixa_graph_node_seconds_bucket[5m])) by (le, node))", "legendFormat": "{{node}}", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}}},
-    {"id": 6, "type": "timeseries", "title": "Custo LLM acumulado (USD)", "gridPos": {"h": 9, "w": 12, "x": 12, "y": 5}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(fixa_llm_estimated_cost_usd_total)", "legendFormat": "USD", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 4}, "overrides": []}},
-    {"id": 7, "type": "stat", "title": "Resoluções (ocorrências concluídas, 7d)", "gridPos": {"h": 5, "w": 6, "x": 0, "y": 14}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(increase(fixa_resolutions_total[7d]))", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "short", "decimals": 0}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"}},
-    {"id": 8, "type": "stat", "title": "Custo médio da requisição que registrou resolução (USD, 7d)", "gridPos": {"h": 5, "w": 9, "x": 6, "y": 14}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum(increase(fixa_resolution_request_cost_usd_sum[7d])) / clamp_min(sum(increase(fixa_resolution_request_cost_usd_count[7d])), 1)", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 5}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"}},
-    {"id": 9, "type": "stat", "title": "ROI estimado (7d, BRL)", "description": "Sem dados enquanto OBSERVABILITY_VALUE_PER_RESOLUTION_BRL ou OBSERVABILITY_BRL_PER_USD estiver vazio.", "gridPos": {"h": 5, "w": 9, "x": 15, "y": 14}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "((max(fixa_roi_value_per_resolution_brl) * sum(increase(fixa_resolutions_total[7d]))) - (sum(increase(fixa_llm_estimated_cost_usd_total[7d])) * max(fixa_brl_per_usd))) / clamp_min(sum(increase(fixa_llm_estimated_cost_usd_total[7d])) * max(fixa_brl_per_usd), 0.000001) * 100 * (max(fixa_roi_value_configured) == 1)", "refId": "A"}], "fieldConfig": {"defaults": {"unit": "percent", "decimals": 2}, "overrides": []}, "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"}},
-    {"id": 10, "type": "timeseries", "title": "Execuções de nós e operações de negócio por resultado", "gridPos": {"h": 8, "w": 24, "x": 0, "y": 19}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (node, outcome) (rate(fixa_graph_node_runs_total[5m]))", "legendFormat": "{{node}} / {{outcome}}", "refId": "A"}, {"expr": "sum by (operation, outcome) (rate(fixa_business_operations_total[5m]))", "legendFormat": "{{operation}} / {{outcome}}", "refId": "B"}], "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []}, "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}}}
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Custo semanal | 100 usuários (USD)",
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "fixa_weekly_estimated_cost_usd{weekly_active_users=\"100\"}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Custo semanal | 1.000 usuários (USD)",
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "fixa_weekly_estimated_cost_usd{weekly_active_users=\"1000\"}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Tempo total de resposta (p95)",
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(fixa_chat_response_seconds_bucket[5m])) by (le))",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Índice de erros de chat (5 min)",
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "100 * sum(rate(fixa_chat_requests_total{outcome=\"error\"}[5m])) / clamp_min(sum(rate(fixa_chat_requests_total[5m])), 0.000001)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Latência por agente/nó (p95)",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(fixa_graph_node_seconds_bucket[5m])) by (le, node))",
+          "legendFormat": "{{node}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Custo LLM acumulado (USD)",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum(fixa_llm_estimated_cost_usd_total)",
+          "legendFormat": "USD",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Resoluções (ocorrências concluídas, 7d)",
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 14
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(fixa_resolutions_total[7d]))",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Custo médio da requisição que registrou resolução (USD, 7d)",
+      "gridPos": {
+        "h": 5,
+        "w": 9,
+        "x": 6,
+        "y": 14
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(fixa_resolution_request_cost_usd_sum[7d])) / clamp_min(sum(increase(fixa_resolution_request_cost_usd_count[7d])), 1)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 5
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "ROI estimado (7d, BRL)",
+      "description": "Sem dados enquanto OBSERVABILITY_VALUE_PER_RESOLUTION_BRL ou OBSERVABILITY_BRL_PER_USD estiver vazio.",
+      "gridPos": {
+        "h": 5,
+        "w": 9,
+        "x": 15,
+        "y": 14
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "((max(fixa_roi_value_per_resolution_brl) * sum(increase(fixa_resolutions_total[7d]))) - (sum(increase(fixa_llm_estimated_cost_usd_total[7d])) * max(fixa_brl_per_usd))) / clamp_min(sum(increase(fixa_llm_estimated_cost_usd_total[7d])) * max(fixa_brl_per_usd), 0.000001) * 100 * (max(fixa_roi_value_configured) == 1)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Execuções de nós e operações de negócio por resultado",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 19
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (node, outcome) (rate(fixa_graph_node_runs_total[5m]))",
+          "legendFormat": "{{node}} / {{outcome}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (operation, outcome) (rate(fixa_business_operations_total[5m]))",
+          "legendFormat": "{{operation}} / {{outcome}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "Visualizações | métricas agregadas",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "panels": []
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Visualizações | chamadas por análise e resultado (por min)",
+      "description": "Invocações do serviço, incluindo validação anterior ao SQL. SEM_RESULTADO e SEM_BASE_CALCULO são resultados de negócio.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 28
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "fixa:visualization_service_calls:rate5m * 60",
+          "refId": "A",
+          "legendFormat": "{{analysis}} | {{outcome}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Visualizações | duração do serviço (p95)",
+      "description": "Inclui validação, consulta e normalização; autenticação e o restante do agente aparecem nas métricas dos nós.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 28
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "fixa:visualization_service_seconds:p95_5m",
+          "refId": "A",
+          "legendFormat": "{{analysis}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Visualizações | tamanho JSON por etapa (p95)",
+      "description": "JSON compacto em tool, juiz, revisor e publico. A etapa pública é projeção, antes da confirmação da persistência. O request completo ao provedor inclui outros conteúdos.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 36
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "fixa:visualization_json_bytes:p95_5m",
+          "refId": "A",
+          "legendFormat": "{{stage}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Visualizações | falhas técnicas (por min)",
+      "description": "Falha de ferramenta, timeout e truncamento. Sem série observada, o painel permanece sem dados.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 36
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (analysis, outcome) (fixa:visualization_service_calls:rate5m{outcome=~\"ERRO_FERRAMENTA|TIMEOUT|RESULTADO_TRUNCADO\"}) * 60",
+          "refId": "A",
+          "legendFormat": "{{analysis}} | {{outcome}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Visualizações | objetos públicos projetados (1h)",
+      "description": "Conta projeções. Uma gravação recusada depois da projeção também entra nesta métrica.",
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 0,
+        "y": 44
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(fixa_visualization_json_bytes_count{job=\"fixa-api\",stage=\"publico\"}[1h]))",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 17,
+      "type": "stat",
+      "title": "Coleta Prometheus | API disponível",
+      "description": "1: coleta bem-sucedida; 0: falha. Ausência de série mantém o painel sem dados.",
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 44
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "min(up{job=\"fixa-api\"})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 1,
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "none"
+      }
+    }
   ],
-  "annotations": {"list": []},
-  "templating": {"list": []},
+  "annotations": {
+    "list": []
+  },
+  "templating": {
+    "list": []
+  },
   "links": []
 }

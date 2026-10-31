@@ -45,6 +45,18 @@ CUSTO_MODELO_USD = Counter(
 EXECUCOES_OPERACAO = Counter(
     "fixa_business_operations_total", "Resultado de operações de negócio", ["operation", "outcome"]
 )
+CONSULTAS_VISUALIZACAO = Counter(
+    "fixa_visualization_service_calls_total", "Invocações dos serviços analíticos de visualização",
+    ["analysis", "outcome"],
+)
+DURACAO_CONSULTAS_VISUALIZACAO = Histogram(
+    "fixa_visualization_service_seconds", "Duração do serviço, incluindo validação, consulta e normalização",
+    ["analysis", "outcome"], buckets=(0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10, 30, 60, 120),
+)
+BYTES_VISUALIZACAO = Histogram(
+    "fixa_visualization_json_bytes", "Tamanho do JSON compacto dos dados de visualização por etapa",
+    ["stage"], buckets=(1024, 4096, 16384, 65536, 131072, 262144, 524288, 1048576, 2097152),
+)
 RESOLUCOES = Counter(
     "fixa_resolutions_total", "Ocorrências de manutenção registradas com sucesso"
 )

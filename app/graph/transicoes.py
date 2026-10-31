@@ -15,6 +15,12 @@ def selecionar_especialista(estado: EstadoGrafo) -> str:
 
     return estado.get("intencao") or "fallback"
 
+def decidir_apos_visualizacao(estado: EstadoGrafo) -> str:
+    if estado.get("motivo_bloqueio") == "visualizacao_mobile":
+        return "classificar_emocao"
+    return "juiz"
+
+
 def decidir_apos_julgamento(estado: EstadoGrafo) -> str:
     veredito = estado.get("veredito")
 

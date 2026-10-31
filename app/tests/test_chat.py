@@ -27,7 +27,8 @@ def usuario_teste(perfil: str = "solicitante") -> UsuarioContexto:
 
 
 @pytest.mark.parametrize("perfil", ["solicitante", "administrador"])
-def test_chat(monkeypatch, perfil) -> None:
+@pytest.mark.parametrize("plataforma", ["web", "mobile"])
+def test_chat(monkeypatch, perfil, plataforma) -> None:
     async def substituir_usuario():
         return usuario_teste(perfil)
 
@@ -53,6 +54,7 @@ def test_chat(monkeypatch, perfil) -> None:
             "/api/v1/chat",
             json={
                 "mensagem": "Como uso o aplicativo?",
+                "plataforma": plataforma,
                 "thread_id": "conversa-1",
                 "imagens": [],
             },
@@ -69,6 +71,7 @@ def test_chat(monkeypatch, perfil) -> None:
         "confirmacao": "nao",
     }
     assert processar.await_args.kwargs["usuario"].tipo_acesso == perfil
+    assert processar.await_args.kwargs["dados"].plataforma == plataforma
 
 
 @pytest.mark.parametrize("resposta_final", ["", "   ", "\t\n"])
@@ -84,7 +87,7 @@ def test_chat_rejeita_resposta_vazia_sem_reenvio(monkeypatch, resposta_final) ->
     try:
         resposta = cliente.post(
             "/api/v1/chat",
-            json={"mensagem": "Como acompanho?", "thread_id": "conversa-1", "imagens": []},
+            json={"mensagem": "Como acompanho?", "plataforma": "web", "thread_id": "conversa-1", "imagens": []},
         )
     finally:
         app.dependency_overrides.clear()

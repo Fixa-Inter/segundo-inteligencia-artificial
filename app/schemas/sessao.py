@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.core import Emocao
 from app.schemas.id_sessao import LIMITE_ID_SESSAO, normalizar_id_sessao
+from app.schemas.visualizacao import VisualizacaoPublica
 
 
 class EncerrarSessaoSaida(BaseModel):
@@ -35,9 +36,16 @@ class ConversaEspecificaEntrada(BaseModel):
 class MensagemHistorico(BaseModel):
     role: Literal["human", "assistant"]
     mensagem: str
-    emocao: Emocao | None = None
+    emocao: Emocao | None = Field(default=None, exclude_if=lambda v: v is None)
     confirmacao: Literal["sim", "nao"] = "nao"
-    imagens: list[str] | None = None
+    imagens: list[str] | None = Field(default=None, exclude_if=lambda v: v is None)
+    visualizacao: VisualizacaoPublica | None = Field(default=None, exclude_if=lambda v: v is None)
+
+    @model_validator(mode="after")
+    def validar_papel_visualizacao(self):
+        if self.visualizacao is not None and self.role != "assistant":
+            raise ValueError("Somente mensagens do assistente possuem visualização.")
+        return self
 
 
 class ConversaHistorico(BaseModel):

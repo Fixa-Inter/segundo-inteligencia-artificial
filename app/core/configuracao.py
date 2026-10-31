@@ -11,6 +11,10 @@ CAMINHO_PDF_FAQ_GESTOR = DIRETORIO_DADOS / "Questionário_Modelos_classicos.pdf"
 
 load_dotenv(DIRETORIO_BASE / ".env")
 
+from app.observability.tracing import configurar_somente_metricas
+
+configurar_somente_metricas()
+
 GEMINI_CHAVE_API = os.getenv("GEMINI_API_KEY")
 OPENAI_CHAVE_API = os.getenv("OPENAI_API_KEY")
 FIXA_URL_BASE_API = os.getenv("FIXA_API_BASE_URL")
