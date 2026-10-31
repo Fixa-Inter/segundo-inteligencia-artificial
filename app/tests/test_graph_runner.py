@@ -10,6 +10,12 @@ from app.graph import executor
 from app.schemas import UsuarioContexto
 
 
+@pytest.fixture(autouse=True)
+def dependencias_persistencia(monkeypatch):
+    monkeypatch.setattr(executor, "obter_analise_compra", AsyncMock(return_value=None))
+    monkeypatch.setattr(executor, "obter_quantidade_anexos_pendentes", AsyncMock(return_value=0))
+
+
 def criar_usuario() -> UsuarioContexto:
     return UsuarioContexto(
         access_token="token-teste",
@@ -23,8 +29,9 @@ def criar_usuario() -> UsuarioContexto:
     )
 
 
+@pytest.mark.parametrize("plataforma", ["web", "mobile"])
 def test_executar_grafo_inicializa_estado_e_contexto(
-    monkeypatch,
+    monkeypatch, plataforma,
 ) -> None:
     ainvoke = AsyncMock(
         return_value={
@@ -71,6 +78,7 @@ def test_executar_grafo_inicializa_estado_e_contexto(
             usuario=usuario,
             thread_id="conversa-123",
             imagens=["https://exemplo.com/imagem.jpg"],
+            plataforma=plataforma,
         )
     )
 
@@ -92,6 +100,7 @@ def test_executar_grafo_inicializa_estado_e_contexto(
     assert len(nomeados["config"]["callbacks"]) == 1
 
     assert nomeados["context"]["usuario"] == usuario
+    assert nomeados["context"]["plataforma"] == plataforma
     assert nomeados["context"]["imagens"] == [
         "https://exemplo.com/imagem.jpg"
     ]

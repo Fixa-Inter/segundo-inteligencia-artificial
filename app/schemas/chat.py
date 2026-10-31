@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, field_validator
 from app.core import Emocao
 from app.schemas.id_sessao import LIMITE_ID_SESSAO
 from app.schemas.imagem import LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem
+from app.schemas.visualizacao import VisualizacaoPublica
 
 
 class ConversaEntrada(BaseModel):
@@ -11,6 +12,8 @@ class ConversaEntrada(BaseModel):
         min_length=1,
         max_length=4000,
     )
+
+    plataforma: Literal["web", "mobile"]
 
     thread_id: str | None = Field(
         default=None,
@@ -54,3 +57,4 @@ class ConversaSaida(BaseModel):
     resposta: str
     emocao: Emocao = Emocao.NEUTRO
     confirmacao: Literal["sim", "nao"] = "nao"
+    visualizacao: VisualizacaoPublica | None = Field(default=None, exclude_if=lambda v: v is None)

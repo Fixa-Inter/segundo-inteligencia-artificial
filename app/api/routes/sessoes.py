@@ -27,12 +27,14 @@ def _traduzir_erro(erro: ErroConsultaHistorico) -> HTTPException:
 
 
 
-@router.get("", response_model=TodasConversasSaida, response_model_exclude_none=True)
+@router.get("", response_model=TodasConversasSaida)
 async def pegar_todas_conversas_usuario(
     usuario: Annotated[UsuarioContexto, Depends(obter_usuario_atual)],
 ) -> TodasConversasSaida:
     try:
-        conversas = await buscar_conversas_usuario(usuario.usuario_id)
+        conversas = await buscar_conversas_usuario(
+            usuario.usuario_id, incluir_visualizacoes=usuario.tipo_acesso.strip().lower() == "gestor",
+        )
     except ErroConsultaHistorico as erro:
         raise _traduzir_erro(erro) from erro
 
@@ -53,7 +55,6 @@ async def pegar_todas_conversas_usuario(
 @router.post(
     "/conversa",
     response_model=ConversaEspecificaSaida,
-    response_model_exclude_none=True,
 )
 async def pegar_conversa_especifica(
     dados: ConversaEspecificaEntrada,
@@ -63,6 +64,7 @@ async def pegar_conversa_especifica(
         conversa = await buscar_conversa(
             session_id=dados.session_id,
             usuario_id=usuario.usuario_id,
+            incluir_visualizacoes=usuario.tipo_acesso.strip().lower() == "gestor",
         )
     except ErroConsultaHistorico as erro:
         raise _traduzir_erro(erro) from erro

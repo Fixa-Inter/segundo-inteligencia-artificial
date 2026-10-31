@@ -2,6 +2,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.observability.tracing import SomenteMetricasMiddleware
 
 from app.api.router import api_router
 from app.core.clients.mongo import fechar_cliente_mongo, iniciar_cliente_mongo
@@ -35,6 +36,7 @@ app = FastAPI(
     description="API da Plataforma de Manutenção FIXA com IA.",
     version="0.1.0",
 )
+app.add_middleware(SomenteMetricasMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

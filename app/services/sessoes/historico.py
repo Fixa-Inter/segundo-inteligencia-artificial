@@ -6,7 +6,7 @@ from app.core import Emocao
 from app.core.clients.mongo import abrir_cliente_mongo
 from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
 from app.memory.persistencia.utilitarios import sessoes_ativas
-from app.schemas import imagem
+from app.services.visualizacoes.publicacao import validar_visualizacao_publica
 
 
 class ErroConsultaHistorico(Exception):
@@ -27,12 +27,11 @@ _PROJECAO = {
 }
 
 
-def _formatar_mensagens(mensagens: Any) -> list[dict[str, Any]]:
+def _formatar_mensagens(mensagens: Any, *, incluir_visualizacoes: bool = False) -> list[dict[str, Any]]:
     if not isinstance(mensagens, list):
         return []
 
     resultado = []
-    print(resultado)
     for mensagem in mensagens:
         if not isinstance(mensagem, dict):
             continue
@@ -40,22 +39,24 @@ def _formatar_mensagens(mensagens: Any) -> list[dict[str, Any]]:
         role = mensagem.get("role")
         conteudo = mensagem.get("content")
         imagens = mensagem.get("imagens")
-        print(imagens)
         if role not in {"human", "assistant"} or not isinstance(conteudo, str):
             continue
-        item = {"role": role, "mensagem": conteudo, "imagens": imagens}
+        item = {"role": role, "mensagem": conteudo}
+        if imagens is not None:
+            item["imagens"] = imagens
         item["confirmacao"] = "sim" if role == "assistant" and mensagem.get("confirmacao") == "sim" else "nao"
         if role == "assistant":
             emocao = mensagem.get("emocao", Emocao.NEUTRO.value)
             item["emocao"] = (
                 emocao if emocao in Emocao._value2member_map_ else Emocao.NEUTRO.value
             )
+            if incluir_visualizacoes and mensagem.get("visualizacao") is not None:
+                item["visualizacao"] = validar_visualizacao_publica(mensagem["visualizacao"]).model_dump(mode="json")
         resultado.append(item)
-    print(resultado)
     return resultado
 
 
-def _formatar_conversa(documento: dict[str, Any]) -> dict[str, Any]:
+def _formatar_conversa(documento: dict[str, Any], *, incluir_visualizacoes: bool = False) -> dict[str, Any]:
     titulo = documento.get("titulo")
     resumo = documento.get("resumo")
     return {
@@ -64,7 +65,7 @@ def _formatar_conversa(documento: dict[str, Any]) -> dict[str, Any]:
         "atualizada_em": documento["atualizada_em"],
         "titulo": titulo if isinstance(titulo, str) else "",
         "resumo": resumo if isinstance(resumo, str) else "",
-        "mensagens": _formatar_mensagens(documento.get("mensagens", [])),
+        "mensagens": _formatar_mensagens(documento.get("mensagens", []), incluir_visualizacoes=incluir_visualizacoes),
     }
 
 
@@ -95,7 +96,7 @@ async def excluir_conversa(session_id: str, usuario_id: int) -> bool:
     return False
 
 
-async def buscar_conversas_usuario(usuario_id: int) -> list[dict[str, Any]]:
+async def buscar_conversas_usuario(usuario_id: int, *, incluir_visualizacoes: bool = False) -> list[dict[str, Any]]:
     try:
         async with abrir_cliente_mongo() as cliente:
             colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
@@ -113,7 +114,7 @@ async def buscar_conversas_usuario(usuario_id: int) -> list[dict[str, Any]]:
         ) from None
 
     try:
-        return [_formatar_conversa(documento) for documento in documentos]
+        return [_formatar_conversa(documento, incluir_visualizacoes=incluir_visualizacoes) for documento in documentos]
     except (KeyError, TypeError, ValueError):
         raise ErroConsultaHistorico(
             500, "Não foi possível interpretar o histórico de conversas."
@@ -121,7 +122,7 @@ async def buscar_conversas_usuario(usuario_id: int) -> list[dict[str, Any]]:
 
 
 async def buscar_conversa(
-    session_id: str, usuario_id: int
+    session_id: str, usuario_id: int, *, incluir_visualizacoes: bool = False,
 ) -> dict[str, Any] | None:
     try:
         async with abrir_cliente_mongo() as cliente:
@@ -147,7 +148,7 @@ async def buscar_conversa(
         return None
 
     try:
-        return _formatar_conversa(documento)
+        return _formatar_conversa(documento, incluir_visualizacoes=incluir_visualizacoes)
     except (KeyError, TypeError, ValueError):
         raise ErroConsultaHistorico(
             500, "Não foi possível interpretar o histórico de conversas."

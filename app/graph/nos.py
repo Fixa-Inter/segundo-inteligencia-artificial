@@ -7,6 +7,14 @@ from langchain_core.messages import (
     SystemMessage,
 )
 from langgraph.runtime import Runtime
+from app.services.visualizacoes.captura import CapturaExecucaoVisualizacao
+from app.services.visualizacoes.aprovacao import possui_visualizacao, liberar_visualizacao
+from app.tools.visualizacoes.contexto import (
+    MENSAGEM_BLOQUEIO_MOBILE,
+    validar_acesso as validar_acesso_visualizacao,
+)
+from app.graph.evidencias import ids_chamadas
+from app.graph.estado import limpar_visualizacao
 from app.agents.registro import (
     ajuda_geral_administrador,
     selecionar_agente,
@@ -98,6 +106,10 @@ def obter_pergunta(
 def validar_entrada(
     estado: EstadoGrafo,
 ) -> dict:
+    return {**_validar_entrada(estado), **limpar_visualizacao()}
+
+
+def _validar_entrada(estado: EstadoGrafo) -> dict:
     pergunta = (
         estado.get("mensagem_anonimizada")
         or obter_pergunta(estado)
@@ -571,8 +583,24 @@ async def executar_visualizacao(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo],
 ) -> dict:
-    if estado.get("perfil") != "gestor":
+    limpo = limpar_visualizacao()
+    contexto = getattr(runtime, "context", None)
+    if isinstance(contexto, dict) and contexto.get("plataforma") == "mobile":
         return {
+            **limpo,
+            "visualizacao_status": "ACESSO_NEGADO",
+            "motivo_bloqueio": "visualizacao_mobile",
+            "resposta_especialista": MENSAGEM_BLOQUEIO_MOBILE,
+            "resposta_candidata": "",
+            "resposta_final": MENSAGEM_BLOQUEIO_MOBILE,
+            "messages": [AIMessage(content=MENSAGEM_BLOQUEIO_MOBILE)],
+            "veredito": "bloqueado",
+            "erro": None,
+        }
+    if estado.get("perfil") != "gestor" or validar_acesso_visualizacao(runtime) is not None:
+        return {
+            **limpo,
+            "visualizacao_status": "ACESSO_NEGADO",
             "resposta_especialista": (
                 "Seu perfil nao possui permissao para "
                 "gerar visualizacoes gerenciais."
@@ -581,9 +609,23 @@ async def executar_visualizacao(
         }
 
     evidencias = list(estado.get("evidencias", []))
+    captura = None
     try:
+        usuario_id = runtime.context["usuario"].usuario_id
+        sessao_id = runtime.context.get("session_id")
+        turno_id = runtime.context.get("turno_id")
+        if (
+            ("user_id" in estado and (type(estado["user_id"]) is not int or estado["user_id"] != usuario_id))
+            or any(type(v) is not str or not v.strip() for v in (sessao_id, turno_id))
+        ):
+            raise ValueError("Contexto da execução de visualização inválido.")
+        captura = CapturaExecucaoVisualizacao(
+            usuario_id=usuario_id, sessao_id=sessao_id, turno_id=turno_id,
+            ids_anteriores=frozenset(ids_chamadas(estado.get("messages", []))),
+        )
+        contexto = {**runtime.context, "captura_visualizacao": captura}
         resultado, evidencias = await executar_com_evidencias(
-            visualizacoes_gestor, estado, runtime.context, VisualizacaoResultado,
+            visualizacoes_gestor, estado, contexto, VisualizacaoResultado,
         )
 
         resposta_estruturada = resultado.get(
@@ -599,7 +641,17 @@ async def executar_visualizacao(
                 "resposta incompativel."
             )
 
+        resposta_estruturada = VisualizacaoResultado.model_validate(resposta_estruturada.model_dump())
+        candidata = (
+            captura.selecionar(resposta_estruturada.visualizacao, resposta_estruturada.status)
+            if resposta_estruturada.visualizacao is not None else None
+        )
         return {
+            **limpo,
+            "consultas_visualizacao": captura.registros(),
+            "visualizacao_candidata": candidata,
+            "visualizacao_status": resposta_estruturada.status,
+            "visualizacao_execucao_id": captura.execucao_id,
             "evidencias": evidencias,
             "resposta_especialista": (
                 resposta_estruturada.resposta
@@ -608,13 +660,15 @@ async def executar_visualizacao(
         }
 
     except Exception as erro:
-        registrador.exception("Falha no agente de visualizações")
+        registrador.error("Falha no agente de visualizações: %s", type(erro).__name__)
         return {
+            **limpo,
+            "visualizacao_status": "ERRO_VALIDACAO" if isinstance(erro, ValueError) else "ERRO_MODELO",
+            "visualizacao_execucao_id": captura.execucao_id if captura is not None else None,
             "evidencias": evidencias,
             "resposta_especialista": "",
             "erro": (
-                "Erro durante a execucao do agente "
-                f"de visualizacoes: {erro}"
+                "Não foi possível validar o resultado da execução de visualizações."
             ),
         }
 
@@ -664,7 +718,41 @@ async def executar_retorno_usuario(
 
 def validar_saida(
     estado: EstadoGrafo,
+    runtime: Runtime[ContextoGrafo] = None,
 ) -> dict:
+    visual = possui_visualizacao(estado)
+    contexto = runtime.context if runtime else None
+    if visual:
+        try:
+            liberar_visualizacao(estado, contexto)
+        except Exception as erro:
+            return _bloquear_saida_visualizacao(erro)
+    resultado = _validar_saida(estado)
+    if (
+        estado.get("veredito") != "aprovado" or resultado.get("erro")
+        or resultado.get("saida_bloqueada") or not resultado.get("resposta_final", "").strip()
+    ):
+        return {**resultado, **limpar_visualizacao()}
+    if visual:
+        try:
+            # Confere novamente após o guardrail. Apenas o texto é redigido;
+            # os números e metadados aprovados nunca passam por reescrita.
+            aprovada = liberar_visualizacao({**estado, **resultado}, contexto)
+        except Exception as erro:
+            return _bloquear_saida_visualizacao(erro)
+        return {**resultado, "visualizacao_aprovada": aprovada}
+    return resultado
+
+
+def _bloquear_saida_visualizacao(erro) -> dict:
+    registrador.error("Falha na liberação de visualização: %s", type(erro).__name__)
+    texto = "Não foi possível validar esta visualização para envio. Ajuste o pedido e tente novamente."
+    return {**limpar_visualizacao(), "resposta_final": texto, "messages": [AIMessage(content=texto)],
+            "veredito": "bloqueado", "saida_bloqueada": True,
+            "erro": "A visualização não corresponde ao conteúdo aprovado."}
+
+
+def _validar_saida(estado: EstadoGrafo) -> dict:
     resposta = (
         estado.get("resposta_candidata") or estado.get("resposta_especialista", "")
     ).strip()
@@ -767,6 +855,10 @@ def validar_saida(
 def tratar_erro(
     estado: EstadoGrafo,
 ) -> dict:
+    return {**_tratar_erro(estado), **limpar_visualizacao()}
+
+
+def _tratar_erro(estado: EstadoGrafo) -> dict:
 
     registrador.warning(
         "Fallback: intenção=%s veredito=%s erro=%s feedback_juiz=%s",
@@ -781,6 +873,12 @@ def tratar_erro(
 
     if resposta_existente:
         resposta = resposta_existente
+
+    elif estado.get("intencao") == "visualizacao":
+        resposta = (
+            "Não foi possível validar esta visualização. "
+            "Ajuste o período, os filtros ou o pedido e tente novamente."
+        )
 
     elif estado.get("veredito") in {"revisar", "bloqueado"}:
         resposta = (

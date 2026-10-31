@@ -359,12 +359,12 @@ def test_conversa_encerrada_pode_continuar_ate_ser_excluida_do_historico(monkeyp
         encerrada = cliente.delete("/api/v1/chat/sessions/conversa-qa")
         continuacao = cliente.post(
             "/api/v1/chat",
-            json={"mensagem": "Continuar", "thread_id": "conversa-qa"},
+            json={"mensagem": "Continuar", "plataforma": "web", "thread_id": "conversa-qa"},
         )
         exclusao = cliente.delete("/api/v1/sessoes/conversa/conversa-qa")
         apos_exclusao = cliente.post(
             "/api/v1/chat",
-            json={"mensagem": "Continuar", "thread_id": "conversa-qa"},
+            json={"mensagem": "Continuar", "plataforma": "web", "thread_id": "conversa-qa"},
         )
     finally:
         app.dependency_overrides.clear()

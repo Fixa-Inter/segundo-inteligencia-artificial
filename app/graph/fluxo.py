@@ -25,6 +25,7 @@ from .nos import (
 from .transicoes import ( 
     selecionar_especialista, 
     decidir_apos_julgamento, 
+    decidir_apos_visualizacao,
     decidir_apos_entrada
 )
 from app.observability.metricas import EXECUCOES_NO_GRAFO, DURACAO_NO_GRAFO
@@ -114,7 +115,11 @@ def construir_grafo():
     construtor.add_edge("agente_ajuda_geral", "juiz")
     construtor.add_edge("agente_solicitacao", "juiz")
     construtor.add_edge("agente_analytics", "juiz")
-    construtor.add_edge("agente_visualizacao", "juiz")
+    construtor.add_conditional_edges(
+        "agente_visualizacao",
+        decidir_apos_visualizacao,
+        {"juiz": "juiz", "classificar_emocao": "classificar_emocao"},
+    )
     construtor.add_edge("agente_feedback", "juiz")
     construtor.add_edge("analista_compras", "juiz")
 

@@ -40,6 +40,13 @@ class EstadoGrafo(TypedDict, total=False):
     justificativa_roteamento: str
 
     evidencias: list[str]
+    consultas_visualizacao: list[dict]
+    visualizacao_candidata: dict | None
+    visualizacao_status: str | None
+    visualizacao_execucao_id: str | None
+    visualizacao_aprovacao: dict | None
+    visualizacao_aprovada: dict | None
+    visualizacao_publica: dict | None
     resposta_especialista: str
     resposta_candidata: str
 
@@ -68,3 +75,16 @@ class EstadoGrafo(TypedDict, total=False):
     esclarecimento_roteamento: bool
     propostas_apresentadas: list[dict]
     contexto_temporal: str
+
+
+def limpar_visualizacao() -> dict:
+    """Descarta a seleção e os registros internos de uma execução anterior."""
+    return {
+        "consultas_visualizacao": [],
+        "visualizacao_candidata": None,
+        "visualizacao_status": None,
+        "visualizacao_execucao_id": None,
+        "visualizacao_aprovacao": None,
+        "visualizacao_aprovada": None,
+        "visualizacao_publica": None,
+    }
