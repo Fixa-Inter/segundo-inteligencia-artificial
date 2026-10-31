@@ -93,10 +93,11 @@ def test_tool_total_os_consulta_gold_com_periodo_exclusivo(monkeypatch, unidade_
     verificar_escopo(consulta, resultado, "gold_kpi_os_criacao_diario")
 
 
-def test_tool_os_abertas_usa_status_atual_sem_periodo(monkeypatch):
+@pytest.mark.parametrize("perfil", ["gestor", "administrador"])
+def test_tool_os_abertas_usa_status_atual_sem_periodo(monkeypatch, perfil):
     consulta = executar_com_resultado(monkeypatch, {"os_abertas": "8"})
 
-    resultado = asyncio.run(obter_os_abertas.coroutine(runtime()))
+    resultado = asyncio.run(obter_os_abertas.coroutine(runtime(perfil)))
 
     assert resultado["resultado"] == {"os_abertas": "8"}
     sql = consulta.await_args.args[0]
@@ -193,7 +194,7 @@ def test_tools_bloqueiam_contexto_ou_unidade_nao_autorizados(monkeypatch, unidad
     for invalido in (
         None, SimpleNamespace(), SimpleNamespace(context=None),
         SimpleNamespace(context={}), SimpleNamespace(context={"usuario": {}}),
-        runtime("tecnico"), runtime("solicitante"), runtime("administrador"),
+        runtime("tecnico"), runtime("solicitante"),
         usuario_invalido,
     ):
         resultado = asyncio.run(obter_os_abertas.coroutine(invalido))

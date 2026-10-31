@@ -16,6 +16,9 @@ from . import (
 )
 
 
+PERFIS_VISUALIZACOES = frozenset({"gestor", "administrador"})
+
+
 _DOMINIOS = (os_criacao, os_conclusao, os_atual, solicitacao, recorrencia, ocorrencia)
 
 

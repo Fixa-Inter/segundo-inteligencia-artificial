@@ -67,7 +67,7 @@ def criar_agente_ajuda_geral(modelo, instrucao: str, *, perfil: str):
         alterar_informacao_solicitacao,
         anexar_foto_solicitacao,
     ]
-    if perfil in {"solicitante", "tecnico", "administrador"}:
+    if perfil in {"solicitante", "tecnico"}:
         ferramentas.append(listar_minhas_solicitacoes)
     if perfil in {"tecnico", "gestor", "administrador"}:
         ferramentas.extend([
@@ -84,7 +84,7 @@ def criar_agente_ajuda_geral(modelo, instrucao: str, *, perfil: str):
             anexar_foto_ocorrencia,
             anexar_foto_observacao_conclusao,
         ])
-    if perfil == "gestor":
+    if perfil in {"gestor", "administrador"}:
         ferramentas.extend([
             listar_todas_solicitacoes_pendentes,
             listar_todas_ordens_servico,

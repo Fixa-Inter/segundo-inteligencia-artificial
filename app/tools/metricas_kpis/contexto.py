@@ -12,7 +12,7 @@ from app.services.indicadores.gerais.unidade import validar_unidade_id
 registrador = logging.getLogger(__name__)
 
 
-def validar_gestor(runtime: ToolRuntime) -> dict | None:
+def validar_gestor(runtime: ToolRuntime, *, perfis_permitidos=frozenset({"gestor", "administrador"})) -> dict | None:
     contexto = getattr(runtime, "context", None)
     if not isinstance(contexto, dict) or not isinstance(
         contexto.get("usuario"), UsuarioContexto,
@@ -22,10 +22,10 @@ def validar_gestor(runtime: ToolRuntime) -> dict | None:
             "mensagem": "Contexto autenticado indisponível para consultar indicadores.",
         }
     usuario = contexto["usuario"]
-    if usuario.tipo_acesso != "gestor":
+    if usuario.tipo_acesso not in perfis_permitidos:
         return {
             "status": "ACESSO_NEGADO",
-            "mensagem": "Somente gestores podem consultar indicadores.",
+            "mensagem": "Somente gestores e administradores podem consultar indicadores.",
         }
     if usuario.usuario_id <= 0:
         return {
@@ -35,9 +35,9 @@ def validar_gestor(runtime: ToolRuntime) -> dict | None:
     return None
 
 
-async def resolver_unidade_indicadores(runtime: ToolRuntime) -> int | dict:
+async def resolver_unidade_indicadores(runtime: ToolRuntime, *, perfis_permitidos=frozenset({"gestor", "administrador"})) -> int | dict:
     """Resolve a unidade atual no servidor; nunca aceita IDs da conversa."""
-    negado = validar_gestor(runtime)
+    negado = validar_gestor(runtime, perfis_permitidos=perfis_permitidos)
     if negado:
         return negado
 

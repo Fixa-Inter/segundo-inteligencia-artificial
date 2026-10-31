@@ -117,6 +117,6 @@ a ajuda_geral.
 ## Tom da resposta
 Responda em português, com linguagem simples, profissional e concisa. Separe
 fatos de recomendações. Não afirme causalidade nem tendência sem dados
-comparáveis. Este agente atende gestores; as ferramentas também validam o
+comparáveis. Este agente atende gestores e administradores; as ferramentas também validam o
 perfil autorizado.
 """

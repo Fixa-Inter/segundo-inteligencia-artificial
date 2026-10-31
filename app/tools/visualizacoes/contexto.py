@@ -2,6 +2,7 @@
 
 from app.schemas import UsuarioContexto
 from app.schemas.visualizacao import ResultadoConsultaVisualizacao
+from app.services.visualizacoes import PERFIS_VISUALIZACOES
 from app.tools.metricas_kpis import contexto as contexto_indicadores
 
 
@@ -24,13 +25,13 @@ def validar_acesso(runtime) -> ResultadoConsultaVisualizacao | None:
             status="ACESSO_NEGADO", mensagem="Usuário autenticado inválido para consultar visualizações.",
         )
     try:
-        negado = contexto_indicadores.validar_gestor(runtime)
+        negado = contexto_indicadores.validar_gestor(runtime, perfis_permitidos=PERFIS_VISUALIZACOES)
     except (AttributeError, TypeError):
         negado = True
     if negado:
         return ResultadoConsultaVisualizacao(
             status="ACESSO_NEGADO",
-            mensagem="É necessário um contexto autenticado de gestor para consultar visualizações.",
+            mensagem="É necessário um contexto autenticado de gestor ou administrador para consultar visualizações.",
         )
     return None
 
@@ -39,7 +40,9 @@ async def resolver_unidade(runtime) -> int | ResultadoConsultaVisualizacao:
     negado = validar_acesso(runtime)
     if negado is not None:
         return negado
-    resultado = await contexto_indicadores.resolver_unidade_indicadores(runtime)
+    resultado = await contexto_indicadores.resolver_unidade_indicadores(
+        runtime, perfis_permitidos=PERFIS_VISUALIZACOES,
+    )
     if isinstance(resultado, dict):
         negado = resultado.get("status") == "ACESSO_NEGADO"
         return ResultadoConsultaVisualizacao(

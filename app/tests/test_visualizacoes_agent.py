@@ -158,11 +158,13 @@ def test_extensoes_nao_substituem_tools_canonicas_com_mesmo_nome(monkeypatch):
     assert agente["tools"][0] is FERRAMENTAS_VISUALIZACOES[0]
 
 
-def test_registro_real_contem_tools_apenas_no_especialista_gestor():
-    from app.agents.registro import AGENTES_POR_PERFIL, visualizacoes_gestor
-    assert set(AGENTES_POR_PERFIL["visualizacao"]) == {"gestor"}
+def test_registro_real_contem_tools_nos_especialistas_autorizados():
+    from app.agents.registro import AGENTES_POR_PERFIL, visualizacoes_gestor, visualizacoes_administrador
+    assert set(AGENTES_POR_PERFIL["visualizacao"]) == {"gestor", "administrador"}
     assert AGENTES_POR_PERFIL["visualizacao"]["gestor"] is visualizacoes_gestor
+    assert AGENTES_POR_PERFIL["visualizacao"]["administrador"] is visualizacoes_administrador
     assert "tools" in visualizacoes_gestor.get_graph().nodes
+    assert "tools" in visualizacoes_administrador.get_graph().nodes
 
 
 def test_prompt_usa_catalogo_canonico_e_consulta_direta_sem_exemplos_numericos_inventados():

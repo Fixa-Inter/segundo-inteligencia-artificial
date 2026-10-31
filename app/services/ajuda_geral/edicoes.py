@@ -41,7 +41,7 @@ def _sql_alvo(tipo: str, usuario: UsuarioContexto) -> str:
               AND local.unidade_id = :unidade_id AND local.esta_ativo IS TRUE
         """
     if tipo == "ocorrencia" and usuario.tipo_acesso in {"tecnico", "gestor", "administrador"}:
-        dono = "AND o.usuario_id = :usuario_id" if usuario.tipo_acesso in {"tecnico", "administrador"} else ""
+        dono = "AND o.usuario_id = :usuario_id" if usuario.tipo_acesso == "tecnico" else ""
         return f"""
             SELECT o.id, o.titulo, o.descricao_ocorrencia, local.nome AS local
             FROM ocorrencia AS o
@@ -51,7 +51,7 @@ def _sql_alvo(tipo: str, usuario: UsuarioContexto) -> str:
               {dono}
         """
     if tipo == "observacao_conclusao" and usuario.tipo_acesso in {"tecnico", "gestor", "administrador"}:
-        responsavel = "AND os.usuario_id = :usuario_id" if usuario.tipo_acesso in {"tecnico", "administrador"} else ""
+        responsavel = "AND os.usuario_id = :usuario_id" if usuario.tipo_acesso == "tecnico" else ""
         return f"""
             SELECT obs.id, obs.observacao, obs.ordem_servico_id,
                    p.titulo AS titulo_problema, local.nome AS local

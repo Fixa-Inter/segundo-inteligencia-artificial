@@ -35,8 +35,9 @@ CADASTROS = {
         "listar_minhas_ordens_servico", "buscar_ordem_servico",
     }),
     ("administrador", {
-        "listar_minhas_solicitacoes", "listar_minhas_ocorrencias",
-        "listar_minhas_ordens_servico", "buscar_ordem_servico",
+        "listar_minhas_ocorrencias", "listar_minhas_ordens_servico",
+        "buscar_ordem_servico", "listar_todas_solicitacoes_pendentes",
+        "listar_todas_ordens_servico", "buscar_tecnicos_disponiveis",
     }),
     ("gestor", {
         "listar_minhas_ocorrencias", "listar_minhas_ordens_servico",
@@ -61,7 +62,7 @@ def test_consultas_ficam_no_ajuda_geral_e_respeitam_perfil(
 @pytest.mark.parametrize("perfil, cadastros_esperados", [
     ("solicitante", {"salvar_rascunho_solicitacao", "criar_solicitacao"}),
     ("tecnico", CADASTROS),
-    ("administrador", CADASTROS),
+    ("administrador", {"salvar_rascunho_ocorrencia", "criar_ocorrencia"}),
     ("gestor", {"salvar_rascunho_ocorrencia", "criar_ocorrencia"}),
 ])
 def test_agente_de_cadastro_preserva_criacao_sem_consultas(
@@ -70,7 +71,7 @@ def test_agente_de_cadastro_preserva_criacao_sem_consultas(
     monkeypatch.setattr(solicitacoes, "create_agent", lambda **kwargs: kwargs)
 
     agente = solicitacoes.criar_agente_solicitacoes(
-        None, "instrução", **{"tecnico" if perfil == "administrador" else perfil: True},
+        None, "instrução", **{"gestor" if perfil == "administrador" else perfil: True},
     )
     nomes = [ferramenta.name for ferramenta in agente["tools"]]
 

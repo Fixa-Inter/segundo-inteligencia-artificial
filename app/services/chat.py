@@ -7,6 +7,7 @@ from app.schemas import UsuarioContexto
 from app.schemas import ConversaEntrada, ConversaSaida
 from app.core import Emocao
 from app.services.visualizacoes.publicacao import validar_visualizacao_publica
+from app.services.visualizacoes import PERFIS_VISUALIZACOES
 from app.memory.persistencia.sessoes import iniciar_sessao
 from app.memory.persistencia.utilitarios import sessao_acessivel
 from app.observability.metricas import (
@@ -68,7 +69,7 @@ async def _processar_chat(
     visualizacao = resultado.get("visualizacao_publica")
     if visualizacao is not None:
         if (
-            usuario.tipo_acesso.strip().lower() != "gestor"
+            usuario.tipo_acesso.strip().lower() not in PERFIS_VISUALIZACOES
             or resultado.get("intencao") != "visualizacao"
             or resultado.get("erro") or resultado.get("saida_bloqueada")
         ):

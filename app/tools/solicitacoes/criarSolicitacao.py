@@ -91,7 +91,7 @@ async def salvar_rascunho_solicitacao(
     contexto, usuario, sessao_id = _contexto(runtime)
     if contexto.get("intencao_atual") not in {None, "solicitacao"}:
         return {"status": "INTENCAO_DIVERGENTE", "mensagem": "Prepare o tipo de registro solicitado nesta mensagem."}
-    if usuario.tipo_acesso.lower() not in {"tecnico", "solicitante", "administrador"}:
+    if usuario.tipo_acesso.lower() not in {"tecnico", "solicitante"}:
         return {
             "status": "ACESSO_NEGADO",
             "mensagem": "Somente técnicos e solicitantes podem criar solicitações.",
@@ -130,7 +130,7 @@ async def criar_solicitacao(runtime: ToolRuntime) -> dict:
     ao rascunho até o envio.
     """
     contexto, usuario, sessao_id = _contexto(runtime)
-    if usuario.tipo_acesso.lower() not in {"tecnico", "solicitante", "administrador"}:
+    if usuario.tipo_acesso.lower() not in {"tecnico", "solicitante"}:
         return {
             "status": "ACESSO_NEGADO",
             "mensagem": "Somente técnicos e solicitantes podem criar solicitações.",

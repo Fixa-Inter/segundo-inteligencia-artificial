@@ -13,6 +13,7 @@ from app.agents.prompts.construtor import (
     construir_ajuda_geral_tecnico,
     construir_faq_administrador,
     construir_indicadores_gestor,
+    construir_indicadores_administrador,
     construir_faq_gestor,
     construir_faq_solicitante,
     construir_faq_tecnico,
@@ -22,6 +23,7 @@ from app.agents.prompts.construtor import (
     construir_solicitacoes_tecnico,
     construir_solicitacoes_administrador,
     construir_visualizacoes_gestor,
+    construir_visualizacoes_administrador,
 )
 
 ajuda_geral_solicitante = criar_agente_ajuda_geral(
@@ -45,12 +47,14 @@ faq_gestor = criar_agente_faq(llm_luna, construir_faq_gestor())
 solicitacoes_solicitante = criar_agente_solicitacoes(modelo=llm_luna, instrucao=construir_solicitacoes_solicitante(), solicitante=True)
 solicitacoes_tecnico = criar_agente_solicitacoes(modelo=llm_luna, instrucao=construir_solicitacoes_tecnico(), tecnico=True)
 solicitacoes_administrador = criar_agente_solicitacoes(
-    modelo=llm_luna, instrucao=construir_solicitacoes_administrador(), tecnico=True,
+    modelo=llm_luna, instrucao=construir_solicitacoes_administrador(), gestor=True,
 )
 solicitacoes_gestor = criar_agente_solicitacoes(modelo=llm_luna, instrucao=construir_solicitacoes_gestor(), gestor=True)
 
 indicadores_gestor = criar_agente_indicadores(llm_especialista, construir_indicadores_gestor())
+indicadores_administrador = criar_agente_indicadores(llm_especialista, construir_indicadores_administrador())
 visualizacoes_gestor = criar_agente_visualizacao(llm_especialista, construir_visualizacoes_gestor())
+visualizacoes_administrador = criar_agente_visualizacao(llm_especialista, construir_visualizacoes_administrador())
 feedback = criar_agente_retorno_usuario(
     llm_luna,
     construir_retorno_usuario(),
@@ -75,8 +79,8 @@ AGENTES_POR_PERFIL = {
         "gestor": solicitacoes_gestor,
         "administrador": solicitacoes_administrador,
     },
-    "analytics": {"gestor": indicadores_gestor},
-    "visualizacao": {"gestor": visualizacoes_gestor},
+    "analytics": {"gestor": indicadores_gestor, "administrador": indicadores_administrador},
+    "visualizacao": {"gestor": visualizacoes_gestor, "administrador": visualizacoes_administrador},
 }
 
 

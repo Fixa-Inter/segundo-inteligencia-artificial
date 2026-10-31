@@ -123,11 +123,29 @@ def construir_indicadores_gestor() -> str:
     ])
 
 
+def construir_indicadores_administrador() -> str:
+    return "\n".join([
+        CONTEXTO_INSTRUCAO,
+        GLOSSARIO_INSTRUCAO,
+        ADMINISTRADOR_INSTRUCAO,
+        INDICADORES_INSTRUCAO,
+    ])
+
+
 def construir_visualizacoes_gestor() -> str:
     return "\n".join([
         CONTEXTO_INSTRUCAO,
         GLOSSARIO_INSTRUCAO,
         GESTOR_INSTRUCAO,
+        VISUALIZACOES_INSTRUCAO,
+    ])
+
+
+def construir_visualizacoes_administrador() -> str:
+    return "\n".join([
+        CONTEXTO_INSTRUCAO,
+        GLOSSARIO_INSTRUCAO,
+        ADMINISTRADOR_INSTRUCAO,
         VISUALIZACOES_INSTRUCAO,
     ])
 

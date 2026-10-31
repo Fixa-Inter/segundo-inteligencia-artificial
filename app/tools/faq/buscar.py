@@ -21,8 +21,8 @@ async def buscar_faq(pergunta: str, runtime: ToolRuntime) -> str:
 
     if perfil not in {"solicitante", "tecnico", "gestor", "administrador"}:
         raise ValueError("Perfil de FAQ inválido.")
-    # O administrador utiliza o mesmo conteúdo de FAQ do técnico.
-    perfil_faq = "tecnico" if perfil == "administrador" else perfil
+    # O administrador utiliza o mesmo conteúdo de FAQ do gestor.
+    perfil_faq = "gestor" if perfil == "administrador" else perfil
     
     vetor = await gerar_vetor_documento(pergunta)
 

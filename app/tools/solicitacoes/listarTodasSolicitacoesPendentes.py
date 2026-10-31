@@ -14,9 +14,9 @@ endereco associado ao gestor."""
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
         raise ValueError("Forneça uma instância de UsuarioContexto em context['usuario'].")
     usuario = contexto["usuario"]
-    if usuario.tipo_acesso.lower() != "gestor":
+    if usuario.tipo_acesso.lower() not in {"gestor", "administrador"}:
         return {
             "status": "ACESSO_NEGADO",
-            "mensagem": "Somente gestores podem consultar as solicitações pendentes da organização.",
+            "mensagem": "Somente gestores e administradores podem consultar as solicitações pendentes da organização.",
         }
     return await listar_solicitacoes_pendentes(usuario)
