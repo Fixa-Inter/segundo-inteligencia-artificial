@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, Mock
 import httpx
 import pytest
 from pydantic import ValidationError
+from app.services.operacoes import dados_cadastro
 
 from app.services.ocorrencias import criarOcorrencia as servico
 from app.services.ordensServico import buscarOrdensServico as servico_ordens
@@ -113,6 +114,7 @@ def test_confirmacao_foto_e_protecao_duplicidade(monkeypatch, foto_inicial):
     monkeypatch.setattr(modulo_ferramenta,"obter_unidade_id",AsyncMock(return_value=1))
     cadastrar = AsyncMock(return_value={"status":"SUCESSO","ocorrencia_id":19})
     monkeypatch.setattr(modulo_ferramenta,"adicionar_ocorrencia",cadastrar)
+    monkeypatch.setattr(modulo_ferramenta, "preparar_operacao", AsyncMock(return_value={"status": "OPERACAO_PREPARADA"}))
     async def fluxo():
         if not foto_inicial:
             assert (await modulo_ferramenta.criar_ocorrencia.coroutine(None))["status"] == "AGUARDANDO_INFORMACAO"
@@ -121,7 +123,11 @@ def test_confirmacao_foto_e_protecao_duplicidade(monkeypatch, foto_inicial):
             rascunho["imagens"]=["https://example.com/foto.jpg"]
             contexto["mensagem_atual"]="Segue a foto"
             contexto["imagens"] = rascunho["imagens"]
-        assert (await modulo_ferramenta.criar_ocorrencia.coroutine(None))["status"] == "SUCESSO"
+        assert (await modulo_ferramenta.criar_ocorrencia.coroutine(None))["status"] == "OPERACAO_PREPARADA"
+        cadastrar.assert_not_awaited()
+        assert (await modulo_ferramenta.processar_ocorrencia(
+            None, operacao_aprovada=dados_cadastro(rascunho),
+        ))["status"] == "SUCESSO"
         assert (await modulo_ferramenta.criar_ocorrencia.coroutine(None))["status"] == "SUCESSO"
     asyncio.run(fluxo())
     cadastrar.assert_awaited_once()

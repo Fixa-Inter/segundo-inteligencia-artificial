@@ -15,6 +15,7 @@ from app.schemas import UsuarioContexto
 from app.schemas.imagem import LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem
 from app.services.ajuda_geral import edicoes as servico
 from app.tools.ajuda_geral.consultas import _Argumentos
+from app.services.operacoes import dados_edicao, preparar_operacao
 
 
 registrador = logging.getLogger(__name__)
@@ -81,7 +82,10 @@ def _confirmacao_edicao(mensagem: str) -> bool:
     return aceite_explicito(mensagem, acoes=("alterar", "atualizar", "anexar", "enviar", "salvar", "prosseguir", "seguir", "continuar"))
 
 
-async def _executar_pendente(contexto: dict, usuario: UsuarioContexto, sessao: str, acao: dict) -> dict:
+async def _executar_pendente(
+    contexto: dict, usuario: UsuarioContexto, sessao: str, acao: dict,
+    *, operacao_aprovada: dict | None = None,
+) -> dict:
     if acao.get("pausado"):
         return {"status": "CONFIRMACAO_NECESSARIA", "mensagem": "Retome explicitamente a proposta pausada antes de confirmar."}
     if acao.get("status") != "aguardando_confirmacao":
@@ -97,6 +101,10 @@ async def _executar_pendente(contexto: dict, usuario: UsuarioContexto, sessao: s
         return {"status": "PROPOSTA_EXPIRADA", "mensagem": "A proposta expirou. Peça uma nova consulta."}
     if not _confirmacao_edicao(str(contexto.get("mensagem_atual", ""))):
         return {"status": "CONFIRMACAO_NECESSARIA", "mensagem": "Confirme explicitamente a proposta exibida antes da alteração."}
+    if operacao_aprovada is None:
+        return await preparar_operacao(contexto, "edicao", acao["id"], dados_edicao(acao))
+    if dados_edicao(acao) != operacao_aprovada:
+        return {"status": "ERRO_VALIDACAO", "mensagem": "A alteração proposta mudou após a aprovação. Confira os dados novamente."}
     if not await iniciar_acao(sessao, usuario.usuario_id, acao["id"]):
         return {"status": "RESULTADO_INDETERMINADO", "mensagem": "Esta proposta já foi processada ou está em processamento."}
     try:
@@ -116,22 +124,16 @@ async def _executar_pendente(contexto: dict, usuario: UsuarioContexto, sessao: s
                 resposta = {"status": "NAO_PERMITIDO", "mensagem": "O registro não está mais disponível para este usuário."}
             else:
                 resposta = {"status": "SUCESSO", "registro_id": acao["registro_id"], "foto_ids": ids}
-        finalizada = await atualizar_acao(
-            sessao, usuario.usuario_id, acao["id"],
-            {"status": "concluida" if resposta["status"] == "SUCESSO" else "recusada", "resultado": resposta},
-            status="executando",
-        )
-        if not finalizada:
-            registrador.error("Mutação SQL concluída sem conseguir finalizar a ação %s no Mongo", acao["id"])
-            return {"status": "RESULTADO_INDETERMINADO", "mensagem": "A alteração pode ter sido concluída. Confira o registro antes de repetir."}
-        return resposta
     except Exception:
         registrador.exception("Resultado de mutação SQL não confirmado")
-        await atualizar_acao(
-            sessao, usuario.usuario_id, acao["id"], {"status": "resultado_indeterminado"},
-            status="executando",
-        )
-        return {"status": "RESULTADO_INDETERMINADO", "mensagem": "Confira o registro no banco antes de tentar novamente."}
+        resposta = {"status": "RESULTADO_INDETERMINADO", "mensagem": "Confira o registro no banco antes de tentar novamente."}
+    status = {"SUCESSO": "concluida", "RESULTADO_INDETERMINADO": "resultado_indeterminado"}.get(resposta["status"], "recusada")
+    try:
+        await atualizar_acao(sessao, usuario.usuario_id, acao["id"],
+                             {"status": status, "resultado": resposta}, status="executando")
+    except Exception:
+        registrador.exception("Resultado SQL recebido sem conseguir atualizar a proposta")
+    return resposta
 
 
 async def _propor(

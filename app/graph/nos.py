@@ -393,6 +393,7 @@ async def executar_solicitacao(
     evidencias = list(estado.get("evidencias", []))
     estado_agente = dict(estado)
     tipo_registro = estado.get("intencao")
+    runtime.context.setdefault("operacoes_pendentes", [])
     contexto_agente = {**runtime.context, "intencao_atual": tipo_registro}
     try:
         if tipo_registro in {"solicitacao", "ocorrencia"}:

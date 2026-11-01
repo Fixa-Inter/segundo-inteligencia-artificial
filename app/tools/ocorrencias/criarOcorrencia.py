@@ -14,6 +14,7 @@ from app.tools.toolsRequest import CriarOcorrenciaEntrada, CategoriaProblema, Pr
 from app.tools.solicitacoes.criarSolicitacao import _contexto
 from app.observability.metricas import adicionar_resolucao_pendente
 from app.services.gerais import obter_unidade_id
+from app.services.operacoes import dados_cadastro, preparar_operacao
 
 registrador = logging.getLogger(__name__)
 
@@ -62,11 +63,15 @@ async def salvar_rascunho_ocorrencia(
 
 @tool
 async def criar_ocorrencia(runtime: ToolRuntime) -> dict:
-    """Envia a ocorrência salva na sessão após confirmação, com suas fotos.
+    """Prepara a ocorrência confirmada e suas fotos para aprovação interna.
 
     Se confirmada sem foto, aguarda a imagem. Retome quando a imagem chegar.
     Não repita envios com resultado indeterminado.
     """
+    return await processar_ocorrencia(runtime)
+
+
+async def processar_ocorrencia(runtime: ToolRuntime, *, operacao_aprovada: dict | None = None) -> dict:
     contexto, usuario, sessao_id = _contexto(runtime)
     if usuario.tipo_acesso not in {"tecnico", "gestor", "administrador"}:
         return {"status": "ACESSO_NEGADO", "mensagem": "Perfil sem permissão para ocorrências."}
@@ -109,6 +114,13 @@ async def criar_ocorrencia(runtime: ToolRuntime) -> dict:
             status_esperados={status}, tipo="ocorrencia", **controle)
         return {"status": "AGUARDANDO_INFORMACAO", "mensagem": "Proposta confirmada. Envie pelo menos uma foto."}
     dados = CriarOcorrenciaEntrada.model_validate(rascunho["dados"])
+    if operacao_aprovada is None:
+        return await preparar_operacao(
+            contexto, "ocorrencia", f"{rascunho['id']}:{rascunho['versao']}:{contexto['turno_id']}",
+            dados_cadastro(rascunho),
+        )
+    if dados_cadastro(rascunho) != operacao_aprovada:
+        return {"status": "ERRO_VALIDACAO", "mensagem": "A proposta ou suas fotos mudaram após a aprovação. Confira os dados novamente."}
     unidade_id = await obter_unidade_id(usuario)
     async with abrir_cliente_qdrant() as cliente:
         try:
@@ -135,7 +147,10 @@ async def criar_ocorrencia(runtime: ToolRuntime) -> dict:
     if resultado_operacao == "success":
         adicionar_resolucao_pendente()
     proximo = {"SUCESSO": "cadastrada", "RESULTADO_INDETERMINADO": "resultado_indeterminado"}.get(status_resultado, "erro_api")
-    await atualizar_rascunho_solicitacao(sessao_id, usuario.usuario_id,
-        {"status_fluxo": proximo, "ocorrencia_id_api": resultado.get("ocorrencia_id")},
-        status_esperados={"enviando"}, tipo="ocorrencia", **controle)
+    try:
+        await atualizar_rascunho_solicitacao(sessao_id, usuario.usuario_id,
+            {"status_fluxo": proximo, "ocorrencia_id_api": resultado.get("ocorrencia_id")},
+            status_esperados={"enviando"}, tipo="ocorrencia", **controle)
+    except Exception:
+        registrador.exception("Resultado da API recebido sem conseguir atualizar o rascunho")
     return resultado

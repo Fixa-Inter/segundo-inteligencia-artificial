@@ -40,6 +40,9 @@ class EstadoGrafo(TypedDict, total=False):
     justificativa_roteamento: str
 
     evidencias: list[str]
+    operacoes_pendentes: list[dict]
+    aprovacao_operacoes: dict | None
+    resultados_operacoes: list[dict]
     consultas_visualizacao: list[dict]
     visualizacao_candidata: dict | None
     visualizacao_status: str | None

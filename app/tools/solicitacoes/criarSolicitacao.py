@@ -17,6 +17,7 @@ from app.memory.vectorSearch import validar_selecao
 from app.schemas import UsuarioContexto
 from app.services.solicitacoes import adicionar_solicitacao
 from app.services.gerais import obter_unidade_id
+from app.services.operacoes import dados_cadastro, preparar_operacao
 from app.tools.toolsRequest import CriarSolicitacaoEntrada
 
 
@@ -123,12 +124,16 @@ async def salvar_rascunho_solicitacao(
 
 @tool
 async def criar_solicitacao(runtime: ToolRuntime) -> dict:
-    """Cria na API a solicitação salva no Mongo, somente após confirmação.
+    """Prepara o envio da solicitação confirmada para aprovação interna.
 
     A proposta e as imagens vêm do rascunho da sessão. A confirmação pode vir
     junto com as imagens; se as imagens forem enviadas depois, ficam anexadas
     ao rascunho até o envio.
     """
+    return await processar_solicitacao(runtime)
+
+
+async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict | None = None) -> dict:
     contexto, usuario, sessao_id = _contexto(runtime)
     if usuario.tipo_acesso.lower() not in {"tecnico", "solicitante"}:
         return {
@@ -218,6 +223,13 @@ async def criar_solicitacao(runtime: ToolRuntime) -> dict:
         }
 
     dados = CriarSolicitacaoEntrada.model_validate(rascunho.get("dados", {}))
+    if operacao_aprovada is None:
+        return await preparar_operacao(
+            contexto, "solicitacao", f"{rascunho['id']}:{rascunho['versao']}:{contexto['turno_id']}",
+            dados_cadastro(rascunho),
+        )
+    if dados_cadastro(rascunho) != operacao_aprovada:
+        return {"status": "ERRO_VALIDACAO", "mensagem": "A proposta ou suas fotos mudaram após a aprovação. Confira os dados novamente."}
     unidade_id = await obter_unidade_id(usuario)
     async with abrir_cliente_qdrant() as cliente:
         await validar_selecao(
@@ -262,32 +274,18 @@ async def criar_solicitacao(runtime: ToolRuntime) -> dict:
         }
 
     status_operacao = resultado.get("status")
+    status_backend = resultado.get("status_backend")
+    campos = {"status_fluxo": {
+        "SUCESSO": "cadastrada", "RESULTADO_INDETERMINADO": "resultado_indeterminado",
+    }.get(status_operacao, "erro_api")}
     if status_operacao == "SUCESSO":
-        status_backend = resultado.get("status_backend")
+        campos.update(problema_id_api=resultado.get("problema_id"), status_backend=status_backend,
+                      status_solicitacao=_normalizar_status_backend(status_backend))
+    try:
         await atualizar_rascunho_solicitacao(
-            sessao_id,
-            usuario.usuario_id,
-            {
-                "status_fluxo": "cadastrada",
-                "problema_id_api": resultado.get("problema_id"),
-                "status_backend": status_backend,
-                "status_solicitacao": _normalizar_status_backend(status_backend),
-            },
+            sessao_id, usuario.usuario_id, campos,
             status_esperados={"enviando"}, **controle,
         )
-    elif status_operacao == "RESULTADO_INDETERMINADO":
-        await atualizar_rascunho_solicitacao(
-            sessao_id,
-            usuario.usuario_id,
-            {"status_fluxo": "resultado_indeterminado"},
-            status_esperados={"enviando"}, **controle,
-        )
-    else:
-        await atualizar_rascunho_solicitacao(
-            sessao_id,
-            usuario.usuario_id,
-            {"status_fluxo": "erro_api"},
-            status_esperados={"enviando"}, **controle,
-        )
-
+    except Exception:
+        registrador.exception("Resultado da API recebido sem conseguir atualizar o rascunho")
     return resultado

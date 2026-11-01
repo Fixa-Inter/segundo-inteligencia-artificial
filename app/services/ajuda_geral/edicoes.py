@@ -160,7 +160,9 @@ async def alterar_solicitacao(
             text(_sql_alvo("solicitacao", usuario)), parametros,
         )
         linha = atualizado.mappings().first()
-        return dict(linha) if linha else None
+        # O UPDATE já confirmou a alteração. A falta de detalhes na releitura
+        # não transforma essa gravação em uma recusa.
+        return dict(linha) if linha else {"id": registro_id}
 
 
 async def anexar_fotos(
