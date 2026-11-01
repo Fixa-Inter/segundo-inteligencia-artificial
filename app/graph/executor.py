@@ -1,3 +1,4 @@
+import logging
 from typing import Literal, cast
 from uuid import uuid4
 from app.observability.tracing import somente_metricas
@@ -8,6 +9,7 @@ from fastapi import HTTPException, status
 from app.graph.contexto import ContextoGrafo
 from app.graph.estado import EstadoGrafo, limpar_visualizacao
 from app.graph.fluxo import grafo
+from app.graph.operacoes import resposta_resultados
 from app.schemas import UsuarioContexto
 from app.core import Emocao
 from app.memory.persistencia import salvar_mensagem
@@ -76,6 +78,9 @@ def criar_estado_inicial(
         "resposta_candidata": "",
         "feedback_juiz": "",
         "evidencias": [],
+        "operacoes_pendentes": [],
+        "aprovacao_operacoes": None,
+        "resultados_operacoes": [],
         "erro": None,
         "entrada_valida": False,
         "mensagem_anonimizada": "",
@@ -175,6 +180,8 @@ async def executar_grafo(
         "turno_id": str(uuid4()),
         "contexto_temporal": estado_inicial["contexto_temporal"],
         "plataforma": plataforma,
+        "operacoes_pendentes": [],
+        "resultados_operacoes": [],
     }
 
     try:
@@ -183,8 +190,24 @@ async def executar_grafo(
             config=configuracao,
             context=contexto,
         )
+    except Exception:
+        if not contexto["resultados_operacoes"]:
+            raise
+        logging.getLogger(__name__).exception("Falha do grafo após executar uma operação")
+        tipo = contexto["resultados_operacoes"][-1]["tipo"]
+        resultado = {**limpar_visualizacao(), **resposta_resultados(contexto["resultados_operacoes"]),
+                     "intencao": "ajuda_geral" if tipo == "edicao" else tipo, "emocao": Emocao.ALERTA.value}
     finally:
         finalizar_resolucoes()
+
+    if contexto["resultados_operacoes"] and (
+        resultado.get("erro") or resultado.get("saida_bloqueada")
+        or not isinstance(resultado.get("resposta_final"), str)
+        or not resultado["resposta_final"].strip()
+    ):
+        # Uma falha de apresentação não apaga um resultado operacional conhecido.
+        # A recuperação contém apenas as mensagens fixas, sem dados livres do serviço.
+        resultado.update(resposta_resultados(contexto["resultados_operacoes"]))
 
     if resultado.get("erro"):
         marcar_falha_requisicao()
@@ -203,12 +226,20 @@ async def executar_grafo(
     except (ValueError, TypeError, KeyError):
         raise HTTPException(status_code=502, detail="Não foi possível validar a visualização para entrega.") from None
     visualizacao_json = visualizacao.model_dump(mode="json") if visualizacao is not None else None
-    await salvar_mensagem(
-        thread_id, "assistant", resultado["resposta_final"], usuario_id,
-        emocao=resultado.get("emocao", Emocao.NEUTRO),
-        turno_id=contexto["turno_id"],
-        **({"visualizacao": visualizacao_json} if visualizacao_json is not None else {}),
-    )
+    try:
+        await salvar_mensagem(
+            thread_id, "assistant", resultado["resposta_final"], usuario_id,
+            emocao=resultado.get("emocao", Emocao.NEUTRO),
+            turno_id=contexto["turno_id"],
+            **({"visualizacao": visualizacao_json} if visualizacao_json is not None else {}),
+        )
+    except Exception:
+        if not resultado.get("resultados_operacoes"):
+            raise
+        logging.getLogger(__name__).exception("Resultado da operação sem persistir mensagem do chat")
+        resultado["resposta_final"] += "\n\nNão consegui atualizar o histórico da conversa. O resultado da operação informado acima permanece válido."
+        resultado["confirmacao"] = "nao"
+        return resultado
     # Só fica disponível à API depois de confirmar a persistência da mensagem.
     resultado["visualizacao_publica"] = visualizacao_json
     propostas_apresentadas = resultado.get("propostas_apresentadas", [])

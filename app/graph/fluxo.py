@@ -7,6 +7,7 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from .estado import EstadoGrafo
 from .contexto import ContextoGrafo
+from .operacoes import executar_operacoes
 from app.agents.juiz import julgar_resposta, revisar_resposta
 from app.agents import classificar_emocao
 from .nos import (
@@ -78,6 +79,7 @@ def construir_grafo():
     construtor.add_node("agente_feedback", _instrumentar_no("agente_feedback", executar_retorno_usuario))
     construtor.add_node("analista_compras", _instrumentar_no("analista_compras", executar_analista_compras))
     construtor.add_node("juiz", _instrumentar_no("juiz", julgar_resposta))
+    construtor.add_node("executar_operacoes", _instrumentar_no("executar_operacoes", executar_operacoes))
     construtor.add_node("revisar_resposta", _instrumentar_no("revisar_resposta", revisar_resposta))
     construtor.add_node("proteger_saida", _instrumentar_no("proteger_saida", validar_saida))
     construtor.add_node("fallback", _instrumentar_no("fallback", tratar_erro))
@@ -128,12 +130,14 @@ def construir_grafo():
         decidir_apos_julgamento,
         {
             "proteger_saida": "proteger_saida",
+            "executar_operacoes": "executar_operacoes",
             "revisar_resposta": "revisar_resposta",
             "fallback": "fallback",
         },
     )
 
     construtor.add_edge("proteger_saida", "classificar_emocao")
+    construtor.add_edge("executar_operacoes", "proteger_saida")
     construtor.add_edge("revisar_resposta", "juiz")
     construtor.add_edge("fallback", "classificar_emocao")
     construtor.add_edge("classificar_emocao", END)

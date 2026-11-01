@@ -16,6 +16,21 @@ async def garantir_indice_historico() -> None:
         )
 
 
+async def garantir_indice_faq() -> None:
+    """Garante o índice usado para filtrar o FAQ pelo perfil autenticado."""
+    async with abrir_cliente_qdrant() as cliente:
+        informacoes = await cliente.get_collection(
+            collection_name=configuracao.QDRANT_COLECAO_FAQ,
+        )
+        if "perfil" not in (informacoes.payload_schema or {}):
+            await cliente.create_payload_index(
+                collection_name=configuracao.QDRANT_COLECAO_FAQ,
+                field_name="perfil",
+                field_schema=models.PayloadSchemaType.KEYWORD,
+                wait=True,
+            )
+
+
 async def garantir_indices_operacionais() -> None:
     """Indexa unidade, atividade, ID e texto nas collections já existentes."""
     indice_textual = models.TextIndexParams(

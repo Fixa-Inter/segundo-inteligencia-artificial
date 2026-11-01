@@ -13,3 +13,5 @@ class ContextoGrafo(TypedDict):
     plataforma: NotRequired[Literal["web", "mobile"]]
     # Objeto do servidor, injetado somente na execução do especialista.
     captura_visualizacao: NotRequired[object]
+    operacoes_pendentes: NotRequired[list[dict]]
+    resultados_operacoes: NotRequired[list[dict]]

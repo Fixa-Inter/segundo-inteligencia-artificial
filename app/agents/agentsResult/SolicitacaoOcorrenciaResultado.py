@@ -7,6 +7,7 @@ class SolicitacaoOcorrenciaResultado(BaseModel):
     agente: str
     resposta: str
     status: Literal[
+        "OPERACAO_PREPARADA",
         "SUCESSO",
         "SUCESSO_PARCIAL",
         "AGUARDANDO_INFORMACAO",

@@ -25,6 +25,8 @@ def decidir_apos_julgamento(estado: EstadoGrafo) -> str:
     veredito = estado.get("veredito")
 
     if veredito == "aprovado":
+        if estado.get("operacoes_pendentes"):
+            return "executar_operacoes"
         return "proteger_saida"
 
     if veredito == "revisar" and estado.get("tentativas", 0) == 1 and not estado.get("erro"):

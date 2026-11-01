@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from app.core.propostas import avaliar_confirmacao, campos_pendentes, metadados_proposta, resumo_confirmacao
+from app.services.operacoes import dados_cadastro
 
 
 def dados(tipo):
@@ -65,6 +66,8 @@ def test_resumo_alteracao_mostra_somente_campo_pendente():
 def test_cadastro_respeita_aceite_e_versao(monkeypatch, tipo, mensagem):
     modulo = import_module(f"app.tools.{('solicitacoes.criarSolicitacao' if tipo == 'solicitacao' else 'ocorrencias.criarOcorrencia')}")
     registro = proposta(tipo)
+    preparar = AsyncMock(return_value={"status": "OPERACAO_PREPARADA"})
+    monkeypatch.setattr(modulo, "preparar_operacao", preparar)
     usuario = SimpleNamespace(tipo_acesso="tecnico", usuario_id=7, access_token="teste")
     monkeypatch.setattr(modulo, "_contexto", lambda _: (contexto(mensagem), usuario, "sessao"))
     monkeypatch.setattr(modulo, "obter_rascunho_solicitacao", AsyncMock(return_value=registro))
@@ -93,8 +96,9 @@ def test_cadastro_respeita_aceite_e_versao(monkeypatch, tipo, mensagem):
         assert "Título" in resultado["proposta"]["resumo_confirmacao"]
         assert "Detalhes do local" not in resultado["proposta"]["resumo_confirmacao"]
     else:
-        assert resultado["status"] == "SUCESSO"
-        cadastrar.assert_awaited_once()
+        assert resultado["status"] == "OPERACAO_PREPARADA"
+        cadastrar.assert_not_awaited()
+        preparar.assert_awaited_once()
         assert all(chamada.kwargs["rascunho_id"] == "rascunho" and chamada.kwargs["versao"] == 1
                    for chamada in atualizar.await_args_list)
 
@@ -345,6 +349,8 @@ def test_conflito_versao_impede_envio(monkeypatch, tipo, falha_confirmacao):
     monkeypatch.setattr(modulo, "abrir_cliente_qdrant", cliente)
     cadastrar = AsyncMock()
     monkeypatch.setattr(modulo, f"adicionar_{tipo}", cadastrar)
-    resultado = asyncio.run(getattr(modulo, f"criar_{tipo}").coroutine(None))
+    resultado = asyncio.run(getattr(modulo, f"processar_{tipo}")(
+        None, operacao_aprovada=dados_cadastro(proposta(tipo)),
+    ))
     assert resultado["status"] == "RESULTADO_INDETERMINADO"
     cadastrar.assert_not_awaited()

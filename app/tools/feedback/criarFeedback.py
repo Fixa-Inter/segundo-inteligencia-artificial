@@ -2,7 +2,7 @@ from langchain.tools import ToolRuntime, tool
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.schemas import UsuarioContexto
-from app.services.feedback import criar_feedback
+from app.services.operacoes import preparar_operacao
 
 
 class _ArgumentosCriarFeedback(BaseModel):
@@ -35,16 +35,14 @@ async def criar_nome_feedback(
     ideia_central: str,
     runtime: ToolRuntime,
 ) -> dict:
-    """Registra feedback. A identidade e o perfil vêm do contexto autenticado."""
+    """Prepara feedback para aprovação interna. Ainda não grava no PostgreSQL."""
     contexto = runtime.context
     if not isinstance(contexto, dict) or not isinstance(
         contexto.get("usuario"), UsuarioContexto
     ):
         raise ValueError("Forneca UsuarioContexto em context['usuario'].")
 
-    usuario = contexto["usuario"]
-    return await criar_feedback(
-        usuario=usuario,
-        comentario=comentario,
-        ideia_central=ideia_central,
+    dados = _ArgumentosCriarFeedback(comentario=comentario, ideia_central=ideia_central)
+    return await preparar_operacao(
+        contexto, "feedback", contexto["turno_id"], dados.model_dump(),
     )

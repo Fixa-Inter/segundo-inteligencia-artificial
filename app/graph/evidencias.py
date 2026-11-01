@@ -47,7 +47,7 @@ def extrair_evidencias(mensagens, ids_anteriores: set[str], formato_saida: str) 
             resultado_operacao = (
                 "success" if texto_status == "SUCESSO"
                 else "indeterminate" if "INDETERMINADO" in texto_status
-                else "pending" if texto_status.startswith(("AGUARDANDO", "CONFIRMACAO", "RASCUNHO"))
+                else "pending" if texto_status.startswith(("AGUARDANDO", "CONFIRMACAO", "RASCUNHO", "OPERACAO_PREPARADA"))
                 else "denied" if "ACESSO_NEGADO" in texto_status
                 else "error"
             )

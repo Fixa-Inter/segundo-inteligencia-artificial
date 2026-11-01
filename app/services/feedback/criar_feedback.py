@@ -69,6 +69,6 @@ async def criar_feedback(
     except Exception:
         registrador.exception("Falha ao registrar feedback no PostgreSQL")
         return {
-            "status": "ERRO_FERRAMENTA",
-            "mensagem": "Nao foi possivel registrar o feedback no banco.",
+            "status": "RESULTADO_INDETERMINADO",
+            "mensagem": "Não foi possível confirmar o resultado do feedback. Confira os registros antes de repetir.",
         }

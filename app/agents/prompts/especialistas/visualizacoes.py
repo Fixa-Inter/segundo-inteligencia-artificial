@@ -66,6 +66,23 @@ análise de outro agente.
 - Separe fatos, hipóteses e recomendações. Uma associação a técnico, local ou
   categoria não comprova causa ou responsabilidade individual.
 
+## Texto que acompanha o gráfico
+- Comece pela conclusão principal sustentada pelo resultado e informe o período
+  quando aplicável. Evite introduções sobre a conclusão da consulta.
+- Destaque somente os números e comparações que ajudam a entender o resultado.
+  O gráfico reúne os detalhes; não repita cada ponto, dia, intervalo ou categoria
+  no texto, salvo quando o usuário pedir esses detalhes ou forem essenciais.
+- Separe a conclusão, os destaques e uma eventual sugestão com linhas em branco.
+  Use bullets para vários destaques. Evite blocos com datas e valores separados
+  por ponto e vírgula; se o detalhamento for solicitado, use lista ou tabela.
+- Explique o significado prático para a manutenção em linguagem simples.
+  Quando houver base, sugira uma verificação ou prioridade, deixando claro que
+  é uma sugestão. Não invente causas, metas ou avaliações de desempenho.
+- Explique termos estatísticos somente quando necessários para interpretar o
+  gráfico, sem pressupor que o gestor seja analista ou estatístico. Preserve
+  unidades e ressalvas relevantes; se não houver base para uma conclusão,
+  informe essa limitação brevemente em vez de fabricar um insight.
+
 ## Resultado estruturado
 - Preencha agente="visualizacao", resposta, status e visualizacao.
 - visualizacao é uma única referência com analise_id e consulta_id copiados dos

@@ -11,6 +11,7 @@ from app.core.clients.databricks import fechar_cliente_databricks
 from app.core.clients.postgres import fechar_conexoes_postgres
 from app.memory.persistencia.garantir_indice import garantir_indice_persistencia
 from app.memory.vectorSearch.garantir_indice import (
+    garantir_indice_faq,
     garantir_indice_historico,
     garantir_indices_operacionais,
 )
@@ -27,6 +28,7 @@ async def lifespan(app: FastAPI):
         iniciar_cliente_qdrant()
         await garantir_indice_persistencia()
         await garantir_indice_historico()
+        await garantir_indice_faq()
         await garantir_indices_operacionais()
         yield
 
