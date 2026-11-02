@@ -11,11 +11,13 @@ from app.tools.ocorrencias import buscar_opcoes_ocorrencia
 from app.tools.ocorrencias import criar_ocorrencia, salvar_rascunho_ocorrencia
 from app.tools.memoria import buscar_historico
 from app.tools.eventos import buscar_opcoes_evento, salvar_rascunho_evento, criar_evento
+from app.tools.solicitacoes.atualizarSolicitacao import buscar_solicitacoes_para_atualizar, atualizar_solicitacao
 from app.graph import ContextoGrafo
 
 
 def criar_agente_solicitacoes(modelo, instrucao: str, modelo_alternativo=None, *, gestor: bool = False, tecnico: bool = False, solicitante:bool = False):
     ferramentas = [buscar_opcoes_solicitacao, buscar_historico]
+    ferramentas.extend([buscar_solicitacoes_para_atualizar, atualizar_solicitacao])
     if gestor or tecnico:
         ferramentas.extend([buscar_opcoes_ocorrencia, salvar_rascunho_ocorrencia, criar_ocorrencia])
     if gestor:

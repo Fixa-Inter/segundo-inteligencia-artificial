@@ -6,6 +6,7 @@ from typing import Any, Literal
 
 from app.core.clients.mongo import abrir_cliente_mongo
 from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
+from app.core.respostas import MENSAGENS
 from app.memory.persistencia.utilitarios import obter_documento_sessao_id
 
 
@@ -67,7 +68,7 @@ async def obter_quantidade_anexos_pendentes(sessao_id: str, usuario_id: int) -> 
 
 async def registrar_coleta_parcial(
     sessao_id: str, usuario_id: int, *, tipo: TipoRascunho,
-    turno_id: str, relato: str,
+    turno_id: str, relato: str, operacao: Literal["criar", "atualizar"] = "criar",
 ) -> dict[str, Any]:
     """Guarda o relato do usuário sem exigir IDs ou propor um cadastro completo."""
     if not turno_id or not isinstance(relato, str):
@@ -90,7 +91,7 @@ async def registrar_coleta_parcial(
         if status in {"enviando", "resultado_indeterminado"}:
             raise ValueError("O envio anterior precisa ser reconciliado antes de abrir outro rascunho.")
         relato_turno = {"turno_id": turno_id, "texto": relato.strip()} if relato.strip() else None
-        if status in STATUS_ATIVOS and not atual.get("pausado"):
+        if status in STATUS_ATIVOS and not atual.get("pausado") and atual.get("operacao", "criar") == operacao:
             if status != "coletando_dados" or relato_turno is None or any(
                 item.get("turno_id") == turno_id for item in atual.get("relatos", [])
             ):
@@ -114,7 +115,7 @@ async def registrar_coleta_parcial(
         anexos_legados = _anexos_legados(documento, tipo)
         agora = _agora()
         rascunho = {
-            "id": str(uuid.uuid4()), "versao": 1, "turno_id": turno_id, "tipo": tipo,
+            "id": str(uuid.uuid4()), "versao": 1, "turno_id": turno_id, "tipo": tipo, "operacao": operacao,
             "status_fluxo": "coletando_dados", "confirmado": False,
             "dados_confirmados": {}, "pausado": False, "rotulos": {}, "dados": {},
             "relatos": [relato_turno] if relato_turno else [], "imagens": anexos_legados,
@@ -173,9 +174,30 @@ async def adicionar_imagens_sessao(
             and (tipo is None or campo == _campo_rascunho(tipo))
         ]
         if ativos:
-            campo, _ = max(ativos, key=lambda item: item[1].get(
+            campo, rascunho = max(ativos, key=lambda item: item[1].get(
                 "atualizada_em", datetime.min,
             ).replace(tzinfo=timezone.utc))
+            if rascunho.get("operacao") == "atualizar":
+                novas = [url for url in urls if url not in rascunho.get("imagens", [])]
+                if not novas:
+                    return
+                campos = {"imagens": [*rascunho.get("imagens", []), *novas],
+                          "versao": rascunho["versao"] + 1, "confirmado": False,
+                          "atualizada_em": _agora()}
+                if rascunho.get("selecao_confirmada"):
+                    campos.update(etapa="alteracoes", status_fluxo="coletando_dados")
+                if rascunho.get("acao_fotos") == "manter":
+                    campos["acao_fotos"] = None
+                resultado = await colecao.update_one(
+                    {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True,
+                     f"{campo}.id": rascunho["id"], f"{campo}.versao": rascunho["versao"],
+                     f"{campo}.status_fluxo": rascunho["status_fluxo"], f"{campo}.pausado": {"$ne": True}},
+                    {"$set": {**{f"{campo}.{chave}": valor for chave, valor in campos.items()},
+                              "atualizada_em": campos["atualizada_em"]}},
+                )
+                if not resultado.matched_count:
+                    raise ValueError(MENSAGENS["atualizacao_proposta_mudou"])
+                return
             caminho = f"{campo}.imagens"
         else:
             caminho = "anexos_pendentes"
@@ -214,6 +236,8 @@ async def salvar_rascunho_solicitacao(
 
         atual = documento.get(campo) or {}
         status_atual = atual.get("status_fluxo")
+        if atual.get("operacao") == "atualizar" and status_atual in STATUS_ATIVOS and not atual.get("pausado"):
+            raise ValueError(MENSAGENS["atualizacao_usar_ferramenta"])
         if status_atual in {"enviando", "resultado_indeterminado"}:
             raise ValueError(
                 "O envio anterior precisa ser reconciliado antes de abrir outro rascunho."
@@ -237,6 +261,7 @@ async def salvar_rascunho_solicitacao(
             "versao": atual.get("versao", 0) + 1 if mesmo_rascunho else 1,
             "turno_id": turno_id,
             "tipo": tipo,
+            "operacao": "criar",
             "status_fluxo": "aguardando_confirmacao",
             "confirmado": False,
             "dados_confirmados": confirmados,

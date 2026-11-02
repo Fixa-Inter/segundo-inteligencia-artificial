@@ -213,13 +213,16 @@ async def alterar_informacao_solicitacao(
     campo: str | None = None, novo_valor: int | str | None = None,
 ) -> dict:
     """Propõe ou confirma edição de cinco campos de solicitação própria pendente."""
-    return await _propor(runtime, "alteracao", problema_id, campo, novo_valor)
+    from app.tools.solicitacoes.atualizarSolicitacao import atualizar_solicitacao
+    argumentos = {campo: novo_valor} if campo is not None else {}
+    return await atualizar_solicitacao.coroutine(runtime=runtime, problema_id=problema_id, **argumentos)
 
 
 @tool(args_schema=_AnexoSolicitacao)
 async def anexar_foto_solicitacao(runtime: ToolRuntime, problema_id: int | None = None) -> dict:
     """Propõe ou confirma anexar imagens da mensagem a solicitação própria pendente."""
-    return await _propor(runtime, "solicitacao", problema_id)
+    from app.tools.solicitacoes.atualizarSolicitacao import atualizar_solicitacao
+    return await atualizar_solicitacao.coroutine(runtime=runtime, problema_id=problema_id)
 
 
 @tool(args_schema=_AnexoOcorrencia)

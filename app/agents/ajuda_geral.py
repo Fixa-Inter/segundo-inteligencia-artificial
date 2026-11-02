@@ -33,6 +33,8 @@ from app.tools.ajuda_geral import (
     anexar_foto_observacao_conclusao,
 )
 from app.tools.memoria import buscar_historico
+from app.tools.feedback.listarFeedbacks import listar_meus_feedbacks
+from app.tools.solicitacoes.atualizarSolicitacao import buscar_solicitacoes_para_atualizar, atualizar_solicitacao
 from app.tools.solicitacoes import listar_minhas_solicitacoes, listar_todas_solicitacoes_pendentes
 from app.tools.ocorrencias import listar_minhas_ocorrencias
 from app.tools.ordensServico import (
@@ -60,6 +62,7 @@ def criar_agente_ajuda_geral(modelo, instrucao: str, *, perfil: str):
         buscar_textos_semelhantes,
     ]
     ferramentas = ferramentas_genericas + [
+        listar_meus_feedbacks, buscar_solicitacoes_para_atualizar, atualizar_solicitacao,
         buscar_historico,
         buscar_problemas_por_local,
         consultar_situacao_problema,

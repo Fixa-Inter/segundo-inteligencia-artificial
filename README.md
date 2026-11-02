@@ -73,6 +73,46 @@ python -m app.scripts.migrar_timestamps_mensagens
 
 A migração pode ser repetida e preserva timestamps já existentes.
 
+## Feedbacks e atualização de solicitações próprias
+
+Todos os perfis podem pedir para listar seus feedbacks. A consulta usa somente
+o ID autenticado e ordena por data e ID decrescentes, sem aplicar o limite de
+três registros ou de três meses de outras ferramentas.
+
+Para atualizar uma solicitação, o agente busca candidatos no Qdrant restritos
+aos registros próprios pendentes e à unidade autenticada. A seleção é
+conferida no PostgreSQL e apresentada assim, sem linha vazia entre título e
+descrição:
+
+```markdown
+A solicitação que você quer alterar é esta?
+
+**Título da solicitação**
+Descrição da solicitação.
+```
+
+O primeiro aceite identifica o registro. Depois são coletadas alterações de
+título, descrição do problema, detalhes do local, local, categoria do equipamento
+e fotos. Novas fotos exigem escolha entre adicionar às existentes ou substituir
+todas; a substituição remove os registros antigos da tabela `foto`, preservando
+os arquivos no Cloudinary. Sem novas imagens, as fotos existentes são mantidas.
+
+O rascunho permanece em `solicitacao_pendente`, com `operacao` igual a `criar`
+ou `atualizar` (rascunhos antigos sem o campo representam criação). Ele guarda
+o registro selecionado, os dados originais, as alterações, a etapa e a escolha
+das fotos. A proposta final exige outro aceite depois de ser salva no histórico.
+Somente então a operação é preparada, avaliada pelo juiz e executada no nó de
+operações. A transação verifica novamente propriedade, unidade, status `0`
+e se os campos e fotos originais continuam iguais. Se algo mudou, pede uma
+nova consulta. Textos e fotos são alterados juntos; resultados indeterminados
+impedem reenvio automático.
+
+Testes específicos (sem chamadas externas):
+
+```bash
+python -m pytest app/tests/test_listar_feedbacks.py app/tests/test_atualizacao_solicitacao.py -q
+```
+
 ## Criação de eventos
 
 Gestores e administradores podem criar eventos pela web ou pelo mobile. O agente

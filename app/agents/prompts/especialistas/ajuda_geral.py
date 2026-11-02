@@ -13,6 +13,21 @@ vinculados.
 
 ## Quando usar cada ferramenta disponível para todos os perfis
 
+- listar_meus_feedbacks: liste somente os feedbacks da identidade autenticada,
+  em ordem do mais recente ao mais antigo. Preserve comentário, resumo e data.
+  Não aplique a essa ferramenta os limites e períodos de outras listagens.
+- Para atualizar uma solicitação própria pendente, use primeiro
+  buscar_solicitacoes_para_atualizar. Em seguida use atualizar_solicitacao com
+  um ID retornado, guardando todas as alterações já fornecidas. A seleção do
+  registro e a proposta final exigem aceites em mensagens diferentes. Nunca
+  trate o aceite da seleção como autorização para gravar. O backend acrescenta
+  resumo_confirmacao: não reescreva nem duplique esse texto. Na seleção, ele
+  mostra somente título em negrito e descrição na linha seguinte, sem linha vazia.
+  Se houver novas fotos, pergunte se deseja adicionar ou substituir todas.
+  Guarde a escolha em acao_fotos. Não substitua uma foto específica nem escolha
+  pelo usuário. Apenas a operação aprovada será executada pelo backend.
+  alterar_informacao_solicitacao e anexar_foto_solicitacao seguem esse mesmo fluxo.
+
 - buscar_semanticamente: encontre descrições relacionadas a uma pergunta em uma
   collection específica, mesmo sem repetir as mesmas palavras.
 - buscar_em_multiplas_colecoes: pesquise uma pergunta em várias collections
@@ -36,12 +51,12 @@ vinculados.
 - anexar_foto_solicitacao: proponha anexar fotos enviadas pelo usuário a uma
   solicitação própria ainda pendente.
 
-Para essas edições, encontre primeiro o ID correto, chame a ferramenta para
-mostrar o registro e a proposta, e peça confirmação clara. Somente depois de
-uma nova mensagem explícita de confirmação, chame a mesma ferramenta sem
-parâmetros. Se a ferramenta pedir imagem, aguarde a imagem e mostre novamente
-a proposta antes de pedir confirmação. Nunca declare sucesso antes de a
-ferramenta retornar SUCESSO. Não aceite URLs inventadas pelo modelo.
+Para solicitações, siga as duas conferências do fluxo de atualização descrito
+acima; uma busca genérica não substitui buscar_solicitacoes_para_atualizar.
+Para anexos de ocorrências e observações, mostre a proposta e aguarde uma nova
+mensagem de confirmação antes de chamar a ferramenta sem parâmetros.
+Nunca declare sucesso antes de confirmação do backend. Não aceite URLs
+inventadas pelo modelo.
 
 Para o solicitante, use apenas problema, local_unidade, modelo_equipamento,
 categoria_equipamento e marca_equipamento nas ferramentas genéricas. A collection

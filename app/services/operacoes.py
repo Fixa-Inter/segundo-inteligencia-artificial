@@ -9,7 +9,7 @@ from app.schemas import UsuarioContexto
 
 from app.core.respostas import MENSAGENS
 
-TIPOS = {"solicitacao", "ocorrencia", "evento", "feedback", "edicao"}
+TIPOS = {"solicitacao", "ocorrencia", "evento", "feedback", "edicao", "atualizacao_solicitacao"}
 
 
 def calcular_hash(dados: dict) -> str:
@@ -62,3 +62,10 @@ def dados_cadastro(rascunho: dict) -> dict:
 
 def dados_edicao(acao: dict) -> dict:
     return {campo: acao.get(campo) for campo in ("id", "tipo", "registro_id", "campo", "novo_valor", "imagens")}
+
+
+def dados_atualizacao(rascunho: dict) -> dict:
+    return {"proposta_id": rascunho["id"], "versao": rascunho["versao"],
+            "registro_id": rascunho["registro_id"], "original": rascunho["original"],
+            "alteracoes": rascunho.get("alteracoes", {}), "imagens": rascunho.get("imagens", []),
+            "acao_fotos": rascunho.get("acao_fotos", "manter")}

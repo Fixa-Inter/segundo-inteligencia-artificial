@@ -83,6 +83,7 @@ async def tratar_continuacao(estado: dict, contexto: dict, pergunta: str) -> dic
             atualizacoes = await pausar_outros_fluxos(estado, contexto, tipo)
             atualizacoes[_chave_estado(tipo)] = await alterar_continuacao(tipo, proposta, contexto, pausado=False)
             return {**atualizacoes, "intencao": tipo, "erro": None,
+                    "operacao_solicitacao": proposta.get("operacao", "criar") if tipo == "solicitacao" else "criar",
                     "justificativa_roteamento": "Retomada explícita da proposta salva."}
         campos = {"pausado": True}
         if manifestacao == "cancelamento":
@@ -102,6 +103,7 @@ async def tratar_continuacao(estado: dict, contexto: dict, pergunta: str) -> dic
             if any(outro in normalizar_mensagem(pergunta) for outro in outros_tipos):
                 return esclarecer_continuacao(MENSAGENS['a_confirmacao_menciona_outro_registro_qual_proposta_voce_quer_continuar'])
             return {"intencao": tipo, "erro": None,
+                    "operacao_solicitacao": ativos[tipo].get("operacao", "criar") if tipo == "solicitacao" else "criar",
                     "justificativa_roteamento": "Continuação da única proposta ativa."}
         if ativos or pausados:
             return esclarecer_continuacao(
