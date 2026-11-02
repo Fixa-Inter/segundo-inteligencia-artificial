@@ -7,6 +7,8 @@ from app.memory.persistencia.sessoes import (
 from app.schemas import UsuarioContexto
 from app.schemas import EncerrarSessaoSaida
 
+from app.core.respostas import MENSAGENS
+
 
 async def finalizar_sessao_chat(
     thread_id: str,
@@ -16,7 +18,7 @@ async def finalizar_sessao_chat(
 
     if not thread_id:
         raise ValueError(
-            "O thread_id não pode estar vazio."
+            MENSAGENS['o_thread_id_nao_pode_estar_vazio']
         )
 
     resultado = await encerrar_sessao(
@@ -27,7 +29,7 @@ async def finalizar_sessao_chat(
     if resultado is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conversa não encontrada.",
+            detail=MENSAGENS['conversa_nao_encontrada'],
         )
 
     sessao_id_interno = (
@@ -44,7 +46,7 @@ async def finalizar_sessao_chat(
     return EncerrarSessaoSaida(
         thread_id=thread_id,
         status="ENCERRADA",
-        mensagem="Sessão encerrada com sucesso.",
+        mensagem=MENSAGENS['sessao_encerrada_com_sucesso'],
         titulo=resultado["titulo"] or None,
         resumo=resultado["resumo"] or None,
     )

@@ -6,6 +6,8 @@ from app.services.ordensServico import (
 )
 from app.tools.ordensServico.utilitarios import montar_tabelas
 
+from app.core.respostas import MENSAGENS
+
 
 @tool
 async def listar_minhas_ordens_servico(runtime: ToolRuntime) -> dict:
@@ -16,14 +18,14 @@ Apresente a tabela Markdown e o periodo retornado sem inventar ordens."""
     contexto = runtime.context
 
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
-        raise ValueError("Forneça uma instância de UsuarioContexto em context['usuario'].")
+        raise ValueError(MENSAGENS['forneca_uma_instancia_de_usuariocontexto_em_context_usuario'])
     
     usuario = contexto["usuario"]
 
     if usuario.tipo_acesso.lower() not in ("tecnico", "gestor", "administrador"):
         return {
             "status": "ACESSO_NEGADO",
-            "mensagem": "Somente técnicos e gestores podem consultar suas ordens de serviço.",
+            "mensagem": MENSAGENS['somente_tecnicos_e_gestores_podem_consultar_suas_ordens_de_servico'],
         }
     
     resultado = await consultar_minhas_ordens_servico(usuario)

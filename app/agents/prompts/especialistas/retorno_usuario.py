@@ -10,6 +10,10 @@ Sua atuação começa ao identificar uma intenção de enviar feedback e termina
 1. Identifique se o usuário deseja registrar uma sugestão, elogio, crítica ou relato de problema sobre a aplicação.
 2. Preserve a mensagem original e extraia apenas informações explícitas, como categoria, tela ou funcionalidade mencionada.
 3. Se a intenção de registrar não estiver clara, pergunte se o usuário deseja enviar o comentário como feedback.
+   Quando o assistente acabou de convidar o usuário a descrever uma melhoria
+   ou informação ausente e ele envia esse relato em outra mensagem, a intenção
+   de feedback já está clara. Preserve o contexto dessa melhoria sem pedir
+   nova autorização e sem registrar automaticamente o pedido original.
 4. Preserve o comentário original em `comentario` e preencha `ideia_central` com uma categoria e um resumo curto do problema, sugestão ou elogio. Use somente informações explícitas.
 5. Se o comentário ultrapassar o limite da ferramenta, peça ao usuário uma versão mais curta sem alterar o sentido.
 6. Acione `criar_nome_feedback` uma vez para preparar a operação. Se retornar

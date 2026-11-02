@@ -5,6 +5,8 @@ from app.memory.vectorSearch.busca import buscar_local_endereco, buscar_categori
 from app.core.clients.qdrant import abrir_cliente_qdrant
 from app.services.gerais import obter_unidade_id
 
+from app.core.respostas import MENSAGENS
+
 
 @tool
 async def buscar_opcoes_ocorrencia(equipamento: str, local: str, runtime: ToolRuntime) -> dict:
@@ -15,10 +17,10 @@ async def buscar_opcoes_ocorrencia(equipamento: str, local: str, runtime: ToolRu
     """
     contexto = runtime.context
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
-        raise ValueError("Forneça UsuarioContexto em context['usuario'].")
+        raise ValueError(MENSAGENS['forneca_usuariocontexto_em_context_usuario_2'])
     usuario = contexto["usuario"]
     if usuario.tipo_acesso not in {"tecnico", "gestor", "administrador"}:
-        return {"status": "ACESSO_NEGADO", "mensagem": "Somente técnicos e gestores podem preparar ocorrências."}
+        return {"status": "ACESSO_NEGADO", "mensagem": MENSAGENS['somente_tecnicos_e_gestores_podem_preparar_ocorrencias']}
     unidade_id = await obter_unidade_id(usuario)
     async with abrir_cliente_qdrant() as cliente:
         categorias, locais = await asyncio.gather(
@@ -29,5 +31,5 @@ async def buscar_opcoes_ocorrencia(equipamento: str, local: str, runtime: ToolRu
         "status": "SUCESSO" if categorias and locais else "AGUARDANDO_INFORMACAO",
         "categoria_equipamento": {str(k): v for k, v in categorias.items()},
         "local_endereco": {str(k): v for k, v in locais.items()},
-        "mensagem": "Confirme os candidatos; peça detalhes se faltar categoria ou local.",
+        "mensagem": MENSAGENS['confirme_os_candidatos_peca_detalhes_se_faltar_categoria_ou_local'],
     }

@@ -14,6 +14,7 @@ def propostas_resposta(estado: dict) -> list[dict]:
             continue
         if registro.get("ferramenta") not in {
             "salvar_rascunho_solicitacao", "salvar_rascunho_ocorrencia", "criar_solicitacao", "criar_ocorrencia",
+            "salvar_rascunho_evento", "criar_evento",
         }:
             continue
         resultado = registro.get("resultado")

@@ -1,10 +1,13 @@
 """Resumo dos grupos pequenos das análises de boxplot, sem acesso a bancos."""
 
+
 from collections.abc import Mapping, Sequence
 from math import isfinite
 from statistics import fmean, median
 
 from app.schemas.visualizacao import Analise, ResumoGrupoPequeno
+
+from app.core.respostas import MENSAGENS
 
 
 MINIMO_REGISTROS_BOXPLOT = 5
@@ -24,28 +27,28 @@ def resumir_grupo_pequeno(
     A elegibilidade além dos nulos, inclusive de tempos negativos, cabe ao chamador.
     """
     if analise.formato_dados != "boxplot" or analise.unidade_medida != "minutos":
-        raise ValueError("O resumo se aplica às análises de boxplot de tempos.")
+        raise ValueError(MENSAGENS['o_resumo_se_aplica_as_analises_de_boxplot_de_tempos'])
     if set(grupo) != set(analise.dimensoes):
-        raise ValueError("As dimensões do grupo não correspondem à análise.")
+        raise ValueError(MENSAGENS['as_dimensoes_do_grupo_nao_correspondem_a_analise'])
 
     observacoes = []
     for valor in valores:
         if valor is None:
             continue
         if type(valor) not in {int, float}:
-            raise ValueError("Os tempos devem ser números normalizados ou nulos.")
+            raise ValueError(MENSAGENS['os_tempos_devem_ser_numeros_normalizados_ou_nulos'])
         try:
             numero = float(valor)
         except OverflowError as erro:
-            raise ValueError("Os tempos devem ser números finitos.") from erro
+            raise ValueError(MENSAGENS['os_tempos_devem_ser_numeros_finitos']) from erro
         if not isfinite(numero):
-            raise ValueError("Os tempos devem ser números finitos.")
+            raise ValueError(MENSAGENS['os_tempos_devem_ser_numeros_finitos'])
         observacoes.append(numero)
 
     if not observacoes:
         return None
     if len(observacoes) >= MINIMO_REGISTROS_BOXPLOT:
-        raise ValueError("Grupos com cinco ou mais registros devem usar boxplot.")
+        raise ValueError(MENSAGENS['grupos_com_cinco_ou_mais_registros_devem_usar_boxplot'])
 
     return ResumoGrupoPequeno(
         analise_id=analise.id,

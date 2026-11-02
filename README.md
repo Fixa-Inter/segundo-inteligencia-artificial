@@ -53,6 +53,40 @@ Os testes em `app/tests/test_orquestrador.py` verificam o roteamento e a continu
 
 Para Prometheus e Grafana, consulte [docs/observabilidade.md](docs/observabilidade.md).
 
+## Respostas de limitações e horários das mensagens
+
+A ausência de ferramenta para uma ação e uma busca no FAQ sem informação
+suficiente recebem respostas padronizadas, com convite para enviar outra mensagem
+como feedback de melhoria. Erros técnicos, restrições de acesso e resultados de
+cadastro mantêm seu tratamento próprio. Dúvidas sobre quais dados fornecer para
+um cadastro seguem para o FAQ.
+
+Cada nova mensagem humana ou do assistente recebe `timestamp` em UTC no MongoDB.
+`GET /api/v1/sessoes` e `POST /api/v1/sessoes/conversa` retornam esse campo em todas
+as mensagens, como ISO 8601 com `Z`. Mensagens antigas sem horário registrado
+retornam `null`. Para adicionar o campo nulo também aos documentos antigos no
+banco, execute uma vez por ambiente:
+
+```bash
+python -m app.scripts.migrar_timestamps_mensagens
+```
+
+A migração pode ser repetida e preserva timestamps já existentes.
+
+## Criação de eventos
+
+Gestores e administradores podem criar eventos pela web ou pelo mobile. O agente
+`solicitacoes` coleta a descrição, o local e as datas e horas de início e fim,
+busca o local no Qdrant e guarda `evento_pendente` na sessão do MongoDB. Detalhes
+do local e observação ausentes recebem "Não foi especificado". Eventos não exigem
+foto nem categoria de equipamento.
+
+Horários sem fuso usam `America/Sao_Paulo` e são enviados em UTC (`Z`). O fim deve
+ser estritamente posterior ao início; eventos no passado são permitidos. O usuário
+confere a proposta antes do aceite. A tool prepara a operação, o juiz a avalia e
+somente então `executar_operacoes` faz `POST /api/v1/eventos`, usando a identidade
+e o Bearer do usuário autenticado. Resultados indeterminados impedem reenvio automático.
+
 ## Pesquisa de compras
 
 Técnicos, administradores e gestores podem pedir lojas ou comparar materiais, peças e equipamentos. O fluxo `analista_compras` guarda `analise_compra_pendente` no documento MongoDB da sessão. Só o nome do item é obrigatório. O especialista oferece uma vez os filtros opcionais (loja, categoria e faixa de preço) e detalhes para avaliar as ofertas (especificações, quantidade e exclusões). Se a pessoa dispensar os opcionais, a pesquisa prossegue com a palavra chave. Loja e categoria são convertidas para os slugs do Pechincha.ai por `list_stores` e `list_categories`.

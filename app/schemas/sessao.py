@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -6,6 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from app.core import Emocao
 from app.schemas.id_sessao import LIMITE_ID_SESSAO, normalizar_id_sessao
 from app.schemas.visualizacao import VisualizacaoPublica
+
+from app.core.respostas import MENSAGENS
 
 
 class EncerrarSessaoSaida(BaseModel):
@@ -36,15 +38,26 @@ class ConversaEspecificaEntrada(BaseModel):
 class MensagemHistorico(BaseModel):
     role: Literal["human", "assistant"]
     mensagem: str
+    timestamp: datetime | None = Field(
+        default=None, description="Instante da persistência em UTC; null em mensagens antigas sem horário registrado.",
+    )
     emocao: Emocao | None = Field(default=None, exclude_if=lambda v: v is None)
     confirmacao: Literal["sim", "nao"] = "nao"
     imagens: list[str] | None = Field(default=None, exclude_if=lambda v: v is None)
     visualizacao: VisualizacaoPublica | None = Field(default=None, exclude_if=lambda v: v is None)
 
+    @field_validator("timestamp")
+    @classmethod
+    def normalizar_timestamp(cls, valor: datetime | None) -> datetime | None:
+        if valor is None:
+            return None
+        # O MongoDB retorna datas BSON como datetime sem tzinfo, em UTC.
+        return valor.replace(tzinfo=timezone.utc) if valor.tzinfo is None else valor.astimezone(timezone.utc)
+
     @model_validator(mode="after")
     def validar_papel_visualizacao(self):
         if self.visualizacao is not None and self.role != "assistant":
-            raise ValueError("Somente mensagens do assistente possuem visualização.")
+            raise ValueError(MENSAGENS['somente_mensagens_do_assistente_possuem_visualizacao'])
         return self
 
 

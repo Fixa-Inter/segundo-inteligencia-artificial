@@ -104,6 +104,7 @@ def construir_grafo():
             "fora_de_escopo": "fallback",
             "solicitacao": "agente_solicitacao",
             "ocorrencia": "agente_solicitacao",
+            "evento": "agente_solicitacao",
             "analytics": "agente_analytics",
             "visualizacao": "agente_visualizacao",
             "feedback": "agente_feedback",

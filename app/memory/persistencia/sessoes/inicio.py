@@ -33,7 +33,9 @@ async def iniciar_sessao(
             "anexos_pendentes": [],
             "solicitacao_pendente": None,
             "ocorrencia_pendente": None,
+            "evento_pendente": None,
             "solicitacoes": [],
             "ocorrencias": [],
+            "eventos": [],
         })
         sessoes_ativas[(usuario_id, sessao_id)] = documento_id

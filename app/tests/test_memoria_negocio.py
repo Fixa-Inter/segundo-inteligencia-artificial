@@ -1,6 +1,7 @@
 """Valida a persistência de sessão com uma coleção Mongo simulada."""
 
 import asyncio
+from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from importlib import import_module
 from types import SimpleNamespace
@@ -22,6 +23,8 @@ def test_salvar_mensagem_preserva_dono_e_anexos(monkeypatch):
     colecao = SimpleNamespace(update_one=AsyncMock())
     preparar_cliente(monkeypatch, modulo, colecao)
     monkeypatch.setattr(modulo, "obter_documento_sessao_id", AsyncMock(return_value="documento"))
+    instante = datetime(2026, 11, 1, 20, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr(modulo, "agora", lambda: instante)
     anexar = AsyncMock()
     monkeypatch.setattr(modulo, "adicionar_imagens_sessao", anexar)
     asyncio.run(modulo.salvar_mensagem("sessao", "human", "Texto anônimo", 7,
@@ -30,6 +33,7 @@ def test_salvar_mensagem_preserva_dono_e_anexos(monkeypatch):
     assert filtro == {"_id": "documento", "user_id": 7, "esta_ativo": True}
     assert atualizacao["$push"]["mensagens"] == {
         "role": "human", "content": "Texto anônimo", "imagens": ["https://exemplo.com/foto.jpg"],
+        "timestamp": instante,
     }
     anexar.assert_awaited_once_with(sessao_id="sessao", usuario_id=7,
                                    imagens=["https://exemplo.com/foto.jpg"])
@@ -60,8 +64,9 @@ def test_confirmacao_da_resposta_persiste_e_aparece_no_historico(monkeypatch):
         {**mensagem, "confirmacao": "sim"},
         {"role": "human", "content": "Sim"},
     ]) == [
-        {"role": "assistant", "mensagem": "Confira os dados.", "emocao": "NEUTRO", "confirmacao": "sim"},
-        {"role": "human", "mensagem": "Sim", "confirmacao": "nao"},
+        {"role": "assistant", "mensagem": "Confira os dados.", "emocao": "NEUTRO", "confirmacao": "sim",
+         "timestamp": mensagem["timestamp"]},
+        {"role": "human", "mensagem": "Sim", "confirmacao": "nao", "timestamp": None},
     ]
 
 

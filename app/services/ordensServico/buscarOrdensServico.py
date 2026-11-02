@@ -7,6 +7,9 @@ import unicodedata
 from app.core.clients.postgres import executar_consulta
 from app.schemas import UsuarioContexto
 
+from app.core.respostas import MENSAGENS
+from app.graph.respostas_padrao import escolher_resposta
+
 
 registrador = logging.getLogger(__name__)
 
@@ -49,7 +52,7 @@ def _data_iso(valor) -> str | None:
         return valor.date().isoformat()
     if isinstance(valor, date):
         return valor.isoformat()
-    raise ValueError("Data retornada pelo banco em formato invalido.")
+    raise ValueError(MENSAGENS['data_retornada_pelo_banco_em_formato_invalido'])
 
 
 def _normalizar_filtro(valor: str) -> str:
@@ -99,7 +102,7 @@ async def buscar_ordens_servico(
     if perfil not in {"tecnico", "gestor", "administrador"}:
         return {
             "status": "ACESSO_NEGADO",
-            "mensagem": "Somente tecnicos e gestores podem consultar ordens de servico.",
+            "mensagem": MENSAGENS['somente_tecnicos_e_gestores_podem_consultar_ordens_de_servico'],
         }
 
     filtros = {
@@ -117,7 +120,7 @@ async def buscar_ordens_servico(
     if not any(valor is not None for valor in filtros.values()):
         return {
             "status": "ERRO_VALIDACAO",
-            "mensagem": "Informe ao menos um filtro para buscar as ordens de servico.",
+            "mensagem": MENSAGENS['informe_ao_menos_um_filtro_para_buscar_as_ordens_de_servico'],
         }
     if (
         data_criacao_inicio and data_criacao_fim
@@ -128,7 +131,7 @@ async def buscar_ordens_servico(
     ):
         return {
             "status": "ERRO_VALIDACAO",
-            "mensagem": "A data inicial de cada periodo deve ser anterior ou igual a data final.",
+            "mensagem": MENSAGENS['a_data_inicial_de_cada_periodo_deve_ser_anterior_ou_igual_a'],
         }
 
     condicoes = [
@@ -151,7 +154,7 @@ async def buscar_ordens_servico(
         if status_id is None:
             return {
                 "status": "ERRO_VALIDACAO",
-                "mensagem": "Use Não Iniciada/Não iniciadas, Atrasada, Pausada, Em andamento ou Concluída/Finalizadas.",
+                "mensagem": MENSAGENS['use_nao_iniciada_nao_iniciadas_atrasada_pausada_em_andamento_ou_concluida_finalizadas'],
             }
         condicoes.append("os.status_ordem_servico = :status_id")
         parametros["status_id"] = status_id
@@ -162,7 +165,7 @@ async def buscar_ordens_servico(
         if prioridade_normalizada not in _ID_POR_PRIORIDADE:
             return {
                 "status": "ERRO_VALIDACAO",
-                "mensagem": "Prioridade invalida. Use ALTA, MEDIA ou BAIXA.",
+                "mensagem": MENSAGENS['prioridade_invalida_use_alta_media_ou_baixa'],
             }
         condicoes.append("os.prioridade = :prioridade")
         parametros["prioridade"] = _ID_POR_PRIORIDADE[prioridade_normalizada]
@@ -173,7 +176,7 @@ async def buscar_ordens_servico(
         if categoria_normalizada not in _ID_POR_CATEGORIA_PROBLEMA:
             return {
                 "status": "ERRO_VALIDACAO",
-                "mensagem": "Categoria do problema invalida. Informe uma categoria cadastrada.",
+                "mensagem": MENSAGENS['categoria_do_problema_invalida_informe_uma_categoria_cadastrada'],
             }
         condicoes.append("os.categoria_problema = :categoria_problema")
         parametros["categoria_problema"] = _ID_POR_CATEGORIA_PROBLEMA[categoria_normalizada]
@@ -276,7 +279,7 @@ async def buscar_ordens_servico(
                 or categoria is None
                 or not status_formatado
             ):
-                raise ValueError("Status, categoria ou prioridade de OS desconhecido.")
+                raise ValueError(MENSAGENS['status_categoria_ou_prioridade_de_os_desconhecido'])
             ordens.append({
                 "titulo": linha["titulo"],
                 "descricaoProblema": linha["descricaoProblema"],
@@ -297,18 +300,16 @@ async def buscar_ordens_servico(
         registrador.exception("Falha ao buscar ordens de servico com filtros no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "Nao foi possivel consultar as ordens de servico no banco.",
+            "mensagem": MENSAGENS['nao_foi_possivel_consultar_as_ordens_de_servico_no_banco'],
         }
 
     return {
         "status": "SUCESSO" if ordens else "SEM_RESULTADO",
         "ordens_servico": ordens,
         "filtros_aplicados": filtros_legiveis,
-        "orientacao": "Para consultar ordens de serviço, acesse a área de ordens de serviço no app.",
+        "orientacao": MENSAGENS['para_consultar_ordens_de_servico_acesse_a_area_de_ordens_de_servico'],
         "mensagem": (
-            "Ordens de servico consultadas com sucesso."
-            if ordens
-            else "Nenhuma ordem de servico encontrada com esses filtros no escopo autorizado."
+            escolher_resposta(ordens, 'ordens_de_servico_consultadas_com_sucesso', 'nenhuma_ordem_de_servico_encontrada_com_esses_filtros_no_escopo_autorizado')
         ),
     }
 
@@ -321,7 +322,7 @@ async def consultar_minhas_ordens_servico(usuario: UsuarioContexto) -> dict:
 async def consultar_todas_ordens_servico(usuario: UsuarioContexto) -> dict:
     """Consulta OS do endereco do gestor nos ultimos tres meses."""
     if usuario.tipo_acesso not in {"gestor", "administrador"}:
-        return {"status": "ACESSO_NEGADO", "mensagem": "Consulta exclusiva para gestores e administradores."}
+        return {"status": "ACESSO_NEGADO", "mensagem": MENSAGENS['consulta_exclusiva_para_gestores_e_administradores']}
     return await _consultar_ordens_servico(usuario, somente_usuario=False)
 
 
@@ -381,7 +382,7 @@ async def _consultar_ordens_servico(
             categoria = CATEGORIA_PROBLEMA_POR_ID.get(linha["categoria_id"])
             status = STATUS_ORDEM_SERVICO_POR_ID.get(linha["statusOrdemServico"])
             if prioridade is None or categoria is None or not status:
-                raise ValueError("Status, categoria ou prioridade de OS desconhecido.")
+                raise ValueError(MENSAGENS['status_categoria_ou_prioridade_de_os_desconhecido'])
             ordens.append({
                 "titulo": linha["titulo"],
                 "descricaoProblema": linha["descricaoProblema"],
@@ -401,7 +402,7 @@ async def _consultar_ordens_servico(
         registrador.exception("Falha ao consultar ordens de servico no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "Nao foi possivel consultar as ordens de servico no banco.",
+            "mensagem": MENSAGENS['nao_foi_possivel_consultar_as_ordens_de_servico_no_banco'],
         }
 
     return {
@@ -411,10 +412,8 @@ async def _consultar_ordens_servico(
             "inicio": inicio.strftime("%d-%m-%Y"),
             "fim": hoje.strftime("%d-%m-%Y"),
         },
-        "orientacao": "Para consultar ordens de serviço, acesse a área de ordens de serviço no app.",
+        "orientacao": MENSAGENS['para_consultar_ordens_de_servico_acesse_a_area_de_ordens_de_servico'],
         "mensagem": (
-            "Ordens de servico consultadas com sucesso."
-            if ordens
-            else "Nenhuma ordem de servico encontrada nos ultimos tres meses."
+            escolher_resposta(ordens, 'ordens_de_servico_consultadas_com_sucesso', 'nenhuma_ordem_de_servico_encontrada_nos_ultimos_tres_meses')
         ),
     }

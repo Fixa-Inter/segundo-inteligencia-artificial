@@ -1,10 +1,10 @@
 """Classificação fechada pelo JEV usada pelo endpoint de problemas."""
 
+
 from app.core.configuracao import LIMIAR
 from app.services.gerais.jev import ErroJEV, consultar_jev, ler_choice, ler_noul
 
-
-FRASE_SEGURA = "Não tenho evidência para afirmar isso."
+from app.core.respostas import MENSAGENS, FRASE_SEGURA
 
 
 def _publicar(texto: str, agente: str, rotulo: str) -> dict:
@@ -39,7 +39,7 @@ async def julgar_jev(
             return _publicar(FRASE_SEGURA, agente, "nao_classificavel")
         if nouls:
             if choice not in nouls:
-                raise ErroJEV("Categoria sem pergunta de confirmação.")
+                raise ErroJEV(MENSAGENS['categoria_sem_pergunta_de_confirmacao'])
             noul = ler_noul(respostas, choice)
             if noul < LIMIAR:
                 return _publicar(FRASE_SEGURA, agente, f"abaixo_do_limiar noul={noul:.2f}")

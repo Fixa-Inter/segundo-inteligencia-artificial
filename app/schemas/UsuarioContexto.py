@@ -3,6 +3,8 @@ from datetime import date
 
 from pydantic import BaseModel, field_validator
 
+from app.core.respostas import MENSAGENS
+
 
 class UsuarioContexto(BaseModel):
     access_token: str
@@ -18,7 +20,7 @@ class UsuarioContexto(BaseModel):
     @classmethod
     def normalizar_tipo_acesso(cls, valor: str) -> str:
         if not isinstance(valor, str):
-            raise ValueError("O tipo de acesso deve ser um texto.")
+            raise ValueError(MENSAGENS['o_tipo_de_acesso_deve_ser_um_texto'])
 
         perfil = valor.strip().lower()
         if perfil in {"técnico", "tecnico"}:
@@ -29,13 +31,13 @@ class UsuarioContexto(BaseModel):
     @classmethod
     def normalizar_cnpj(cls, valor: str) -> str:
         if not isinstance(valor, str):
-            raise ValueError("O CNPJ do endereço deve ser uma string.")
+            raise ValueError(MENSAGENS['o_cnpj_do_endereco_deve_ser_uma_string'])
 
         cnpj = re.sub(r"\D", "", valor)
 
         if len(cnpj) != 14:
             raise ValueError(
-                "O CNPJ do endereço deve possuir 14 dígitos."
+                MENSAGENS['o_cnpj_do_endereco_deve_possuir_14_digitos']
             )
 
         return cnpj

@@ -1,5 +1,6 @@
 """Validação e execução de consultas de indicadores na API Databricks."""
 
+
 import asyncio
 import re
 from datetime import date, datetime
@@ -10,6 +11,9 @@ import httpx
 
 from app.core import configuracao
 from app.core.clients import databricks as cliente_databricks
+
+from app.core.respostas import MENSAGENS
+from app.graph.respostas_padrao import formatar_resposta
 
 
 _WAIT_TIMEOUT = "10s"
@@ -73,7 +77,7 @@ def _configuracoes() -> tuple[str, str, str]:
         or partes.fragment
     ):
         raise ConfiguracaoDatabricksAusente(
-            "DATABRICKS_HOST deve ser o host HTTPS do workspace, sem caminho."
+            MENSAGENS['databricks_host_deve_ser_o_host_https_do_workspace_sem_caminho']
         )
 
     return (
@@ -86,9 +90,9 @@ def _configuracoes() -> tuple[str, str, str]:
 def _validar_sql(sql: str, parametros: dict[str, Any]) -> None:
     consulta = sql.strip()
     if not consulta or not re.match(r"^SELECT\b", consulta, re.IGNORECASE):
-        raise ValueError("O cliente Databricks aceita somente consultas SELECT.")
+        raise ValueError(MENSAGENS['o_cliente_databricks_aceita_somente_consultas_select'])
     if ";" in consulta.rstrip(";"):
-        raise ValueError("Envie somente uma consulta SQL por chamada.")
+        raise ValueError(MENSAGENS['envie_somente_uma_consulta_sql_por_chamada'])
 
     marcadores = set(_MARCADOR_SQL.findall(consulta))
     nomes_recebidos = set(parametros)
@@ -112,7 +116,7 @@ def _valor_parametro(valor: Any) -> str | None:
         return "true" if valor else "false"
     if isinstance(valor, (str, int, float)):
         return str(valor)
-    raise ValueError("Tipo de parâmetro SQL não suportado.")
+    raise ValueError(MENSAGENS['tipo_de_parametro_sql_nao_suportado'])
 
 
 def _parametros_api(
@@ -157,7 +161,7 @@ def _linhas_resultado(payload: dict[str, Any]) -> list[dict[str, Any]]:
     if not nomes or any(not isinstance(nome, str) or not nome for nome in nomes):
         if dados:
             raise ErroConsultaDatabricks(
-                "A resposta do Databricks não trouxe o esquema das colunas."
+                MENSAGENS['a_resposta_do_databricks_nao_trouxe_o_esquema_das_colunas']
             )
         return []
 
@@ -165,7 +169,7 @@ def _linhas_resultado(payload: dict[str, Any]) -> list[dict[str, Any]]:
     for linha in dados:
         if not isinstance(linha, list) or len(linha) != len(nomes):
             raise ErroConsultaDatabricks(
-                "A resposta do Databricks trouxe uma linha incompatível com o esquema."
+                MENSAGENS['a_resposta_do_databricks_trouxe_uma_linha_incompativel_com_o_esquema']
             )
         linhas.append(dict(zip(nomes, linha)))
     return linhas
@@ -189,26 +193,26 @@ async def _requisicao_json(
         resposta.raise_for_status()
     except httpx.TimeoutException as erro:
         raise TimeoutConsultaDatabricks(
-            "A API Databricks excedeu o tempo limite de comunicação."
+            MENSAGENS['a_api_databricks_excedeu_o_tempo_limite_de_comunicacao']
         ) from erro
     except httpx.HTTPStatusError as erro:
         raise ErroHTTPDatabricks(
-            f"A API Databricks respondeu HTTP {erro.response.status_code}."
+            formatar_resposta('a_api_databricks_respondeu_http_valor_1', valor_1=erro.response.status_code)
         ) from erro
     except httpx.HTTPError as erro:
         raise ErroHTTPDatabricks(
-            "Não foi possível estabelecer comunicação com a API Databricks."
+            MENSAGENS['nao_foi_possivel_estabelecer_comunicacao_com_a_api_databricks']
         ) from erro
 
     try:
         payload = resposta.json()
     except ValueError as erro:
         raise ErroHTTPDatabricks(
-            "A API Databricks retornou uma resposta inválida."
+            MENSAGENS['a_api_databricks_retornou_uma_resposta_invalida']
         ) from erro
     if not isinstance(payload, dict):
         raise ErroHTTPDatabricks(
-            "A API Databricks retornou um formato de resposta inválido."
+            MENSAGENS['a_api_databricks_retornou_um_formato_de_resposta_invalido']
         )
     return payload
 
@@ -245,11 +249,11 @@ async def executar_consulta(
     valores = parametros or {}
     _validar_sql(sql, valores)
     if not 1 <= limite_linhas <= 10_000:
-        raise ValueError("limite_linhas deve estar entre 1 e 10000.")
+        raise ValueError(MENSAGENS['limite_linhas_deve_estar_entre_1_e_10000'])
     if limite_bytes <= 0:
-        raise ValueError("limite_bytes deve ser maior que zero.")
+        raise ValueError(MENSAGENS['limite_bytes_deve_ser_maior_que_zero'])
     if tempo_limite_segundos <= 0:
-        raise ValueError("tempo_limite_segundos deve ser maior que zero.")
+        raise ValueError(MENSAGENS['tempo_limite_segundos_deve_ser_maior_que_zero'])
 
     host, token, warehouse_id = _configuracoes()
     cliente = cliente_databricks.obter_cliente_databricks()
@@ -266,7 +270,7 @@ async def executar_consulta(
     if valores:
         corpo["parameters"] = _parametros_api(valores, tipos_parametros)
     elif tipos_parametros:
-        raise ValueError("Tipos de parâmetros informados sem parâmetros SQL.")
+        raise ValueError(MENSAGENS['tipos_de_parametros_informados_sem_parametros_sql'])
 
     prazo = asyncio.get_running_loop().time() + tempo_limite_segundos
     payload = await _requisicao_json(
@@ -279,7 +283,7 @@ async def executar_consulta(
         while estado in {"PENDING", "RUNNING"}:
             if not statement_id:
                 raise ErroConsultaDatabricks(
-                    "A API Databricks não retornou o identificador da consulta pendente."
+                    MENSAGENS['a_api_databricks_nao_retornou_o_identificador_da_consulta_pendente']
                 )
             restante = prazo - asyncio.get_running_loop().time()
             if restante <= 0:
@@ -287,7 +291,7 @@ async def executar_consulta(
                     cliente, host, token, statement_id, warehouse_id,
                 )
                 raise TimeoutConsultaDatabricks(
-                    "A consulta Databricks não terminou dentro do tempo limite."
+                    MENSAGENS['a_consulta_databricks_nao_terminou_dentro_do_tempo_limite']
                 )
             await asyncio.sleep(min(_INTERVALO_POLL_SEGUNDOS, restante))
             payload = await _requisicao_json(
@@ -314,7 +318,7 @@ async def executar_consulta(
 
     if asyncio.get_running_loop().time() >= prazo:
         raise TimeoutConsultaDatabricks(
-            "A consulta Databricks não terminou dentro do tempo limite."
+            MENSAGENS['a_consulta_databricks_nao_terminou_dentro_do_tempo_limite']
         )
 
     if estado != "SUCCEEDED":
@@ -325,7 +329,7 @@ async def executar_consulta(
     manifest = payload.get("manifest") or {}
     if manifest.get("truncated") or (payload.get("result") or {}).get("truncated"):
         raise ResultadoDatabricksTruncado(
-            "O resultado excedeu o limite de linhas ou bytes configurado."
+            MENSAGENS['o_resultado_excedeu_o_limite_de_linhas_ou_bytes_configurado']
         )
 
     resultado = payload.get("result") or {}
@@ -334,7 +338,7 @@ async def executar_consulta(
     while proximo_chunk is not None:
         if asyncio.get_running_loop().time() >= prazo:
             raise TimeoutConsultaDatabricks(
-                "A leitura dos resultados Databricks excedeu o tempo limite."
+                MENSAGENS['a_leitura_dos_resultados_databricks_excedeu_o_tempo_limite']
             )
         chunk = await _requisicao_json(
             cliente,
@@ -346,16 +350,16 @@ async def executar_consulta(
         )
         if asyncio.get_running_loop().time() >= prazo:
             raise TimeoutConsultaDatabricks(
-                "A leitura dos resultados Databricks excedeu o tempo limite."
+                MENSAGENS['a_leitura_dos_resultados_databricks_excedeu_o_tempo_limite']
             )
         if chunk.get("truncated"):
             raise ResultadoDatabricksTruncado(
-                "O resultado excedeu o limite de linhas ou bytes configurado."
+                MENSAGENS['o_resultado_excedeu_o_limite_de_linhas_ou_bytes_configurado']
             )
         linhas.extend(_linhas_resultado({"manifest": manifest, "result": chunk}))
         proximo_chunk = chunk.get("next_chunk_index")
         if len(linhas) > limite_linhas:
             raise ResultadoDatabricksTruncado(
-                "O resultado excedeu o limite de linhas configurado."
+                MENSAGENS['o_resultado_excedeu_o_limite_de_linhas_configurado']
             )
     return linhas

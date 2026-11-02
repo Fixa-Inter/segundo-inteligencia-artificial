@@ -21,6 +21,8 @@ ALVOS = (
     "o cadastro", "a alteracao", "a mudanca", "a foto", "as fotos", "a imagem", "as imagens",
     "o local", "o titulo", "a descricao", "a prioridade", "a categoria", "a compra",
     "a categoria do equipamento", "a categoria do problema", "os detalhes do local",
+    "o evento", "a descricao do evento", "a observacao", "o inicio", "o fim", "o termino",
+    "a data de inicio", "a data de fim", "o horario de inicio", "o horario de fim", "os horarios", "as datas",
 )
 
 
@@ -51,13 +53,13 @@ def classificar_manifestacao(texto: str) -> Manifestacao:
     normalizada = normalizar_mensagem(texto)
     if "?" in texto or re.match(r"^(como|qual|quando|onde|por que|sera|posso|voce pode)\b", normalizada):
         return "pergunta"
-    if re.fullmatch(r"(?:nao )?(?:quero |vamos |pode )?(?:cancele|cancelar|cancela|desista|desistir|desisti|esqueca|deixa pra la|deixe para la)(?: (?:disso|isso|o cadastro|a solicitacao|a ocorrencia|a alteracao|a compra))?", normalizada):
+    if re.fullmatch(r"(?:nao )?(?:quero |vamos |pode )?(?:cancele|cancelar|cancela|desista|desistir|desisti|esqueca|deixa pra la|deixe para la)(?: (?:disso|isso|o cadastro|a solicitacao|a ocorrencia|o evento|a alteracao|a compra))?", normalizada):
         return "negacao" if normalizada.startswith("nao ") else "cancelamento"
-    if re.fullmatch(r"nao quero (?:mais(?: continuar| cadastrar| registrar)?|continuar)(?: (?:a solicitacao|a ocorrencia|o cadastro))?", normalizada):
+    if re.fullmatch(r"nao quero (?:mais(?: continuar| cadastrar| registrar)?|continuar)(?: (?:a solicitacao|a ocorrencia|o evento|o cadastro))?", normalizada):
         return "cancelamento"
-    if re.fullmatch(r"(?:vamos |quero |podemos )?(?:retomar|continuar)(?: (?:o cadastro|a solicitacao|a ocorrencia|a alteracao|a compra))?", normalizada):
+    if re.fullmatch(r"(?:vamos |quero |podemos )?(?:retomar|continuar)(?: (?:o cadastro|a solicitacao|a ocorrencia|o evento|a alteracao|a compra))?", normalizada):
         return "retomada"
-    if re.fullmatch(r"(?:depois (?:eu )?(?:continuo|termino)|(?:vamos |quero )?pausar(?: (?:o cadastro|a solicitacao|a ocorrencia|a alteracao|a compra))?|(?:deixe|deixa) para depois|agora nao)", normalizada):
+    if re.fullmatch(r"(?:depois (?:eu )?(?:continuo|termino)|(?:vamos |quero )?pausar(?: (?:o cadastro|a solicitacao|a ocorrencia|o evento|a alteracao|a compra))?|(?:deixe|deixa) para depois|agora nao)", normalizada):
         return "pausa"
     if re.search(r"\b(nao|nunca|jamais|cancele|cancelar|talvez|mas|porem|se|antes|depois|corrija|corrigir|mude|mudar)\b", normalizada):
         return "negacao"

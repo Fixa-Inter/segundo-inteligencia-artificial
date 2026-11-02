@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 
 from app.agents.modelos import llm_especialista
 
+from app.graph.respostas_padrao import pergunta_opcionais_compra
+
 
 class DadosCompra(BaseModel):
     item: str | None = None
@@ -49,12 +51,7 @@ def opcionais_ausentes(dados: DadosCompra) -> list[str]:
 
 
 def pergunta_opcionais(dados: DadosCompra) -> str:
-    campos = opcionais_ausentes(dados)
-    pergunta = ("Já tenho o nome do item. Se quiser, informe também " + ", ".join(campos) + "."
-                if campos else "Já tenho os dados para pesquisar.")
-    if dados.questao_compatibilidade:
-        pergunta += " " + dados.questao_compatibilidade.strip()
-    return pergunta + " Pode dizer que prefere seguir sem esses dados."
+    return pergunta_opcionais_compra(opcionais_ausentes(dados), dados.questao_compatibilidade)
 
 
 async def extrair(mensagem: str, anterior: dict | None, pergunta_feita: bool) -> DadosCompra:

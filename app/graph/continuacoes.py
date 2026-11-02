@@ -1,8 +1,12 @@
 """Continuação, pausa e cancelamento de propostas da sessão."""
 
+
 from app.core.confirmacoes import classificar_manifestacao, normalizar_mensagem
 from app.memory.persistencia import atualizar_acao, atualizar_rascunho_solicitacao
 from app.memory.persistencia.analise_compra import atualizar_analise_compra
+
+from app.core.respostas import MENSAGENS
+from app.graph.respostas_padrao import escolher_resposta, resposta_interrupcao_proposta
 
 STATUS_RASCUNHO = {"coletando_dados", "aguardando_confirmacao", "aguardando_imagem", "erro_api"}
 STATUS_ACAO = {"aguardando_confirmacao", "aguardando_imagem"}
@@ -14,7 +18,7 @@ def _chave_estado(tipo: str) -> str:
 
 def propostas_pendentes(estado: dict, *, pausadas: bool = False) -> dict[str, dict]:
     propostas = {}
-    for tipo in ("solicitacao", "ocorrencia", "ajuda_geral", "analista_compras"):
+    for tipo in ("solicitacao", "ocorrencia", "evento", "ajuda_geral", "analista_compras"):
         chave = _chave_estado(tipo)
         proposta = estado.get(chave)
         if not isinstance(proposta, dict):
@@ -72,8 +76,7 @@ async def tratar_continuacao(estado: dict, contexto: dict, pergunta: str) -> dic
             candidatos = mencionados
         if len(candidatos) != 1:
             return esclarecer_continuacao(
-                "Qual proposta você quer retomar, pausar ou cancelar: solicitação, ocorrência, alteração ou compra?"
-                if candidatos else "Não há proposta pendente para essa ação. Como posso ajudar?"
+                escolher_resposta(candidatos, 'qual_proposta_voce_quer_retomar_pausar_ou_cancelar_solicitacao_ocorrencia_evento_alteracao', 'nao_ha_proposta_pendente_para_essa_acao_como_posso_ajudar')
             )
         tipo, proposta = next(iter(candidatos.items()))
         if manifestacao == "retomada":
@@ -85,12 +88,7 @@ async def tratar_continuacao(estado: dict, contexto: dict, pergunta: str) -> dic
         if manifestacao == "cancelamento":
             campos["status" if tipo == "ajuda_geral" else "status_fluxo"] = "cancelada"
         proposta = await alterar_continuacao(tipo, proposta, contexto, **campos)
-        resposta = ("Análise de compra cancelada." if tipo == "analista_compras" else
-                    "Proposta cancelada. Não vou enviar esse cadastro nem executar essa alteração.") if manifestacao == "cancelamento" else (
-            "Proposta pausada. Para continuar depois, peça para retomar a "
-            + ("análise de compra." if tipo == "analista_compras" else "alteração." if tipo == "ajuda_geral" else
-               tipo.replace("solicitacao", "solicitação").replace("ocorrencia", "ocorrência") + ".")
-        )
+        resposta = resposta_interrupcao_proposta(tipo, manifestacao)
         return {**esclarecer_continuacao(resposta), _chave_estado(tipo): proposta}
     if (len(ativos) == 1 and "analista_compras" in ativos
             and ativos["analista_compras"].get("status_fluxo") == "aguardando_opcionais"
@@ -100,14 +98,14 @@ async def tratar_continuacao(estado: dict, contexto: dict, pergunta: str) -> dic
     if manifestacao == "aceite" or estado.get("imagens_recebidas") and not pergunta.strip():
         if len(ativos) == 1:
             tipo = next(iter(ativos))
-            outro_tipo = "ocorrencia" if tipo == "solicitacao" else "solicitacao"
-            if outro_tipo in normalizar_mensagem(pergunta):
-                return esclarecer_continuacao("A confirmação menciona outro registro. Qual proposta você quer continuar?")
+            outros_tipos = {"solicitacao", "ocorrencia", "evento"} - {tipo}
+            if any(outro in normalizar_mensagem(pergunta) for outro in outros_tipos):
+                return esclarecer_continuacao(MENSAGENS['a_confirmacao_menciona_outro_registro_qual_proposta_voce_quer_continuar'])
             return {"intencao": tipo, "erro": None,
                     "justificativa_roteamento": "Continuação da única proposta ativa."}
         if ativos or pausados:
             return esclarecer_continuacao(
-                "Há mais de uma proposta ou uma proposta pausada. Informe qual deseja retomar antes de confirmar."
+                MENSAGENS['ha_mais_de_uma_proposta_ou_uma_proposta_pausada_informe_qual_deseja']
             )
     return None
 

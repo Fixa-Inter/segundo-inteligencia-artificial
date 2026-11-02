@@ -7,9 +7,7 @@ from typing import Any
 import httpx
 
 from app.observability.metricas import REQUISICOES_PECHINCHA
-
-URL = "https://pechincha.ai/mcp"
-VERSAO_PROTOCOLO = "2025-03-26"
+from app.core.configuracao import URL_PECHINCHA, VERSAO_PROTOCOLO
 
 
 class ErroPechincha(RuntimeError):
@@ -48,7 +46,7 @@ def _ler_resposta(resposta: httpx.Response) -> dict[str, Any]:
 async def _post(cliente: httpx.AsyncClient, corpo: dict, headers: dict) -> httpx.Response:
     for tentativa in range(2):
         try:
-            resposta = await cliente.post(URL, json=corpo, headers=headers)
+            resposta = await cliente.post(URL_PECHINCHA, json=corpo, headers=headers)
             if resposta.status_code in {502, 503, 504} and tentativa == 0:
                 await asyncio.sleep(0.4)
                 continue

@@ -12,6 +12,7 @@ class SolicitacaoOcorrenciaResultado(BaseModel):
         "SUCESSO_PARCIAL",
         "AGUARDANDO_INFORMACAO",
         "SEM_RESULTADO",
+        "FERRAMENTA_INDISPONIVEL",
         "ERRO_VALIDACAO",
         "ERRO_FERRAMENTA",
         "ERRO_MODELO",

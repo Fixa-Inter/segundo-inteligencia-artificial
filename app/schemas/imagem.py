@@ -1,9 +1,12 @@
 """Limites e validação das URLs de imagens recebidas pelo chat."""
 
+
 import ipaddress
 import re
 
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
+
+from app.core.respostas import MENSAGENS
 
 
 LIMITE_IMAGENS_POR_MENSAGEM = 3
@@ -17,7 +20,7 @@ _SUFIXOS_LOCAIS = (".local", ".localhost", ".internal", ".test", ".invalid")
 def validar_url_imagem(valor: str) -> str:
     """Aceita uma URL HTTP(S) de origem pública, sem credenciais ou fragmento."""
     if not isinstance(valor, str):
-        raise ValueError("A imagem deve ser uma URL HTTP(S) pública.")
+        raise ValueError(MENSAGENS['a_imagem_deve_ser_uma_url_http_s_publica'])
     url = valor.strip()
     if (
         not url
@@ -25,15 +28,15 @@ def validar_url_imagem(valor: str) -> str:
         or "\\" in url
         or any(ord(caractere) < 33 or ord(caractere) == 127 for caractere in url)
     ):
-        raise ValueError("A imagem deve ser uma URL HTTP(S) pública de até 255 caracteres.")
+        raise ValueError(MENSAGENS['a_imagem_deve_ser_uma_url_http_s_publica_de_ate_255'])
 
     try:
         partes = _ADAPTADOR_URL.validate_python(url)
     except ValidationError as erro:
-        raise ValueError("A imagem deve ser uma URL HTTP(S) válida.") from erro
+        raise ValueError(MENSAGENS['a_imagem_deve_ser_uma_url_http_s_valida']) from erro
 
     if partes.username or partes.password or partes.fragment:
-        raise ValueError("A URL da imagem não pode conter credenciais ou fragmento.")
+        raise ValueError(MENSAGENS['a_url_da_imagem_nao_pode_conter_credenciais_ou_fragmento'])
 
     host = (partes.host or "").strip("[]").rstrip(".").lower()
     try:
@@ -42,15 +45,15 @@ def validar_url_imagem(valor: str) -> str:
         try:
             dominio = host.encode("idna").decode("ascii")
         except UnicodeError as erro:
-            raise ValueError("A URL da imagem deve ter uma origem pública.") from erro
+            raise ValueError(MENSAGENS['a_url_da_imagem_deve_ter_uma_origem_publica']) from erro
         if (
             "." not in dominio
             or dominio.endswith(_SUFIXOS_LOCAIS)
             or any(not _ROTULO_DNS.fullmatch(rotulo) for rotulo in dominio.split("."))
         ):
-            raise ValueError("A URL da imagem deve ter uma origem pública.")
+            raise ValueError(MENSAGENS['a_url_da_imagem_deve_ter_uma_origem_publica'])
     else:
         if not endereco.is_global:
-            raise ValueError("A URL da imagem deve ter uma origem pública.")
+            raise ValueError(MENSAGENS['a_url_da_imagem_deve_ter_uma_origem_publica'])
 
     return url

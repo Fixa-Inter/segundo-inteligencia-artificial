@@ -1,5 +1,6 @@
 """Cliente e validação das decisões estruturadas do JEV."""
 
+
 import asyncio
 import json
 import logging
@@ -11,6 +12,9 @@ from app.observability.tracing import somente_metricas
 
 from app.core.configuracao import JEV_MODELO, JEV_URL, TYPESAFE_API_KEY
 from app.observability.metricas import DURACAO_JEV, REQUISICOES_JEV, registrar_uso_modelo
+
+from app.core.respostas import MENSAGENS
+from app.graph.respostas_padrao import formatar_resposta
 
 
 registrador = logging.getLogger(__name__)
@@ -30,12 +34,12 @@ async def consultar_jev(estado: dict, perguntas: dict, *, operacao: str = "outra
     resultado = "error"
     try:
         if not TYPESAFE_API_KEY:
-            raise ErroJEV("Chave do JEV ausente.")
+            raise ErroJEV(MENSAGENS['chave_do_jev_ausente'])
         corpo = {"model": JEV_MODELO, "state": estado, "questions": perguntas}
         try:
             json.dumps(corpo, allow_nan=False)
         except (TypeError, ValueError) as exc:
-            raise ErroJEV("Estado do JEV não é JSON válido.") from exc
+            raise ErroJEV(MENSAGENS['estado_do_jev_nao_e_json_valido']) from exc
 
         async with httpx.AsyncClient(timeout=30, follow_redirects=False) as cliente:
             for tentativa in range(2):
@@ -50,7 +54,7 @@ async def consultar_jev(estado: dict, perguntas: dict, *, operacao: str = "outra
                 resposta.raise_for_status()
                 dados = resposta.json()
                 if not isinstance(dados, dict) or not isinstance(dados.get("answers"), dict):
-                    raise ErroJEV("Resposta do JEV sem answers válidos.")
+                    raise ErroJEV(MENSAGENS['resposta_do_jev_sem_answers_validos'])
                 uso = dados.get("usage") or {}
                 if isinstance(uso, dict):
                     registrar_uso_modelo(
@@ -63,15 +67,15 @@ async def consultar_jev(estado: dict, perguntas: dict, *, operacao: str = "outra
                 )
                 resultado = "success"
                 return dados
-        raise ErroJEV("JEV não retornou uma decisão.")
+        raise ErroJEV(MENSAGENS['jev_nao_retornou_uma_decisao'])
     except httpx.HTTPStatusError as exc:
-        raise ErroJEV(f"JEV retornou HTTP {exc.response.status_code}.") from exc
+        raise ErroJEV(formatar_resposta('jev_retornou_http_valor_1', valor_1=exc.response.status_code)) from exc
     except httpx.TimeoutException as exc:
-        raise ErroJEV("Tempo do JEV esgotado.") from exc
+        raise ErroJEV(MENSAGENS['tempo_do_jev_esgotado']) from exc
     except httpx.RequestError as exc:
-        raise ErroJEV("Conexão com o JEV indisponível.") from exc
+        raise ErroJEV(MENSAGENS['conexao_com_o_jev_indisponivel']) from exc
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-        raise ErroJEV("JEV retornou JSON inválido.") from exc
+        raise ErroJEV(MENSAGENS['jev_retornou_json_invalido']) from exc
     finally:
         DURACAO_JEV.labels(operacao).observe(time.perf_counter() - inicio)
         REQUISICOES_JEV.labels(operacao, resultado).inc()
@@ -80,23 +84,23 @@ async def consultar_jev(estado: dict, perguntas: dict, *, operacao: str = "outra
 def ler_choice(respostas: dict, nome: str, opcoes: set[str]) -> tuple[str, float]:
     resposta = respostas.get(nome)
     if not isinstance(resposta, dict) or resposta.get("type") != "choice":
-        raise ErroJEV(f"Choice {nome} inválido.")
+        raise ErroJEV(formatar_resposta('choice_valor_1_invalido', valor_1=nome))
     escolha = resposta.get("choice")
     confianca = resposta.get("confidence")
     if escolha not in opcoes or isinstance(confianca, bool) or not isinstance(confianca, (float, int)):
-        raise ErroJEV(f"Choice {nome} inválido.")
+        raise ErroJEV(formatar_resposta('choice_valor_1_invalido', valor_1=nome))
     if not math.isfinite(confianca) or not 0 <= confianca <= 1:
-        raise ErroJEV(f"Confiança de {nome} inválida.")
+        raise ErroJEV(formatar_resposta('confianca_de_valor_1_invalida', valor_1=nome))
     return escolha, float(confianca)
 
 
 def ler_noul(respostas: dict, nome: str) -> float:
     resposta = respostas.get(nome)
     if not isinstance(resposta, dict) or resposta.get("type") != "noul":
-        raise ErroJEV(f"Noul {nome} inválido.")
+        raise ErroJEV(formatar_resposta('noul_valor_1_invalido', valor_1=nome))
     valor = resposta.get("noul")
     if isinstance(valor, bool) or not isinstance(valor, (float, int)):
-        raise ErroJEV(f"Noul {nome} inválido.")
+        raise ErroJEV(formatar_resposta('noul_valor_1_invalido', valor_1=nome))
     if not math.isfinite(valor) or not 0 <= valor <= 1:
-        raise ErroJEV(f"Noul {nome} fora do intervalo.")
+        raise ErroJEV(formatar_resposta('noul_valor_1_fora_do_intervalo', valor_1=nome))
     return float(valor)

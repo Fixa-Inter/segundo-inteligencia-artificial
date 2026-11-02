@@ -96,6 +96,11 @@ JEV_MODELO = os.getenv("JEV_MODEL", "jev-latest")
 LIMIAR = 0.20
 # ================= FIM DAS CONFIGURAÇÕES DO JUIZ ==================
 
+# ================== CONFIGURAÇÕES DO PECHINCHA ====================
+URL_PECHINCHA = "https://pechincha.ai/mcp"
+VERSAO_PROTOCOLO = "2025-03-26"
+# ================= FIM DAS CONFIGURAÇÕES DO PECHINCHA ==================
+
 OBRIGATORIAS = {
     "OPENAI_API_KEY": OPENAI_CHAVE_API,
     "TYPESAFE_API_KEY": TYPESAFE_API_KEY,

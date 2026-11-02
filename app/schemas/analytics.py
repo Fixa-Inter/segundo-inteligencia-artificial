@@ -2,6 +2,8 @@ from datetime import date
 
 from pydantic import BaseModel, model_validator
 
+from app.core.respostas import MENSAGENS
+
 
 class PeriodoRequest(BaseModel):
     inicio: date
@@ -11,7 +13,7 @@ class PeriodoRequest(BaseModel):
     def validar_periodo(self):
         if self.inicio > self.fim:
             raise ValueError(
-                "A data inicial não pode ser posterior à final."
+                MENSAGENS['a_data_inicial_nao_pode_ser_posterior_a_final']
             )
 
         return self

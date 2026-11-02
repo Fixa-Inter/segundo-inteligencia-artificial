@@ -12,6 +12,8 @@ from app.services.ajuda_geral import (
     listar_registros as consultar_registros,
 )
 
+from app.core.respostas import MENSAGENS
+
 
 Colecao = Literal[
     "problema", "ocorrencia", "ordem_servico", "tarefa",
@@ -97,7 +99,7 @@ def _acesso_negado() -> dict:
         "status": "ACESSO_NEGADO",
         "resultados": [],
         "cursor_paginacao": None,
-        "mensagem": "Usuário autenticado não disponível.",
+        "mensagem": MENSAGENS['usuario_autenticado_nao_disponivel'],
     }
 
 

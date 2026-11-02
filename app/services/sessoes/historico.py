@@ -8,6 +8,8 @@ from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
 from app.memory.persistencia.utilitarios import sessoes_ativas
 from app.services.visualizacoes.publicacao import validar_visualizacao_publica
 
+from app.core.respostas import MENSAGENS
+
 
 class ErroConsultaHistorico(Exception):
     def __init__(self, status_code: int, mensagem: str):
@@ -41,7 +43,7 @@ def _formatar_mensagens(mensagens: Any, *, incluir_visualizacoes: bool = False) 
         imagens = mensagem.get("imagens")
         if role not in {"human", "assistant"} or not isinstance(conteudo, str):
             continue
-        item = {"role": role, "mensagem": conteudo}
+        item = {"role": role, "mensagem": conteudo, "timestamp": mensagem.get("timestamp")}
         if imagens is not None:
             item["imagens"] = imagens
         item["confirmacao"] = "sim" if role == "assistant" and mensagem.get("confirmacao") == "sim" else "nao"
@@ -83,11 +85,11 @@ async def excluir_conversa(session_id: str, usuario_id: int) -> bool:
             )
     except (PyMongoError, TimeoutError, OSError):
         raise ErroConsultaHistorico(
-            503, "O histórico de conversas está temporariamente indisponível."
+            503, MENSAGENS['o_historico_de_conversas_esta_temporariamente_indisponivel']
         ) from None
     except RuntimeError:
         raise ErroConsultaHistorico(
-            500, "O serviço de histórico de conversas não está configurado."
+            500, MENSAGENS['o_servico_de_historico_de_conversas_nao_esta_configurado']
         ) from None
 
     if resultado.modified_count > 0:
@@ -106,18 +108,18 @@ async def buscar_conversas_usuario(usuario_id: int, *, incluir_visualizacoes: bo
             documentos = await cursor.to_list(length=None)
     except (PyMongoError, TimeoutError, OSError):
         raise ErroConsultaHistorico(
-            503, "O histórico de conversas está temporariamente indisponível."
+            503, MENSAGENS['o_historico_de_conversas_esta_temporariamente_indisponivel']
         ) from None
     except RuntimeError:
         raise ErroConsultaHistorico(
-            500, "O serviço de histórico de conversas não está configurado."
+            500, MENSAGENS['o_servico_de_historico_de_conversas_nao_esta_configurado']
         ) from None
 
     try:
         return [_formatar_conversa(documento, incluir_visualizacoes=incluir_visualizacoes) for documento in documentos]
     except (KeyError, TypeError, ValueError):
         raise ErroConsultaHistorico(
-            500, "Não foi possível interpretar o histórico de conversas."
+            500, MENSAGENS['nao_foi_possivel_interpretar_o_historico_de_conversas']
         ) from None
 
 
@@ -137,11 +139,11 @@ async def buscar_conversa(
             )
     except (PyMongoError, TimeoutError, OSError):
         raise ErroConsultaHistorico(
-            503, "O histórico de conversas está temporariamente indisponível."
+            503, MENSAGENS['o_historico_de_conversas_esta_temporariamente_indisponivel']
         ) from None
     except RuntimeError:
         raise ErroConsultaHistorico(
-            500, "O serviço de histórico de conversas não está configurado."
+            500, MENSAGENS['o_servico_de_historico_de_conversas_nao_esta_configurado']
         ) from None
 
     if documento is None:
@@ -151,5 +153,5 @@ async def buscar_conversa(
         return _formatar_conversa(documento, incluir_visualizacoes=incluir_visualizacoes)
     except (KeyError, TypeError, ValueError):
         raise ErroConsultaHistorico(
-            500, "Não foi possível interpretar o histórico de conversas."
+            500, MENSAGENS['nao_foi_possivel_interpretar_o_historico_de_conversas']
         ) from None

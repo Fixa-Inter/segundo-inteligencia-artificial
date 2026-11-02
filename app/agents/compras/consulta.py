@@ -1,5 +1,6 @@
 """Converte filtros informados pela pessoa nos parâmetros aceitos pelo MCP."""
 
+
 import unicodedata
 
 from app.mcp.pechincha import buscar_ofertas, listar_categorias, listar_lojas
@@ -7,6 +8,9 @@ from app.mcp.pechincha.modelos import BuscaOfertas
 from app.mcp.pechincha.transporte import ErroPechincha
 
 from .coleta import DadosCompra
+
+from app.core.respostas import MENSAGENS
+from app.graph.respostas_padrao import formatar_resposta
 
 
 def _normalizar(valor: str) -> str:
@@ -22,7 +26,7 @@ def _slug_exato(valor: str, opcoes: list[dict], campo: str) -> str:
             slug = opcao.get("slug")
             if isinstance(slug, str) and slug:
                 return slug
-    raise ErroPechincha("filtro_invalido", f"{campo} não encontrada no Pechincha.ai: {valor}.")
+    raise ErroPechincha("filtro_invalido", formatar_resposta('valor_1_nao_encontrada_no_pechincha_ai_valor_2', valor_1=campo, valor_2=valor))
 
 
 async def consultar(dados: DadosCompra) -> dict:
@@ -35,7 +39,7 @@ async def consultar(dados: DadosCompra) -> dict:
     try:
         busca = BuscaOfertas(**filtros)
     except ValueError as exc:
-        raise ErroPechincha("filtro_invalido", "Confira a palavra chave e a faixa de preço informadas.") from exc
+        raise ErroPechincha("filtro_invalido", MENSAGENS['confira_a_palavra_chave_e_a_faixa_de_preco_informadas']) from exc
     resultado = await buscar_ofertas(busca)
     resultado["ofertas"] = resultado["ofertas"][:5]
     return resultado

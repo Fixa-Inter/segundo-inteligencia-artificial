@@ -1,5 +1,6 @@
 """Validação dos argumentos das tools, compartilhada com os serviços."""
 
+
 from collections.abc import Iterable
 from types import MappingProxyType
 
@@ -15,6 +16,8 @@ from app.services.visualizacoes.validacao import (
     validar_argumentos_analise,
 )
 
+from app.core.respostas import MENSAGENS
+
 
 # As definições e os tipos dos campos pertencem ao serviço de cada fonte.
 FILTROS_POR_FONTE = MappingProxyType({
@@ -27,7 +30,7 @@ def validar_campos_filtro(analise_id: str, campos: Iterable[str]) -> None:
     analise = obter_analise(analise_id)
     permitidos = FILTROS_POR_FONTE[analise.fonte.id]
     if any(not isinstance(campo, str) or campo not in permitidos for campo in campos):
-        raise ValueError("Filtro não permitido para a fonte desta análise.")
+        raise ValueError(MENSAGENS['filtro_nao_permitido_para_a_fonte_desta_analise'])
 
 
 def validar_consulta(

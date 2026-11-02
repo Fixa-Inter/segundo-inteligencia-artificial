@@ -4,6 +4,7 @@ As análises e os tipos de filtros são fornecidos pelos módulos de domínio, n
 pela conversa. A unidade deve ser resolvida pelo servidor antes desta chamada.
 """
 
+
 from collections.abc import Mapping
 from datetime import date, datetime
 import logging
@@ -30,6 +31,9 @@ from .normalizacao import (
 )
 from .temporais import calendario_consulta, expressao_periodo_sql
 from .validacao import validar_argumentos_analise
+
+from app.core.respostas import MENSAGENS
+from app.graph.respostas_padrao import _avisos_base, resposta_consulta_visualizacao, formatar_resposta
 
 
 registrador = logging.getLogger(__name__)
@@ -143,7 +147,7 @@ def _data(valor):
             return date.fromisoformat(valor)
         except ValueError:
             pass
-    raise _ErroRespostaDatabricks("A resposta não contém uma data válida.")
+    raise _ErroRespostaDatabricks(MENSAGENS['a_resposta_nao_contem_uma_data_valida'])
 
 
 def _medida(analise, linha):
@@ -161,15 +165,15 @@ def _medida(analise, linha):
         ),
     )
     if base.qtd_registros_total == 0:
-        raise _ErroRespostaDatabricks("Um agrupamento retornado exige registros na fonte.")
+        raise _ErroRespostaDatabricks(MENSAGENS['um_agrupamento_retornado_exige_registros_na_fonte'])
     if (valor is None) != (quantidade == 0):
-        raise _ErroRespostaDatabricks("A medida não corresponde à base elegível.")
+        raise _ErroRespostaDatabricks(MENSAGENS['a_medida_nao_corresponde_a_base_elegivel'])
     if valor is not None:
         valor = _numero(valor)
         if analise.escala_percentual is not None and not 0 <= valor <= analise.escala_percentual:
-            raise _ErroRespostaDatabricks("O percentual retornado está fora da escala publicada.")
+            raise _ErroRespostaDatabricks(MENSAGENS['o_percentual_retornado_esta_fora_da_escala_publicada'])
         if analise.excluir_negativos and valor < 0:
-            raise _ErroRespostaDatabricks("A média contém tempos negativos excluídos da população.")
+            raise _ErroRespostaDatabricks(MENSAGENS['a_media_contem_tempos_negativos_excluidos_da_populacao'])
     return {"valor": valor, "qtd_registros": quantidade, "base_calculo": base}
 
 
@@ -181,7 +185,7 @@ def _instante(valor):
             return datetime.fromisoformat(valor.replace("Z", "+00:00"))
         except ValueError:
             pass
-    raise _ErroRespostaDatabricks("A resposta não contém um timestamp válido.")
+    raise _ErroRespostaDatabricks(MENSAGENS['a_resposta_nao_contem_um_timestamp_valido'])
 
 
 def _categorias(analise, linhas, filtros_permitidos):
@@ -192,7 +196,7 @@ def _categorias(analise, linhas, filtros_permitidos):
         grupo = _grupo(analise, linha, filtros_permitidos)
         chave = tuple(grupo.items())
         if chave in grupos_vistos:
-            raise _ErroRespostaDatabricks("A resposta repete um agrupamento de categorias.")
+            raise _ErroRespostaDatabricks(MENSAGENS['a_resposta_repete_um_agrupamento_de_categorias'])
         grupos_vistos.add(chave)
         pontos.append(PontoCategoria(grupo=grupo, **_medida(analise, linha)))
         if analise.fonte.campo_snapshot:
@@ -208,21 +212,21 @@ def _serie_temporal(analise, linhas, filtros_permitidos, calendario):
     for linha in linhas:
         referencia = _data(_campo(linha, "data_referencia"))
         if referencia not in calendario:
-            raise _ErroRespostaDatabricks("A resposta contém referência incompatível com o calendário consultado.")
+            raise _ErroRespostaDatabricks(MENSAGENS['a_resposta_contem_referencia_incompativel_com_o_calendario_consultado'])
         grupo = _grupo(analise, linha, filtros_permitidos, temporal=True)
         chave_grupo = tuple(grupo.items())
         chave_ponto = (referencia, chave_grupo)
         if chave_ponto in por_data_grupo:
-            raise _ErroRespostaDatabricks("A resposta repete um agrupamento temporal.")
+            raise _ErroRespostaDatabricks(MENSAGENS['a_resposta_repete_um_agrupamento_temporal'])
         grupos[chave_grupo] = grupo
         por_data_grupo[chave_ponto] = PontoSerieTemporal(
             data_referencia=referencia, periodo=calendario[referencia], grupo=grupo, **_medida(analise, linha),
         )
     if len(grupos) > MAXIMO_GRUPOS:
-        raise _LimiteSerieExcedido("A série excede 50 grupos; refine os filtros.")
+        raise _LimiteSerieExcedido(MENSAGENS['a_serie_excede_50_grupos_refine_os_filtros'])
     if len(calendario) * len(grupos) > MAXIMO_PONTOS_SERIE:
         raise _LimiteSerieExcedido(
-            "A série com as lacunas excede 500 pontos; reduza o período ou refine os filtros."
+            MENSAGENS['a_serie_com_as_lacunas_excede_500_pontos_reduza_o_periodo_ou']
         )
 
     # Os tipos de cada dimensão já foram normalizados. O marcador de nulidade
@@ -276,17 +280,17 @@ def _base_total(dados):
 
 def _histograma(analise, linhas):
     if len(linhas) != 1:
-        raise _ErroRespostaDatabricks("O agregado do histograma exige uma linha.")
+        raise _ErroRespostaDatabricks(MENSAGENS['o_agregado_do_histograma_exige_uma_linha'])
     linha = linhas[0]
     if _inteiro(_campo(linha, "qtd_registros_invalidos")):
-        raise _ErroRespostaDatabricks("A fonte contém valores incompatíveis com o histograma.")
+        raise _ErroRespostaDatabricks(MENSAGENS['a_fonte_contem_valores_incompativeis_com_o_histograma'])
     base = BaseCalculoVisualizacao(
         qtd_registros_total=_inteiro(_campo(linha, "qtd_registros_total")),
         qtd_registros_elegiveis=_inteiro(_campo(linha, "qtd_registros")),
         qtd_tempos_negativos_excluidos=_inteiro(_campo(linha, "qtd_tempos_negativos_excluidos")),
     )
     if not analise.excluir_negativos and base.qtd_tempos_negativos_excluidos:
-        raise _ErroRespostaDatabricks("Exclusões incompatíveis com a população da análise.")
+        raise _ErroRespostaDatabricks(MENSAGENS['exclusoes_incompativeis_com_a_populacao_da_analise'])
     frequencias = [
         _inteiro(_campo(linha, f"frequencia_{indice}"))
         for indice in range(MAXIMO_INTERVALOS_HISTOGRAMA)
@@ -294,32 +298,11 @@ def _histograma(analise, linhas):
     minimo, maximo = _campo(linha, "minimo"), _campo(linha, "maximo")
     if not base.qtd_registros_elegiveis:
         if minimo is not None or maximo is not None or any(frequencias):
-            raise _ErroRespostaDatabricks("Distribuição sem base contém valores ou frequências.")
+            raise _ErroRespostaDatabricks(MENSAGENS['distribuicao_sem_base_contem_valores_ou_frequencias'])
         return None, base
     return construir_histograma(
         _numero(minimo), _numero(maximo), frequencias, base.qtd_registros_elegiveis,
     ), base
-
-
-def _avisos_base(base, analise):
-    avisos = []
-    if base.qtd_registros_elegiveis < base.qtd_registros_total:
-        complemento = (
-            "os demais não integram o histograma."
-            if analise.formato_dados == "histograma"
-            else "os demais não integram as estatísticas dos grupos."
-            if analise.formato_dados == "boxplot"
-            else "os demais não integram a média. Consulte também a base de cada ponto."
-        )
-        avisos.append(
-            f"Base elegível: {base.qtd_registros_elegiveis} de {base.qtd_registros_total} registros; "
-            f"{complemento}"
-        )
-    if base.qtd_tempos_negativos_excluidos:
-        avisos.append(
-            f"Tempos negativos excluídos: {base.qtd_tempos_negativos_excluidos}."
-        )
-    return avisos
 
 
 async def consultar_agregado(
@@ -359,48 +342,48 @@ async def _consultar_agregado(
 ) -> ResultadoConsultaVisualizacao:
     """Executa análise registrada pelo domínio, com validação antes da consulta."""
     if validar_unidade_id(unidade_id):
-        return _erro("ERRO_VALIDACAO", "Unidade inválida para consultar visualizações.")
+        return _erro("ERRO_VALIDACAO", MENSAGENS['unidade_invalida_para_consultar_visualizacoes'])
     try:
         if not isinstance(consulta, (ConsultaVisualizacaoPeriodo, ConsultaVisualizacaoSnapshot)):
-            raise ValueError("Informe uma consulta de visualização válida.")
+            raise ValueError(MENSAGENS['informe_uma_consulta_de_visualizacao_valida'])
         # Revalida e copia os argumentos antes do await, preservando a consulta e
         # os metadados mesmo que o objeto do chamador seja alterado em paralelo.
         consulta = type(consulta).model_validate(consulta.model_dump())
         analise = next((item for item in analises if item.id == consulta.analise_id), None)
         if analise is None:
-            raise ValueError("A análise não pertence à fonte deste serviço.")
+            raise ValueError(MENSAGENS['a_analise_nao_pertence_a_fonte_deste_servico'])
         validar_argumentos_analise(consulta, analise, filtros_permitidos)
         if analise.id not in implementadas:
-            raise ValueError("Esta análise ainda não está implementada neste serviço.")
+            raise ValueError(MENSAGENS['esta_analise_ainda_nao_esta_implementada_neste_servico'])
         calendario = None
         if analise.formato_dados == "serie_temporal":
             if "data_referencia" not in analise.dimensoes:
-                raise ValueError("A série exige uma dimensão temporal canônica.")
+                raise ValueError(MENSAGENS['a_serie_exige_uma_dimensao_temporal_canonica'])
             calendario = calendario_consulta(consulta.periodo, consulta.granularidade)
         if analise.formato_dados not in {"histograma", "boxplot"} and analise.agregacao not in {"SUM", "COUNT", "AVG"}:
-            raise ValueError("Esta agregação ainda não está implementada neste serviço.")
+            raise ValueError(MENSAGENS['esta_agregacao_ainda_nao_esta_implementada_neste_servico'])
         sql, parametros, tipos = _montar_sql(analise, consulta, unidade_id, filtros_permitidos)
     except (ValidationError, TypeError):
-        return _erro("ERRO_VALIDACAO", "Consulta inválida ou ainda indisponível; confira análise, período e filtros.")
+        return _erro("ERRO_VALIDACAO", MENSAGENS['consulta_invalida_ou_ainda_indisponivel_confira_analise_periodo_e_filtros'])
     except ValueError as erro:
         return _erro("ERRO_VALIDACAO", str(erro))
 
     try:
         linhas = await databricks.executar_consulta(sql, parametros, tipos_parametros=tipos)
     except databricks.TimeoutConsultaDatabricks:
-        return _erro("TIMEOUT", "A consulta excedeu o tempo limite; reduza o período ou refine os filtros.")
+        return _erro("TIMEOUT", MENSAGENS['a_consulta_excedeu_o_tempo_limite_reduza_o_periodo_ou_refine_os'])
     except databricks.ResultadoDatabricksTruncado:
-        return _erro("RESULTADO_TRUNCADO", "O resultado excedeu o limite de transporte; refine os filtros.")
+        return _erro("RESULTADO_TRUNCADO", MENSAGENS['o_resultado_excedeu_o_limite_de_transporte_refine_os_filtros'])
     except Exception as erro:
         registrador.error("Falha na consulta %s: %s", analise.id, type(erro).__name__)
-        return _erro("ERRO_FERRAMENTA", "Não foi possível consultar os dados no Databricks.")
+        return _erro("ERRO_FERRAMENTA", MENSAGENS['nao_foi_possivel_consultar_os_dados_no_databricks'])
 
     try:
         if not isinstance(linhas, list) or any(not isinstance(linha, Mapping) for linha in linhas):
-            raise _ErroRespostaDatabricks("Formato de resposta incompatível.")
+            raise _ErroRespostaDatabricks(MENSAGENS['formato_de_resposta_incompativel'])
         if not linhas and analise.formato_dados != "histograma":
             return ResultadoConsultaVisualizacao(
-                status="SEM_RESULTADO", mensagem="A consulta não retornou dados para esta análise.",
+                status="SEM_RESULTADO", mensagem=MENSAGENS['a_consulta_nao_retornou_dados_para_esta_analise'],
                 metadados=_metadados(
                     analise, consulta, unidade_id, 0,
                     base_calculo=(
@@ -417,7 +400,7 @@ async def _consultar_agregado(
             if dados is None:
                 return ResultadoConsultaVisualizacao(
                     status="SEM_BASE_CALCULO" if base.qtd_registros_total else "SEM_RESULTADO",
-                    mensagem="Não há observações elegíveis para o histograma.",
+                    mensagem=MENSAGENS['nao_ha_observacoes_elegiveis_para_o_histograma'],
                     metadados=metadados, avisos=_avisos_base(base, analise),
                 )
         elif analise.formato_dados == "boxplot":
@@ -438,7 +421,7 @@ async def _consultar_agregado(
         return _erro("ERRO_VALIDACAO", str(erro))
     except Exception as erro:
         registrador.error("Resposta incompatível na consulta %s: %s", analise.id, type(erro).__name__)
-        return _erro("ERRO_FERRAMENTA", "O Databricks retornou dados incompatíveis com a análise.")
+        return _erro("ERRO_FERRAMENTA", MENSAGENS['o_databricks_retornou_dados_incompativeis_com_a_analise'])
 
     try:
         validar_limites_resultado(dados)
@@ -449,17 +432,14 @@ async def _consultar_agregado(
         omitidos = sum(getattr(g, "qtd_extremos_omitidos", 0) for g in dados.grupos)
         if omitidos:
             avisos.append(
-                f"Pontos extremos omitidos pelos limites de retorno: {omitidos}. "
-                "Estatísticas e contagens usam toda a população elegível."
+                formatar_resposta('pontos_extremos_omitidos_pelos_limites_de_retorno_valor_1_estatisticas_e_contagens', valor_1=omitidos)
             )
     if base is not None and base.qtd_registros_elegiveis == 0:
         return ResultadoConsultaVisualizacao(
-            status="SEM_BASE_CALCULO", mensagem="Há registros no recorte, mas nenhum é elegível para a medida.",
+            status="SEM_BASE_CALCULO", mensagem=MENSAGENS['ha_registros_no_recorte_mas_nenhum_e_elegivel_para_a_medida'],
             metadados=metadados, avisos=avisos,
         )
-    mensagem = "Consulta concluída."
-    if isinstance(dados, DadosSerieTemporal) and any(p.periodo.parcial for p in dados.pontos):
-        mensagem = "Consulta concluída; períodos parciais identificados nos pontos."
+    mensagem = resposta_consulta_visualizacao(isinstance(dados, DadosSerieTemporal) and any((p.periodo.parcial for p in dados.pontos)))
     return ResultadoConsultaVisualizacao(
         status="SUCESSO_PARCIAL" if avisos else "SUCESSO", mensagem=mensagem,
         metadados=metadados, dados=dados, avisos=avisos,

@@ -3,7 +3,7 @@
 import asyncio
 import copy
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from importlib import import_module
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
@@ -200,10 +200,13 @@ def test_nao_grava_grafico_em_papel_ou_turno_invalidos(origem, mongo, papel, tur
     assert len(mongo.doc["mensagens"]) == 1
 
 
-def test_repeticao_identica_nao_duplica_e_conflito_nao_substitui(origem, mongo):
+def test_repeticao_identica_nao_duplica_e_conflito_nao_substitui(origem, mongo, monkeypatch):
     asyncio.run(gravar(origem))
+    timestamp = mongo.doc["mensagens"][-1]["timestamp"]
+    monkeypatch.setattr(salvar, "agora", lambda: timestamp + timedelta(seconds=30))
     asyncio.run(gravar(origem))
     assert len(mongo.doc["mensagens"]) == 2
+    assert mongo.doc["mensagens"][-1]["timestamp"] == timestamp
     with pytest.raises(HTTPException) as erro:
         asyncio.run(salvar.salvar_mensagem("sessao", "assistant", "Outro texto", 10,
                                           turno_id="turno", visualizacao=origem.grafico))
@@ -332,7 +335,10 @@ def test_api_com_executor_e_persistencia_reais_no_mongo_simulado(monkeypatch, or
     assert origem.banco.await_count == 1
     if recusa:
         assert resposta.status_code == 413
-        assert mongo.doc["mensagens"][-1] == {"role": "human", "content": "Novo pedido"}
+        assert isinstance(mongo.doc["mensagens"][-1]["timestamp"], datetime)
+        assert mongo.doc["mensagens"][-1] == {
+            "role": "human", "content": "Novo pedido", "timestamp": mongo.doc["mensagens"][-1]["timestamp"],
+        }
         assert all("visualizacao" not in m for m in recuperado.json()["conversa"]["mensagens"])
     else:
         assert resposta.status_code == 200, resposta.text

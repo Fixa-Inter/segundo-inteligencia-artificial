@@ -1,12 +1,15 @@
 """Resolve a unidade do usuário autenticado a partir do banco FIXA."""
 
+
 from app.core.clients.postgres import executar_consulta
 from app.schemas import UsuarioContexto
+
+from app.core.respostas import MENSAGENS
 
 
 async def obter_unidade_id(usuario: UsuarioContexto) -> int:
     if not isinstance(usuario, UsuarioContexto) or usuario.usuario_id <= 0:
-        raise ValueError("Usuário autenticado inválido.")
+        raise ValueError(MENSAGENS['usuario_autenticado_invalido'])
     linhas = await executar_consulta(
         usuario.tipo_acesso,
         """
@@ -21,5 +24,5 @@ async def obter_unidade_id(usuario: UsuarioContexto) -> int:
         {"usuario_id": usuario.usuario_id, "cnpj": usuario.cnpj_endereco},
     )
     if len(linhas) != 1 or type(linhas[0]["id"]) is not int:
-        raise PermissionError("Unidade autenticada não encontrada.")
+        raise PermissionError(MENSAGENS['unidade_autenticada_nao_encontrada'])
     return linhas[0]["id"]

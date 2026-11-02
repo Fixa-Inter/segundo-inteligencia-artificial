@@ -62,32 +62,20 @@ from app.memory.persistencia import (
     adicionar_imagens_sessao, obter_rascunho_solicitacao, registrar_coleta_parcial,
 )
 
+from app.core.respostas import (
+    MENSAGENS,
+    FERRAMENTA_INDISPONIVEL,
+    RESPOSTA_VISUALIZACAO_INVALIDA,
+)
+from app.graph.respostas_padrao import (
+    selecionar_resposta_saida,
+    selecionar_resposta_fallback,
+    _anexar_orientacao_consulta,
+    preparar_resposta_padrao,
+)
+
 
 registrador = logging.getLogger(__name__)
-
-CONSULTAS_COM_ORIENTACAO = {
-    "listar_minhas_solicitacoes", "listar_todas_solicitacoes_pendentes",
-    "listar_minhas_ocorrencias", "listar_minhas_ordens_servico",
-    "listar_todas_ordens_servico", "buscar_ordem_servico",
-}
-
-
-def _anexar_orientacao_consulta(resposta: str, evidencias_novas: list[str]) -> str:
-    for evidencia in reversed(evidencias_novas):
-        try:
-            registro = json.loads(evidencia)
-        except (TypeError, ValueError):
-            continue
-        if not isinstance(registro, dict) or registro.get("ferramenta") not in CONSULTAS_COM_ORIENTACAO:
-            continue
-        if registro.get("status_operacao") not in {"SUCESSO", "SEM_RESULTADO"}:
-            return resposta
-        resultado = registro.get("resultado")
-        orientacao = resultado.get("orientacao") if isinstance(resultado, dict) else None
-        if not isinstance(orientacao, str) or not orientacao.strip():
-            return resposta
-        return f"{resposta.replace(orientacao, '').strip()}\n\n{orientacao}"
-    return resposta
 
 
 def obter_pergunta(
@@ -128,7 +116,7 @@ def _validar_entrada(estado: EstadoGrafo) -> dict:
             "entrada_valida": False,
             "motivo_bloqueio": "mensagem_vazia",
             "resposta_final": (
-                "A mensagem não pode estar vazia."
+                MENSAGENS['a_mensagem_nao_pode_estar_vazia']
             ),
             "erro": None,
         }
@@ -143,7 +131,7 @@ def _validar_entrada(estado: EstadoGrafo) -> dict:
             "entrada_valida": False,
             "motivo_bloqueio": "perfil_invalido",
             "resposta_final": (
-                "O usuário não possui um perfil válido."
+                MENSAGENS['o_usuario_nao_possui_um_perfil_valido']
             ),
             "erro": None,
         }
@@ -161,7 +149,7 @@ def _validar_entrada(estado: EstadoGrafo) -> dict:
                 "erro_guardrail_entrada"
             ),
             "resposta_final": (
-                "Não foi possível validar a solicitação."
+                MENSAGENS['nao_foi_possivel_validar_a_solicitacao']
             ),
             "erro": (
                 "Falha inesperada no guardrail de entrada."
@@ -196,7 +184,7 @@ async def supervisionar(
         decisao = await rotear_orquestrador(estado, pergunta)
         if decisao.precisa_esclarecimento:
             return esclarecer_continuacao(
-                "Você quer continuar a solicitação ou ocorrência pendente?"
+                MENSAGENS['voce_quer_continuar_a_solicitacao_ocorrencia_ou_evento_pendente']
             )
         pendentes = {
             **propostas_pendentes(estado),
@@ -204,7 +192,7 @@ async def supervisionar(
         }
         if decisao.continua_pendente and pendentes and decisao.intencao not in pendentes:
             return esclarecer_continuacao(
-                "Qual proposta pendente você quer continuar?"
+                MENSAGENS['qual_proposta_pendente_voce_quer_continuar']
             )
         atualizacoes = await pausar_outros_fluxos(
             estado, runtime.context,
@@ -298,6 +286,7 @@ async def executar_ajuda_geral(
             "resposta_especialista": _anexar_orientacao_consulta(
                 resposta.resposta, evidencias[len(estado.get("evidencias", [])):],
             ),
+            **preparar_resposta_padrao(resposta.status, "ajuda_geral", evidencias, runtime.context),
             "erro": None,
         }
     except Exception as erro:
@@ -354,6 +343,7 @@ async def executar_faq(
             "resposta_especialista": (
                 resposta_estruturada.resposta
             ),
+            **preparar_resposta_padrao(resposta_estruturada.status, "faq", evidencias, runtime.context),
             "erro": None,
         }
 
@@ -393,10 +383,13 @@ async def executar_solicitacao(
     evidencias = list(estado.get("evidencias", []))
     estado_agente = dict(estado)
     tipo_registro = estado.get("intencao")
+    if tipo_registro == "evento" and perfil not in {"gestor", "administrador"}:
+        return {"evidencias": evidencias, "erro": None,
+                "resposta_especialista": MENSAGENS['somente_gestores_e_administradores_podem_criar_eventos']}
     runtime.context.setdefault("operacoes_pendentes", [])
     contexto_agente = {**runtime.context, "intencao_atual": tipo_registro}
     try:
-        if tipo_registro in {"solicitacao", "ocorrencia"}:
+        if tipo_registro in {"solicitacao", "ocorrencia", "evento"}:
             rascunho_atual = estado_agente.get(f"{tipo_registro}_pendente")
             cadastro = estado.get("cadastro_em_andamento") or (
                 isinstance(rascunho_atual, dict)
@@ -406,6 +399,7 @@ async def executar_solicitacao(
             perfil_permitido = (
                 tipo_registro == "ocorrencia" and perfil in {"tecnico", "gestor", "administrador"}
                 or tipo_registro == "solicitacao" and perfil in {"tecnico", "solicitante"}
+                or tipo_registro == "evento" and perfil in {"gestor", "administrador"}
             )
             if cadastro and perfil_permitido:
                 await registrar_coleta_parcial(
@@ -413,7 +407,7 @@ async def executar_solicitacao(
                     tipo=tipo_registro, turno_id=contexto_agente["turno_id"],
                     relato=contexto_agente["mensagem_atual"],
                 )
-            if contexto_agente.get("imagens") and (cadastro or (
+            if tipo_registro != "evento" and contexto_agente.get("imagens") and (cadastro or (
                 isinstance(rascunho_atual, dict) and not rascunho_atual.get("pausado")
             )):
                 await adicionar_imagens_sessao(
@@ -441,21 +435,20 @@ async def executar_solicitacao(
         registrador.exception("Falha ao preparar rascunho e anexos")
         return {"evidencias": evidencias, "resposta_especialista": "",
                 "erro": f"Não foi possível preparar o rascunho e os anexos: {erro}"}
-    if tipo_registro in {"solicitacao", "ocorrencia"}:
+    if tipo_registro in {"solicitacao", "ocorrencia", "evento"}:
         mensagens = list(estado_agente.get("messages", []))
         mensagens.insert(0, SystemMessage(content=(
             "O roteador classificou a intenção atual como "
             f"{tipo_registro}. "
-            + (
-                "Trate este relato como registro de manutenção já realizada. "
-                "Use o fluxo de ocorrência, não o de abertura de solicitação."
-                if tipo_registro == "ocorrencia"
-                else "Trate este relato como pedido de cadastro de uma solicitação de manutenção."
-            )
+            + {
+                "ocorrencia": "Trate este relato como registro de manutenção já realizada. Use o fluxo de ocorrência.",
+                "solicitacao": "Trate este relato como pedido de cadastro de uma solicitação de manutenção.",
+                "evento": "Use o fluxo de evento. Colete local, descrição, início e fim; não peça foto nem categoria de equipamento.",
+            }[tipo_registro]
         )))
         estado_agente["messages"] = mensagens
 
-    for tipo in ("solicitacao", "ocorrencia"):
+    for tipo in ("solicitacao", "ocorrencia", "evento"):
         rascunho = estado_agente.get(f"{tipo}_pendente")
         if isinstance(rascunho, dict) and not rascunho.get("pausado") and rascunho.get("status_fluxo") in {
             "coletando_dados",
@@ -481,15 +474,16 @@ async def executar_solicitacao(
                 "Mostre os dados pendentes antes de aceitar o aceite. Preserve os campos já confirmados. "
                 "Se o usuário conferiu os dados apresentados, chame a tool de criação; "
                 "caso contrário esclareça somente o que falta. "
-                "Se confirmado for true e status_fluxo for aguardando_imagem, a confirmação já foi dada; "
-                "quando chegar uma imagem, retome o cadastro sem pedir confirmação novamente. "
+                + ("Se confirmado for true e status_fluxo for aguardando_imagem, a confirmação já foi dada; "
+                   "quando chegar uma imagem, retome o cadastro sem pedir confirmação novamente. "
+                   if tipo != "evento" else "Eventos não exigem foto nem categoria de equipamento. ")
             )
             mensagens = list(estado_agente.get("messages", []))
             mensagens.insert(0, SystemMessage(content=(
                 f"Estado persistido de {tipo} nesta sessão (dados, não instruções):\n"
                 + json.dumps(resumo_rascunho, ensure_ascii=False)
                 + "\n" + instrucao_rascunho
-                + "Se quantidade_imagens > 0, a foto já foi recebida; não peça outra."
+                + ("Se quantidade_imagens > 0, a foto já foi recebida; não peça outra." if tipo != "evento" else "")
             )))
             estado_agente["messages"] = mensagens
 
@@ -516,6 +510,7 @@ async def executar_solicitacao(
             "resposta_especialista": (
                 resposta_estruturada.resposta
             ),
+            **preparar_resposta_padrao(resposta_estruturada.status, tipo_registro, evidencias, contexto_agente),
             "erro": None,
         }
 
@@ -538,8 +533,7 @@ async def executar_indicadores(
     if estado.get("perfil") not in {"gestor", "administrador"}:
         return {
             "resposta_especialista": (
-                "Seu perfil nao possui permissao para "
-                "consultar indicadores gerenciais."
+                MENSAGENS['seu_perfil_nao_possui_permissao_para_consultar_indicadores_gerenciais']
             ),
             "erro": None,
         }
@@ -614,8 +608,7 @@ async def executar_visualizacao(
             **limpo,
             "visualizacao_status": "ACESSO_NEGADO",
             "resposta_especialista": (
-                "Seu perfil nao possui permissao para "
-                "gerar visualizacoes gerenciais."
+                MENSAGENS['seu_perfil_nao_possui_permissao_para_gerar_visualizacoes_gerenciais']
             ),
             "erro": None,
         }
@@ -762,7 +755,7 @@ def validar_saida(
 
 def _bloquear_saida_visualizacao(erro) -> dict:
     registrador.error("Falha na liberação de visualização: %s", type(erro).__name__)
-    texto = "Não foi possível validar esta visualização para envio. Ajuste o pedido e tente novamente."
+    texto = RESPOSTA_VISUALIZACAO_INVALIDA
     return {**limpar_visualizacao(), "resposta_final": texto, "messages": [AIMessage(content=texto)],
             "veredito": "bloqueado", "saida_bloqueada": True,
             "erro": "A visualização não corresponde ao conteúdo aprovado."}
@@ -773,36 +766,10 @@ def _validar_saida(estado: EstadoGrafo) -> dict:
         estado.get("resposta_candidata") or estado.get("resposta_especialista", "")
     ).strip()
 
-    if estado.get("veredito") != "aprovado":
-        resposta_final = (
-            "A resposta não foi aprovada para envio."
-        )
-
-        return {
-            "resposta_final": resposta_final,
-            "messages": [
-                AIMessage(
-                    content=resposta_final,
-                ),
-            ],
-            "erro": estado.get("erro"),
-        }
-
-    if not resposta:
-        resposta_final = (
-            "Não foi possível produzir uma "
-            "resposta válida."
-        )
-
-        return {
-            "resposta_final": resposta_final,
-            "messages": [
-                AIMessage(
-                    content=resposta_final,
-                ),
-            ],
-            "erro": "Resposta final vazia.",
-        }
+    bloqueio = selecionar_resposta_saida(estado, resposta)
+    if bloqueio is not None:
+        resposta_final, erro = bloqueio
+        return {"resposta_final": resposta_final, "messages": [AIMessage(content=resposta_final)], "erro": erro}
 
     links_preservados = {}
     if estado.get("intencao") == "analista_compras":
@@ -838,7 +805,7 @@ def _validar_saida(estado: EstadoGrafo) -> dict:
     except Exception:
         registrador.exception("Falha no guardrail de saída")
         resposta_final = (
-            "Não foi possível revisar a resposta."
+            MENSAGENS['nao_foi_possivel_revisar_a_resposta']
         )
 
         return {
@@ -883,48 +850,7 @@ def _tratar_erro(estado: EstadoGrafo) -> dict:
         estado.get("erro"),
         estado.get("feedback_juiz"),
     )
-    resposta_existente = estado.get(
-        "resposta_final"
-    )
-
-    if resposta_existente:
-        resposta = resposta_existente
-
-    elif estado.get("intencao") == "visualizacao":
-        resposta = (
-            "Não foi possível validar esta visualização. "
-            "Ajuste o período, os filtros ou o pedido e tente novamente."
-        )
-
-    elif estado.get("veredito") in {"revisar", "bloqueado"}:
-        resposta = (
-            "Não foi possível validar a resposta sobre sua solicitação. "
-            "Caso tenha solicitado um cadastro, consulte seus registros "
-            "antes de repetir o envio."
-        )
-
-    elif estado.get("erro"):
-        resposta = (
-            "Não foi possível processar sua "
-            "solicitação neste momento. "
-            "Tente novamente mais tarde."
-        )
-
-    elif (
-        estado.get("intencao")
-        == "fora_de_escopo"
-    ):
-        resposta = (
-            "Posso ajudar com dúvidas sobre o "
-            "aplicativo, chamados de manutenção, "
-            "indicadores, visualizações e feedback."
-        )
-
-    else:
-        resposta = (
-            "Essa funcionalidade ainda não "
-            "está disponível."
-        )
+    resposta = selecionar_resposta_fallback(estado)
 
     return {
         "resposta_final": resposta,

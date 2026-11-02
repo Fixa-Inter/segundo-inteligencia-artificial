@@ -1,5 +1,6 @@
 """Propostas e confirmação de alterações em registros existentes."""
 
+
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Literal
@@ -16,6 +17,9 @@ from app.schemas.imagem import LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem
 from app.services.ajuda_geral import edicoes as servico
 from app.tools.ajuda_geral.consultas import _Argumentos
 from app.services.operacoes import dados_edicao, preparar_operacao
+
+from app.core.respostas import MENSAGENS
+from app.graph.respostas_padrao import escolher_resposta
 
 
 registrador = logging.getLogger(__name__)
@@ -46,21 +50,21 @@ class _AnexoObservacao(_Argumentos):
 def _contexto(runtime: ToolRuntime) -> tuple[dict, UsuarioContexto, str]:
     contexto = runtime.context
     if not isinstance(contexto, dict):
-        raise PermissionError("Contexto de autenticação ausente.")
+        raise PermissionError(MENSAGENS['contexto_de_autenticacao_ausente'])
     usuario = contexto.get("usuario")
     sessao = contexto.get("session_id")
     turno = contexto.get("turno_id")
     if not isinstance(usuario, UsuarioContexto) or usuario.tipo_acesso not in {
         "solicitante", "tecnico", "gestor", "administrador",
     } or not isinstance(sessao, str) or not sessao or not isinstance(turno, str) or not turno:
-        raise PermissionError("Contexto de autenticação ou sessão inválido.")
+        raise PermissionError(MENSAGENS['contexto_de_autenticacao_ou_sessao_invalido'])
     return contexto, usuario, sessao
 
 
 def _imagens(contexto: dict) -> list[str]:
     bruto = contexto.get("imagens", [])
     if not isinstance(bruto, list) or len(bruto) > LIMITE_IMAGENS_POR_MENSAGEM:
-        raise ValueError("Envie no máximo três imagens.")
+        raise ValueError(MENSAGENS['envie_no_maximo_tres_imagens'])
     urls = []
     for imagem in bruto:
         url = validar_url_imagem(imagem)
@@ -75,7 +79,7 @@ def _erro(erro: Exception) -> dict:
     if isinstance(erro, ValueError):
         return {"status": "ENTRADA_INVALIDA", "mensagem": str(erro)}
     registrador.exception("Falha na edição do ajuda_geral")
-    return {"status": "ERRO", "mensagem": "Não foi possível processar a alteração."}
+    return {"status": "ERRO", "mensagem": MENSAGENS['nao_foi_possivel_processar_a_alteracao']}
 
 
 def _confirmacao_edicao(mensagem: str) -> bool:
@@ -87,33 +91,33 @@ async def _executar_pendente(
     *, operacao_aprovada: dict | None = None,
 ) -> dict:
     if acao.get("pausado"):
-        return {"status": "CONFIRMACAO_NECESSARIA", "mensagem": "Retome explicitamente a proposta pausada antes de confirmar."}
+        return {"status": "CONFIRMACAO_NECESSARIA", "mensagem": MENSAGENS['retome_explicitamente_a_proposta_pausada_antes_de_confirmar']}
     if acao.get("status") != "aguardando_confirmacao":
-        return {"status": "AGUARDANDO_INFORMACAO", "mensagem": "A proposta ainda não está pronta para confirmação."}
+        return {"status": "AGUARDANDO_INFORMACAO", "mensagem": MENSAGENS['a_proposta_ainda_nao_esta_pronta_para_confirmacao']}
     if acao.get("turno_id") == contexto["turno_id"]:
-        return {"status": "CONFIRMACAO_NECESSARIA", "mensagem": "Confirme em uma nova mensagem após ver a proposta."}
+        return {"status": "CONFIRMACAO_NECESSARIA", "mensagem": MENSAGENS['confirme_em_uma_nova_mensagem_apos_ver_a_proposta']}
     criada_em = acao.get("criada_em")
     if not isinstance(criada_em, datetime):
-        return {"status": "PROPOSTA_EXPIRADA", "mensagem": "A proposta expirou. Peça uma nova consulta."}
+        return {"status": "PROPOSTA_EXPIRADA", "mensagem": MENSAGENS['a_proposta_expirou_peca_uma_nova_consulta']}
     if criada_em.tzinfo is None:
         criada_em = criada_em.replace(tzinfo=timezone.utc)
     if datetime.now(timezone.utc) - criada_em > timedelta(minutes=30):
-        return {"status": "PROPOSTA_EXPIRADA", "mensagem": "A proposta expirou. Peça uma nova consulta."}
+        return {"status": "PROPOSTA_EXPIRADA", "mensagem": MENSAGENS['a_proposta_expirou_peca_uma_nova_consulta']}
     if not _confirmacao_edicao(str(contexto.get("mensagem_atual", ""))):
-        return {"status": "CONFIRMACAO_NECESSARIA", "mensagem": "Confirme explicitamente a proposta exibida antes da alteração."}
+        return {"status": "CONFIRMACAO_NECESSARIA", "mensagem": MENSAGENS['confirme_explicitamente_a_proposta_exibida_antes_da_alteracao']}
     if operacao_aprovada is None:
         return await preparar_operacao(contexto, "edicao", acao["id"], dados_edicao(acao))
     if dados_edicao(acao) != operacao_aprovada:
-        return {"status": "ERRO_VALIDACAO", "mensagem": "A alteração proposta mudou após a aprovação. Confira os dados novamente."}
+        return {"status": "ERRO_VALIDACAO", "mensagem": MENSAGENS['a_alteracao_proposta_mudou_apos_a_aprovacao_confira_os_dados_novamente']}
     if not await iniciar_acao(sessao, usuario.usuario_id, acao["id"]):
-        return {"status": "RESULTADO_INDETERMINADO", "mensagem": "Esta proposta já foi processada ou está em processamento."}
+        return {"status": "RESULTADO_INDETERMINADO", "mensagem": MENSAGENS['esta_proposta_ja_foi_processada_ou_esta_em_processamento']}
     try:
         if acao["tipo"] == "alteracao":
             resultado = await servico.alterar_solicitacao(
                 usuario, acao["registro_id"], acao["campo"], acao["novo_valor"],
             )
             if resultado is None:
-                resposta = {"status": "NAO_PERMITIDO", "mensagem": "A solicitação deixou de estar pendente, a opção escolhida ficou indisponível ou o usuário perdeu acesso."}
+                resposta = {"status": "NAO_PERMITIDO", "mensagem": MENSAGENS['a_solicitacao_deixou_de_estar_pendente_a_opcao_escolhida_ficou_indisponivel_ou']}
             else:
                 resposta = {"status": "SUCESSO", "registro": resultado}
         else:
@@ -121,12 +125,12 @@ async def _executar_pendente(
                 usuario, acao["tipo"], acao["registro_id"], acao["imagens"],
             )
             if ids is None:
-                resposta = {"status": "NAO_PERMITIDO", "mensagem": "O registro não está mais disponível para este usuário."}
+                resposta = {"status": "NAO_PERMITIDO", "mensagem": MENSAGENS['o_registro_nao_esta_mais_disponivel_para_este_usuario']}
             else:
                 resposta = {"status": "SUCESSO", "registro_id": acao["registro_id"], "foto_ids": ids}
     except Exception:
         registrador.exception("Resultado de mutação SQL não confirmado")
-        resposta = {"status": "RESULTADO_INDETERMINADO", "mensagem": "Confira o registro no banco antes de tentar novamente."}
+        resposta = {"status": "RESULTADO_INDETERMINADO", "mensagem": MENSAGENS['confira_o_registro_no_banco_antes_de_tentar_novamente']}
     status = {"SUCESSO": "concluida", "RESULTADO_INDETERMINADO": "resultado_indeterminado"}.get(resposta["status"], "recusada")
     try:
         await atualizar_acao(sessao, usuario.usuario_id, acao["id"],
@@ -143,48 +147,48 @@ async def _propor(
     try:
         contexto, usuario, sessao = _contexto(runtime)
         if tipo in {"ocorrencia", "observacao_conclusao"} and usuario.tipo_acesso == "solicitante":
-            raise PermissionError("Seu perfil não pode alterar esse tipo de registro.")
+            raise PermissionError(MENSAGENS['seu_perfil_nao_pode_alterar_esse_tipo_de_registro'])
         acao = await obter_acao(sessao, usuario.usuario_id)
         if acao and acao.get("status") in {"executando", "resultado_indeterminado"}:
-            return {"status": "RESULTADO_INDETERMINADO", "mensagem": "Confira a última alteração no banco antes de criar outra proposta."}
+            return {"status": "RESULTADO_INDETERMINADO", "mensagem": MENSAGENS['confira_a_ultima_alteracao_no_banco_antes_de_criar_outra_proposta']}
         if (acao and acao.get("tipo") == tipo and acao.get("status") == "concluida"
                 and registro_id is None and _confirmacao_edicao(str(contexto.get("mensagem_atual", "")))):
             return {"status": "JA_CONCLUIDA", "resultado_anterior": acao.get("resultado"),
-                    "mensagem": "A proposta anterior já foi executada."}
+                    "mensagem": MENSAGENS['a_proposta_anterior_ja_foi_executada']}
         imagens = _imagens(contexto) if tipo != "alteracao" else []
         if acao and not acao.get("pausado") and acao.get("tipo") == tipo and acao.get("status") == "aguardando_imagem" and registro_id is None:
             if not imagens:
-                return {"status": "AGUARDANDO_IMAGEM", "mensagem": "Envie a imagem da proposta apresentada."}
+                return {"status": "AGUARDANDO_IMAGEM", "mensagem": MENSAGENS['envie_a_imagem_da_proposta_apresentada']}
             registro_id = acao["registro_id"]
         if acao and not acao.get("pausado") and acao.get("tipo") == tipo and acao.get("status") == "aguardando_confirmacao":
             if registro_id is None or (registro_id == acao.get("registro_id") and not imagens
                     and (tipo != "alteracao" or (campo is None and novo_valor is None))):
                 return await _executar_pendente(contexto, usuario, sessao, acao)
         if registro_id is None:
-            return {"status": "ID_NECESSARIO", "mensagem": "Encontre primeiro o ID exato do registro."}
+            return {"status": "ID_NECESSARIO", "mensagem": MENSAGENS['encontre_primeiro_o_id_exato_do_registro']}
         if tipo == "alteracao":
             if campo in servico.CAMPOS_RELACIONAIS:
                 if type(novo_valor) is not int or novo_valor <= 0:
-                    raise ValueError("Encontre o ID da nova categoria ou do novo local e informe-o como inteiro positivo.")
+                    raise ValueError(MENSAGENS['encontre_o_id_da_nova_categoria_ou_do_novo_local_e_informe'])
             elif campo in servico.CAMPOS_EDITAVEIS:
                 if not isinstance(novo_valor, str):
-                    raise ValueError("Informe o novo texto para esse campo.")
+                    raise ValueError(MENSAGENS['informe_o_novo_texto_para_esse_campo'])
                 novo_valor = novo_valor.strip()
                 if not novo_valor or len(novo_valor) > servico.CAMPOS_EDITAVEIS[campo]:
-                    raise ValueError("O valor está vazio ou excede o tamanho permitido.")
+                    raise ValueError(MENSAGENS['o_valor_esta_vazio_ou_excede_o_tamanho_permitido'])
             else:
-                raise ValueError("Informe um dos cinco campos editáveis e o novo valor.")
+                raise ValueError(MENSAGENS['informe_um_dos_cinco_campos_editaveis_e_o_novo_valor'])
             tipo_sql = "solicitacao"
         else:
             tipo_sql = tipo
         registro = await servico.localizar_registro(usuario, tipo_sql, registro_id)
         if registro is None:
-            return {"status": "NAO_ENCONTRADO", "mensagem": "Registro não encontrado, indisponível ou sem autorização."}
+            return {"status": "NAO_ENCONTRADO", "mensagem": MENSAGENS['registro_nao_encontrado_indisponivel_ou_sem_autorizacao']}
         opcao_destino = None
         if tipo == "alteracao" and campo in servico.CAMPOS_RELACIONAIS:
             opcao_destino = await servico.localizar_opcao(usuario, campo, novo_valor)
             if opcao_destino is None:
-                return {"status": "OPCAO_INVALIDA", "mensagem": "A nova categoria ou local não está ativo na unidade do usuário."}
+                return {"status": "OPCAO_INVALIDA", "mensagem": MENSAGENS['a_nova_categoria_ou_local_nao_esta_ativo_na_unidade_do_usuario']}
         status = "aguardando_confirmacao" if tipo == "alteracao" or imagens else "aguardando_imagem"
         proposta = await salvar_acao(sessao, usuario.usuario_id, {
             "tipo": tipo, "registro_id": registro_id, "campo": campo,
@@ -197,8 +201,7 @@ async def _propor(
             "mudanca": {"campo": campo, "novo_valor": novo_valor} if tipo == "alteracao"
                        else {"quantidade_imagens": len(imagens)},
             "opcao_destino": opcao_destino,
-            "mensagem": "Confirme em uma nova mensagem se este é o registro correto e autoriza a mudança."
-                        if status == "aguardando_confirmacao" else "Envie a imagem; depois mostrarei a proposta para confirmação.",
+            "mensagem": escolher_resposta(status == 'aguardando_confirmacao', 'confirme_em_uma_nova_mensagem_se_este_e_o_registro_correto_e', 'envie_a_imagem_depois_mostrarei_a_proposta_para_confirmacao'),
         }
     except Exception as erro:
         return _erro(erro)

@@ -3,6 +3,8 @@ import logging
 from app.core.clients.postgres import executar_insercao
 from app.schemas import UsuarioContexto
 
+from app.core.respostas import MENSAGENS
+
 
 registrador = logging.getLogger(__name__)
 
@@ -26,19 +28,19 @@ async def criar_feedback(
     if not comentario or not ideia_central:
         return {
             "status": "ERRO_VALIDACAO",
-            "mensagem": "O comentario e sua categoria/resumo nao podem ficar vazios.",
+            "mensagem": MENSAGENS['o_comentario_e_sua_categoria_resumo_nao_podem_ficar_vazios'],
         }
     if len(comentario) > 255 or len(ideia_central) > 255:
         return {
             "status": "ERRO_VALIDACAO",
-            "mensagem": "O comentario e o resumo devem ter no maximo 255 caracteres.",
+            "mensagem": MENSAGENS['o_comentario_e_o_resumo_devem_ter_no_maximo_255_caracteres'],
         }
 
     perfil = usuario.tipo_acesso.lower()
     if perfil not in _PERFIS_COM_ACESSO:
         return {
             "status": "ACESSO_NEGADO",
-            "mensagem": "Este perfil nao possui uma conexao de banco autorizada para feedback.",
+            "mensagem": MENSAGENS['este_perfil_nao_possui_uma_conexao_de_banco_autorizada_para_feedback'],
         }
 
     try:
@@ -52,7 +54,7 @@ async def criar_feedback(
             },
         )
         if not linhas:
-            raise RuntimeError("O banco nao retornou o feedback inserido.")
+            raise RuntimeError(MENSAGENS['o_banco_nao_retornou_o_feedback_inserido'])
 
         registro = linhas[0]
         data_criacao = registro["data_criacao"]
@@ -64,11 +66,11 @@ async def criar_feedback(
                 if hasattr(data_criacao, "isoformat")
                 else data_criacao
             ),
-            "mensagem": "Feedback registrado com sucesso.",
+            "mensagem": MENSAGENS['feedback_registrado_com_sucesso'],
         }
     except Exception:
         registrador.exception("Falha ao registrar feedback no PostgreSQL")
         return {
             "status": "RESULTADO_INDETERMINADO",
-            "mensagem": "Não foi possível confirmar o resultado do feedback. Confira os registros antes de repetir.",
+            "mensagem": MENSAGENS['nao_foi_possivel_confirmar_o_resultado_do_feedback_confira_os_registros_antes'],
         }

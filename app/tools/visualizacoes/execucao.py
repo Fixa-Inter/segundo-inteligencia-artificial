@@ -1,5 +1,6 @@
 """Adaptação de schemas e execução das tools; regras analíticas ficam nos serviços."""
 
+
 import logging
 from typing import Literal
 
@@ -15,6 +16,8 @@ from app.services.visualizacoes.validacao import validar_resultado_consulta
 from app.observability.metricas import BYTES_VISUALIZACAO
 from .contexto import resolver_unidade, validar_acesso
 from .filtros import validar_consulta
+
+from app.core.respostas import MENSAGENS
 
 
 registrador = logging.getLogger(__name__)
@@ -33,7 +36,7 @@ class _RuntimeInjetado(BaseModel):
 
 def _erro_validacao():
     return ResultadoConsultaVisualizacao(
-        status="ERRO_VALIDACAO", mensagem="Confira a análise, o período, a granularidade e os filtros da ferramenta.",
+        status="ERRO_VALIDACAO", mensagem=MENSAGENS['confira_a_analise_o_periodo_a_granularidade_e_os_filtros_da_ferramenta'],
     )
 
 
@@ -65,7 +68,7 @@ async def _executar(dominio, runtime, dados):
         captura = runtime.context.get("captura_visualizacao")
         if captura is not None:
             if not isinstance(captura, CapturaExecucaoVisualizacao):
-                raise ValueError("Contexto de captura inválido.")
+                raise ValueError(MENSAGENS['contexto_de_captura_invalido'])
             captura.registrar(
                 runtime.context, runtime.tool_call_id,
                 f"consultar_visualizacao_{dominio.FONTE.id}", consulta, unidade_id, resultado,
@@ -75,7 +78,7 @@ async def _executar(dominio, runtime, dados):
     except Exception as erro:
         registrador.error("Falha na ferramenta de visualização %s: %s", dominio.FONTE.id, type(erro).__name__)
         return ResultadoConsultaVisualizacao(
-            status="ERRO_FERRAMENTA", mensagem="Não foi possível obter um resultado válido para a visualização.",
+            status="ERRO_FERRAMENTA", mensagem=MENSAGENS['nao_foi_possivel_obter_um_resultado_valido_para_a_visualizacao'],
         ).model_dump(mode="json")
 
 

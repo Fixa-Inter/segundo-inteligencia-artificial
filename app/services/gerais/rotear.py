@@ -1,9 +1,12 @@
 """Decisão de intenção do chat pelo JEV."""
 
+
 import json
 
 from app.graph.continuacoes import propostas_pendentes
 from app.services.gerais.jev import DecisaoIncertaJEV, consultar_jev, ler_choice, ler_noul
+
+from app.core.respostas import MENSAGENS
 
 
 CRITERIOS_INTENCAO = {
@@ -15,6 +18,7 @@ CRITERIOS_INTENCAO = {
     ),
     "solicitacao": "Pede reparo ainda necessário ou consulta solicitações de manutenção.",
     "ocorrencia": "Registra manutenção ou reparo que já foi realizado.",
+    "evento": "Cria ou continua o cadastro de evento com local e horários de início e fim.",
     "analytics": "Pede métricas, indicadores ou análises.",
     "visualizacao": "Pede gráficos ou visualizações.",
     "feedback": "Envia crítica, elogio ou sugestão.",
@@ -79,7 +83,7 @@ async def rotear_jev(estado: dict, pergunta: str) -> dict:
     intencao, confianca = ler_choice(respostas, "intencao", set(CRITERIOS_INTENCAO))
     continuacao = ler_noul(respostas, "continua_pendente")
     if confianca < 0.35 or ativo and 0.35 < continuacao < 0.65:
-        raise DecisaoIncertaJEV("Roteamento incerto.")
+        raise DecisaoIncertaJEV(MENSAGENS['roteamento_incerto'])
     return {
         "intencao": intencao,
         "continua_pendente": bool(ativo) and continuacao >= 0.65,

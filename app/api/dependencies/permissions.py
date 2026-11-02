@@ -6,6 +6,8 @@ from fastapi import Depends, HTTPException, status
 from app.api.dependencies.auth import obter_usuario_atual
 from app.schemas import UsuarioContexto
 
+from app.core.respostas import MENSAGENS
+
 
 def exigir_perfis(
     *perfis_permitidos: str,
@@ -26,7 +28,7 @@ def exigir_perfis(
         if perfil_atual not in perfis_normalizados:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Usuário sem permissão para esta operação.",
+                detail=MENSAGENS['usuario_sem_permissao_para_esta_operacao'],
             )
 
         return usuario
