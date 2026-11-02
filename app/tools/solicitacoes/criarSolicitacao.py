@@ -144,6 +144,8 @@ async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict
         }
 
     rascunho = await obter_rascunho_solicitacao(sessao_id, usuario.usuario_id)
+    if rascunho and rascunho.get("operacao") == "atualizar":
+        return {"status": "ERRO_VALIDACAO", "mensagem": MENSAGENS["atualizacao_usar_ferramenta"]}
     if not rascunho:
         return {
             "status": "SEM_RASCUNHO",

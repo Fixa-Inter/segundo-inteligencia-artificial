@@ -124,6 +124,10 @@ def texto_resultados(resultados: list[dict]) -> str:
     for item in resultados:
         resultado = item["resultado"]
         status = resultado.get("status")
+        if item["tipo"] == "atualizacao_solicitacao":
+            mensagens.append(resultado_indeterminado()["mensagem"] if status == "RESULTADO_INDETERMINADO" else
+                             MENSAGENS["atualizacao_sucesso" if status == "SUCESSO" else "atualizacao_falha"])
+            continue
         if status == "SUCESSO":
             mensagem = RESPOSTAS_OPERACAO_SUCESSO[item["tipo"]]
         elif status == "RESULTADO_INDETERMINADO":
@@ -153,6 +157,8 @@ def _anexar_orientacao_consulta(resposta: str, evidencias_novas: list[str]) -> s
 
 
 def resumo_confirmacao(rascunho: dict) -> str:
+    if rascunho.get("operacao") == "atualizar":
+        return resumo_atualizacao(rascunho)
     from app.core.propostas import campos_pendentes
     pendentes = campos_pendentes(rascunho)
     if not pendentes:
@@ -166,6 +172,31 @@ def resumo_confirmacao(rascunho: dict) -> str:
             valor = TEXTOS_CONFIRMACAO["rotulo_ausente"]
         linhas.append(TEXTOS_CONFIRMACAO["campo"].format(nome=NOMES_CAMPOS.get(campo, campo), valor=str(valor).replace(chr(10), ' ')))
     linhas.append(TEXTOS_CONFIRMACAO["pergunta"])
+    return "\n".join(linhas)
+
+
+def resumo_atualizacao(rascunho: dict) -> str:
+    import re
+
+    def texto(valor):
+        # Conteúdo persistido é texto, não formatação ou instrução do sistema.
+        return re.sub(r"([\\`*_{}\[\]<>])", r"\\\1", " ".join(str(valor).split()))
+
+    if rascunho.get("etapa") == "selecao":
+        original = rascunho["original"]
+        return MENSAGENS["atualizacao_confirmar_selecao"].format(
+            titulo=texto(original["titulo"]), descricao=texto(original["descricao_problema"]),
+        )
+    linhas = [MENSAGENS["atualizacao_titulo_final"]]
+    for campo in ("titulo", "descricao_problema", "descricao_local", "local_unidade_id", "categoria_equipamento_id"):
+        valor = rascunho.get("rotulos", {}).get(campo, rascunho["dados"][campo])
+        linhas.append(TEXTOS_CONFIRMACAO["campo"].format(nome=NOMES_CAMPOS[campo], valor=texto(valor)))
+    acao = rascunho["acao_fotos"]
+    linhas.append(MENSAGENS[f"atualizacao_fotos_{acao}"].format(
+        quantidade=len(rascunho["original"].get("fotos", [])),
+        existentes=len(rascunho["original"].get("fotos", [])), novas=len(rascunho.get("imagens", [])),
+    ))
+    linhas.append(MENSAGENS["atualizacao_pergunta_final"])
     return "\n".join(linhas)
 
 

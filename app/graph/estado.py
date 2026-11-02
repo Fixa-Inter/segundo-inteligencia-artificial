@@ -12,6 +12,7 @@ class EstadoGrafo(TypedDict, total=False):
     ]
 
     user_id: int
+    operacao_solicitacao: Literal["criar", "atualizar"]
 
     perfil: Literal[
         "solicitante",

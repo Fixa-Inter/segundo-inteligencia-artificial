@@ -90,6 +90,11 @@ def avaliar_confirmacao(rascunho: dict, contexto: dict) -> dict | None:
 
 
 def metadados_proposta(rascunho: dict) -> dict:
+    if rascunho.get("operacao") == "atualizar":
+        from app.services.operacoes import dados_atualizacao
+        return {"tipo": "solicitacao", "proposta_id": rascunho["id"], "versao": rascunho["versao"],
+                "dados": rascunho["dados"], "resumo_confirmacao": resumo_confirmacao(rascunho),
+                "operacao": "atualizar", "etapa": rascunho["etapa"], "atualizacao": dados_atualizacao(rascunho)}
     return {"tipo": rascunho["tipo"], "proposta_id": rascunho["id"],
             "versao": rascunho["versao"], "dados": rascunho["dados"],
             "resumo_confirmacao": resumo_confirmacao(rascunho)}

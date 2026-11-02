@@ -89,6 +89,7 @@ def criar_estado_inicial(
         "mapa_pii": {},
         "motivo_bloqueio": None,
         "motivo_resposta_padrao": None,
+        "operacao_solicitacao": "criar",
         "justificativa_roteamento": "",
         "veredito": None,
         "intencao": None,
@@ -202,7 +203,8 @@ async def executar_grafo(
         logging.getLogger(__name__).exception("Falha do grafo após executar uma operação")
         tipo = contexto["resultados_operacoes"][-1]["tipo"]
         resultado = {**limpar_visualizacao(), **resposta_resultados(contexto["resultados_operacoes"]),
-                     "intencao": "ajuda_geral" if tipo == "edicao" else tipo, "emocao": Emocao.ALERTA.value}
+                     "intencao": {"edicao": "ajuda_geral", "atualizacao_solicitacao": "solicitacao"}.get(tipo, tipo),
+                     "emocao": Emocao.ALERTA.value}
     finally:
         finalizar_resolucoes()
 
@@ -251,10 +253,17 @@ async def executar_grafo(
     propostas_apresentadas = resultado.get("propostas_apresentadas", [])
     resultado["confirmacao"] = "nao"
     for proposta in propostas_apresentadas:
+        campos_apresentacao = {"turno_apresentacao": contexto["turno_id"], "versao_apresentada": proposta["versao"],
+                              "dados_apresentados": proposta["dados"]}
+        if proposta.get("operacao") == "atualizar":
+            if proposta.get("etapa") == "selecao":
+                campos_apresentacao = {"turno_selecao_apresentada": contexto["turno_id"],
+                                      "versao_selecao_apresentada": proposta["versao"]}
+            else:
+                campos_apresentacao["atualizacao_apresentada"] = proposta["atualizacao"]
         apresentada = await atualizar_rascunho_solicitacao(
             thread_id, usuario_id,
-            {"turno_apresentacao": contexto["turno_id"], "versao_apresentada": proposta["versao"],
-             "dados_apresentados": proposta["dados"]},
+            campos_apresentacao,
             tipo=proposta["tipo"], rascunho_id=proposta["proposta_id"],
             versao=proposta["versao"], status_esperados={"aguardando_confirmacao", "aguardando_imagem", "erro_api"},
             exigir_ativo=True,

@@ -83,6 +83,7 @@ async def localizar_registro(usuario: UsuarioContexto, tipo: str, registro_id: i
 
 async def localizar_opcao(
     usuario: UsuarioContexto, campo: str, identificador: int,
+    *, conexao=None,
 ) -> dict | None:
     """Confere o novo local ou categoria ativa na unidade autenticada."""
     _validar_id(identificador)
@@ -104,9 +105,12 @@ async def localizar_opcao(
         """
     else:
         raise ValueError(MENSAGENS['campo_relacional_invalido'])
-    linhas = await executar_consulta(usuario.tipo_acesso, sql, {
-        "identificador": identificador, "unidade_id": unidade_id,
-    })
+    parametros = {"identificador": identificador, "unidade_id": unidade_id}
+    if conexao is None:
+        linhas = await executar_consulta(usuario.tipo_acesso, sql, parametros)
+    else:
+        resultado = await conexao.execute(text(sql), parametros)
+        linhas = resultado.mappings().all()
     return linhas[0] if linhas else None
 
 
