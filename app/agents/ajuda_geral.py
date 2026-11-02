@@ -37,6 +37,7 @@ from app.tools.feedback.listarFeedbacks import listar_meus_feedbacks
 from app.tools.solicitacoes.atualizarSolicitacao import buscar_solicitacoes_para_atualizar, atualizar_solicitacao
 from app.tools.solicitacoes import listar_minhas_solicitacoes, listar_todas_solicitacoes_pendentes
 from app.tools.ocorrencias import listar_minhas_ocorrencias
+from app.tools.ocorrencias.atualizarOcorrencia import buscar_ocorrencias_para_atualizar, atualizar_ocorrencia
 from app.tools.ordensServico import (
     listar_minhas_ordens_servico,
     listar_todas_ordens_servico,
@@ -74,6 +75,7 @@ def criar_agente_ajuda_geral(modelo, instrucao: str, *, perfil: str):
         ferramentas.append(listar_minhas_solicitacoes)
     if perfil in {"tecnico", "gestor", "administrador"}:
         ferramentas.extend([
+            buscar_ocorrencias_para_atualizar, atualizar_ocorrencia,
             listar_minhas_ocorrencias,
             listar_minhas_ordens_servico,
             buscar_ordem_servico,

@@ -17,13 +17,26 @@ TRECHO_FAQ_AUSENTE = "Nenhum trecho relevante encontrado no FAQ."
 
 # Catálogo compartilhado por API, agentes, ferramentas e serviços.
 MENSAGENS = {
+    'ocorrencia_atualizacao_descricao_busca': 'Descreva a ocorrência que deseja alterar em até 500 caracteres.',
+    'ocorrencia_atualizacao_buscar_primeiro': 'Encontre e selecione primeiro uma das suas ocorrências ativas.',
+    'ocorrencia_atualizacao_selecionar': 'Selecione a ocorrência que deseja alterar para conferir o título e a descrição.',
+    'ocorrencia_atualizacao_sem_resultados': 'Não encontrei uma ocorrência sua ativa com essa descrição. Pode detalhar o serviço ou o local?',
+    'ocorrencia_atualizacao_confirmar_selecao': 'A ocorrência que você quer alterar é esta?\n\n**{titulo}**  \n{descricao}',
+    'ocorrencia_atualizacao_escolher_fotos': 'Você quer adicionar as novas fotos às existentes ou substituir todas as fotos da ocorrência?',
+    'ocorrencia_atualizacao_quais_campos': 'O que você deseja alterar nessa ocorrência?',
+    'ocorrencia_atualizacao_registro_mudou': 'A ocorrência mudou, foi inativada ou não está mais disponível. Consulte os dados atuais antes de preparar outra alteração.',
+    'ocorrencia_atualizacao_titulo_final': 'Confira como ficará a ocorrência:',
+    'ocorrencia_atualizacao_sucesso': 'Ocorrência atualizada com sucesso.',
+    'ocorrencia_atualizacao_falha': 'Não foi possível atualizar a ocorrência. Confira os dados e se ela continua ativa.',
+    'ocorrencia_atualizacao_usar_ferramenta': 'Esta proposta é de atualização. Use a ferramenta de atualizar ocorrência.',
+    'ocorrencia_atualizacao_enum_invalido': 'Informe uma categoria do problema e uma prioridade válidas.',
     'feedbacks_listados': 'Seus feedbacks, do mais recente ao mais antigo:',
     'feedbacks_ausentes': 'Você ainda não possui feedbacks registrados.',
     'feedbacks_erro_consulta': 'Não consegui consultar seus feedbacks agora. Tente novamente mais tarde.',
     'atualizacao_descricao_busca': 'Descreva a solicitação que deseja alterar em até 500 caracteres.',
     'atualizacao_buscar_primeiro': 'Encontre e selecione primeiro uma das suas solicitações pendentes.',
     'atualizacao_selecionar': 'Selecione a solicitação que deseja alterar para conferir o título e a descrição.',
-    'atualizacao_sem_resultados': 'Não encontrei uma solicitação sua pendente com essa descrição. Pode detalhar o problema ou o local?',
+    'atualizacao_sem_resultados': 'Não encontrei uma solicitação sua pendente com essa descrição. Confira se a descrição está correta e se a solicitação está pendente. Só é possível alterar solicitações pendentes. Se precisar, informe mais detalhes do problema ou do local.',
     'atualizacao_confirmar_selecao': 'A solicitação que você quer alterar é esta?\n\n**{titulo}**  \n{descricao}',
     'atualizacao_escolher_fotos': 'Você quer adicionar as novas fotos às existentes ou substituir todas as fotos da solicitação?',
     'atualizacao_quais_campos': 'O que você deseja alterar nessa solicitação?',
@@ -602,6 +615,7 @@ TEXTOS_COMPRAS = {
 }
 
 NOMES_CAMPOS = {
+    "categoria_problema": "Categoria do problema",
     "titulo": "Título", "descricao_problema": "Problema",
     "descricao_ocorrencia": "Serviço realizado", "descricao_local": "Detalhes do local",
     "local_endereco_id": "Local", "categoria_equipamento_id": "Categoria do equipamento",

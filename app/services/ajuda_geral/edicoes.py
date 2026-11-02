@@ -44,14 +44,15 @@ def _sql_alvo(tipo: str, usuario: UsuarioContexto) -> str:
               AND local.unidade_id = :unidade_id AND local.esta_ativo IS TRUE
         """
     if tipo == "ocorrencia" and usuario.tipo_acesso in {"tecnico", "gestor", "administrador"}:
-        dono = "AND o.usuario_id = :usuario_id" if usuario.tipo_acesso == "tecnico" else ""
-        return f"""
-            SELECT o.id, o.titulo, o.descricao_ocorrencia, local.nome AS local
+        return """
+            SELECT o.id, o.titulo, o.descricao_ocorrencia, o.descricao_local,
+                   o.local_unidade_id, o.categoria_equipamento_id, o.categoria_problema,
+                   o.prioridade, local.nome AS local, categoria.nome AS categoria_equipamento
             FROM ocorrencia AS o
             JOIN local_unidade AS local ON local.id = o.local_unidade_id
-            WHERE o.id = :registro_id AND o.esta_ativo IS TRUE
+            LEFT JOIN categoria_equipamento AS categoria ON categoria.id = o.categoria_equipamento_id
+            WHERE o.id = :registro_id AND o.usuario_id = :usuario_id AND o.esta_ativo IS TRUE
               AND local.unidade_id = :unidade_id AND local.esta_ativo IS TRUE
-              {dono}
         """
     if tipo == "observacao_conclusao" and usuario.tipo_acesso in {"tecnico", "gestor", "administrador"}:
         responsavel = "AND os.usuario_id = :usuario_id" if usuario.tipo_acesso == "tecnico" else ""

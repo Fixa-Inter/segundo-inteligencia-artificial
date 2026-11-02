@@ -113,6 +113,42 @@ Testes específicos (sem chamadas externas):
 python -m pytest app/tests/test_listar_feedbacks.py app/tests/test_atualizacao_solicitacao.py -q
 ```
 
+## Atualização de ocorrências próprias
+
+Técnicos, gestores e administradores podem atualizar somente suas próprias
+ocorrências ativas. Gestor e administrador não podem editar ocorrências de
+outros usuários, inclusive ao anexar fotos. Não há filtro de status: o bloqueio
+é por autoria, unidade e inatividade.
+
+O fluxo busca candidatos no Qdrant restritos aos registros próprios ativos e
+confere os dados no PostgreSQL. A primeira confirmação identifica o registro,
+com título em negrito e descrição na linha seguinte, sem linha vazia entre eles.
+A segunda confirma a proposta final. O rascunho `ocorrencia_pendente` guarda
+`operacao=criar` ou `operacao=atualizar`, versões, dados originais, alterações,
+etapa e escolha sobre fotos. As regras de versionamento e identificação são
+compartilhadas com a atualização de solicitações.
+
+São editáveis título, descrição da ocorrência, detalhes do local, local,
+categoria do equipamento, categoria do problema, prioridade e fotos.
+Categoria do problema e prioridade usam os enums já existentes, convertidos
+para os inteiros do PostgreSQL. Os campos não alterados são preservados.
+Novas imagens exigem escolha entre adicionar e substituir todas; sem novas
+imagens, as fotos existentes são mantidas. Arquivos no Cloudinary não são apagados.
+
+Somente a operação aprovada pelo juiz é executada no nó de operações. A mesma
+transação trava a ocorrência e verifica novamente autor, unidade, atividade
+e dados originais, antes de alterar campos e fotos. Propostas alteradas exigem
+nova conferência; resultados indeterminados impedem reenvio automático.
+
+As permissões adicionais estão em
+[`docs/database/permissoes_atualizacao_ocorrencias.sql`](docs/database/permissoes_atualizacao_ocorrencias.sql).
+O script complementa as permissões básicas; não substitui a configuração existente
+nem implementa RLS. Aplique-o no ambiente antes de validar a integração real.
+
+```bash
+python -m pytest app/tests/test_atualizacao_ocorrencia.py app/tests/test_atualizacao_solicitacao.py -q
+```
+
 ## Criação de eventos
 
 Gestores e administradores podem criar eventos pela web ou pelo mobile. O agente

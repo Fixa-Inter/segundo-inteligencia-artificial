@@ -227,8 +227,9 @@ async def anexar_foto_solicitacao(runtime: ToolRuntime, problema_id: int | None 
 
 @tool(args_schema=_AnexoOcorrencia)
 async def anexar_foto_ocorrencia(runtime: ToolRuntime, ocorrencia_id: int | None = None) -> dict:
-    """Propõe ou confirma foto de ocorrência própria de técnico ou da unidade do gestor."""
-    return await _propor(runtime, "ocorrencia", ocorrencia_id)
+    """Atualiza fotos de ocorrência própria e ativa, após seleção e proposta final."""
+    from app.tools.ocorrencias.atualizarOcorrencia import atualizar_ocorrencia
+    return await atualizar_ocorrencia.coroutine(runtime=runtime, ocorrencia_id=ocorrencia_id)
 
 
 @tool(args_schema=_AnexoObservacao)

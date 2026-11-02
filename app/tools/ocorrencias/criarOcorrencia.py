@@ -79,6 +79,8 @@ async def processar_ocorrencia(runtime: ToolRuntime, *, operacao_aprovada: dict 
     if usuario.tipo_acesso not in {"tecnico", "gestor", "administrador"}:
         return {"status": "ACESSO_NEGADO", "mensagem": MENSAGENS['perfil_sem_permissao_para_ocorrencias']}
     rascunho = await obter_rascunho_solicitacao(sessao_id, usuario.usuario_id, tipo="ocorrencia")
+    if rascunho and rascunho.get("operacao") == "atualizar":
+        return {"status": "ERRO_VALIDACAO", "mensagem": MENSAGENS["ocorrencia_atualizacao_usar_ferramenta"]}
     if not rascunho:
         return {"status": "SEM_RASCUNHO", "mensagem": MENSAGENS['prepare_e_salve_a_proposta_antes_do_cadastro']}
     status = rascunho.get("status_fluxo")

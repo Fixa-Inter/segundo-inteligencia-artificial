@@ -9,6 +9,7 @@ from app.tools.solicitacoes import (
 )
 from app.tools.ocorrencias import buscar_opcoes_ocorrencia
 from app.tools.ocorrencias import criar_ocorrencia, salvar_rascunho_ocorrencia
+from app.tools.ocorrencias.atualizarOcorrencia import buscar_ocorrencias_para_atualizar, atualizar_ocorrencia
 from app.tools.memoria import buscar_historico
 from app.tools.eventos import buscar_opcoes_evento, salvar_rascunho_evento, criar_evento
 from app.tools.solicitacoes.atualizarSolicitacao import buscar_solicitacoes_para_atualizar, atualizar_solicitacao
@@ -19,6 +20,7 @@ def criar_agente_solicitacoes(modelo, instrucao: str, modelo_alternativo=None, *
     ferramentas = [buscar_opcoes_solicitacao, buscar_historico]
     ferramentas.extend([buscar_solicitacoes_para_atualizar, atualizar_solicitacao])
     if gestor or tecnico:
+        ferramentas.extend([buscar_ocorrencias_para_atualizar, atualizar_ocorrencia])
         ferramentas.extend([buscar_opcoes_ocorrencia, salvar_rascunho_ocorrencia, criar_ocorrencia])
     if gestor:
         ferramentas.extend([buscar_opcoes_evento, salvar_rascunho_evento, criar_evento])
