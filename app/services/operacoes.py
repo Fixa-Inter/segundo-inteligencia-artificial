@@ -9,7 +9,7 @@ from app.schemas import UsuarioContexto
 
 from app.core.respostas import MENSAGENS
 
-TIPOS = {"solicitacao", "ocorrencia", "evento", "feedback", "edicao", "atualizacao_solicitacao"}
+TIPOS = {"solicitacao", "ocorrencia", "evento", "feedback", "edicao", "atualizacao_solicitacao", "atualizacao_ocorrencia"}
 
 
 def calcular_hash(dados: dict) -> str:

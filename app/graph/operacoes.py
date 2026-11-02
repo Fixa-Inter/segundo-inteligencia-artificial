@@ -19,6 +19,9 @@ async def executar_servico(documento: dict, contexto: dict) -> dict:
     """Lista explícita de serviços permitidos; o modelo não escolhe funções Python."""
     tipo, dados = documento["tipo"], documento["dados"]
     runtime = SimpleNamespace(context=contexto)
+    if tipo == "atualizacao_ocorrencia":
+        from app.tools.ocorrencias.atualizarOcorrencia import processar_atualizacao
+        return await processar_atualizacao(runtime, operacao_aprovada=dados)
     if tipo == "atualizacao_solicitacao":
         from app.tools.solicitacoes.atualizarSolicitacao import processar_atualizacao
         return await processar_atualizacao(runtime, operacao_aprovada=dados)

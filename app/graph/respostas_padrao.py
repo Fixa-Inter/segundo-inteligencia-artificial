@@ -124,9 +124,10 @@ def texto_resultados(resultados: list[dict]) -> str:
     for item in resultados:
         resultado = item["resultado"]
         status = resultado.get("status")
-        if item["tipo"] == "atualizacao_solicitacao":
+        if item["tipo"] in {"atualizacao_solicitacao", "atualizacao_ocorrencia"}:
+            prefixo = "ocorrencia_atualizacao" if item["tipo"] == "atualizacao_ocorrencia" else "atualizacao"
             mensagens.append(resultado_indeterminado()["mensagem"] if status == "RESULTADO_INDETERMINADO" else
-                             MENSAGENS["atualizacao_sucesso" if status == "SUCESSO" else "atualizacao_falha"])
+                             MENSAGENS[f"{prefixo}_sucesso" if status == "SUCESSO" else f"{prefixo}_falha"])
             continue
         if status == "SUCESSO":
             mensagem = RESPOSTAS_OPERACAO_SUCESSO[item["tipo"]]
@@ -177,6 +178,9 @@ def resumo_confirmacao(rascunho: dict) -> str:
 
 def resumo_atualizacao(rascunho: dict) -> str:
     import re
+    ocorrencia = rascunho["tipo"] == "ocorrencia"
+    prefixo = "ocorrencia_atualizacao" if ocorrencia else "atualizacao"
+    descricao = "descricao_ocorrencia" if ocorrencia else "descricao_problema"
 
     def texto(valor):
         # Conteúdo persistido é texto, não formatação ou instrução do sistema.
@@ -184,11 +188,14 @@ def resumo_atualizacao(rascunho: dict) -> str:
 
     if rascunho.get("etapa") == "selecao":
         original = rascunho["original"]
-        return MENSAGENS["atualizacao_confirmar_selecao"].format(
-            titulo=texto(original["titulo"]), descricao=texto(original["descricao_problema"]),
+        return MENSAGENS[f"{prefixo}_confirmar_selecao"].format(
+            titulo=texto(original["titulo"]), descricao=texto(original[descricao]),
         )
-    linhas = [MENSAGENS["atualizacao_titulo_final"]]
-    for campo in ("titulo", "descricao_problema", "descricao_local", "local_unidade_id", "categoria_equipamento_id"):
+    linhas = [MENSAGENS[f"{prefixo}_titulo_final"]]
+    campos = ("titulo", descricao, "descricao_local", "local_unidade_id", "categoria_equipamento_id")
+    if ocorrencia:
+        campos += ("categoria_problema", "prioridade")
+    for campo in campos:
         valor = rascunho.get("rotulos", {}).get(campo, rascunho["dados"][campo])
         linhas.append(TEXTOS_CONFIRMACAO["campo"].format(nome=NOMES_CAMPOS[campo], valor=texto(valor)))
     acao = rascunho["acao_fotos"]

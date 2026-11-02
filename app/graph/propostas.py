@@ -16,6 +16,7 @@ def propostas_resposta(estado: dict) -> list[dict]:
             "salvar_rascunho_solicitacao", "salvar_rascunho_ocorrencia", "criar_solicitacao", "criar_ocorrencia",
             "salvar_rascunho_evento", "criar_evento",
             "atualizar_solicitacao", "alterar_informacao_solicitacao", "anexar_foto_solicitacao",
+            "atualizar_ocorrencia", "anexar_foto_ocorrencia",
         }:
             continue
         resultado = registro.get("resultado")

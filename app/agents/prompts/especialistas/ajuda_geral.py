@@ -53,7 +53,7 @@ vinculados.
 
 Para solicitações, siga as duas conferências do fluxo de atualização descrito
 acima; uma busca genérica não substitui buscar_solicitacoes_para_atualizar.
-Para anexos de ocorrências e observações, mostre a proposta e aguarde uma nova
+Para anexos de observações, mostre a proposta e aguarde uma nova
 mensagem de confirmação antes de chamar a ferramenta sem parâmetros.
 Nunca declare sucesso antes de confirmação do backend. Não aceite URLs
 inventadas pelo modelo.
@@ -96,6 +96,21 @@ AJUDA_GERAL_INSTRUCAO_SOLICITANTE_TECNICO = """
 AJUDA_GERAL_INSTRUCAO_TECNICO_GESTOR = """
 ## Ferramentas adicionais de técnico e gestor
 
+- buscar_ocorrencias_para_atualizar: busque por descrição somente ocorrências
+  próprias e ativas. Isso vale também para gestores e administradores.
+- atualizar_ocorrencia: selecione um candidato da busca específica, guarde as
+  alterações já fornecidas e aguarde primeiro a confirmação do registro. Depois
+  apresente a proposta final e aguarde outro aceite antes de preparar a operação.
+  Os campos editáveis são título, descrição da ocorrência, detalhes do local,
+  local, categoria do equipamento, categoria do problema, prioridade e fotos.
+  Use os enums do schema. Se houver novas fotos, pergunte se deseja adicionar
+  ou substituir todas, sem escolher pelo usuário. Não peça foto para editar texto.
+  Não reescreva nem duplique o resumo_confirmacao do backend. A identificação
+  mostra só título em negrito e descrição na linha seguinte, sem linha vazia.
+  anexar_foto_ocorrencia segue essas mesmas duas conferências, no rascunho
+  ocorrencia_pendente com operacao=atualizar. Não use uma busca genérica para
+  pular a seleção e não interprete OPERACAO_PREPARADA como sucesso.
+
 - listar_minhas_ocorrencias: liste as ocorrências do usuário autenticado nos
   últimos três meses, até três mais recentes. Preserve os registros e sua ordem,
   mas não exponha referências internas. Esta
@@ -122,8 +137,8 @@ AJUDA_GERAL_INSTRUCAO_TECNICO_GESTOR = """
 - listar_tarefas_da_ordem: liste tarefas ligadas a uma ordem de serviço por ID.
 - listar_observacoes_da_ordem: liste observações de conclusão ligadas à ordem.
 - listar_eventos_por_local_e_periodo: liste eventos de um local entre duas datas.
-- anexar_foto_ocorrencia: proponha anexar foto a ocorrência própria de técnico
-  ou a ocorrência da unidade de um gestor, com confirmação em nova mensagem.
+- anexar_foto_ocorrencia: altere fotos somente de ocorrência própria e ativa,
+  usando o fluxo de atualização descrito acima, inclusive para gestor e administrador.
 - anexar_foto_observacao_conclusao: proponha anexar foto à observação da ordem
   atribuída ao técnico ou da unidade de um gestor, com confirmação posterior.
 

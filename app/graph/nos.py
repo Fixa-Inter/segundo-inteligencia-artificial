@@ -209,6 +209,11 @@ async def supervisionar(
         return {
             **atualizacoes,
             "intencao": decisao.intencao,
+            "operacao_ocorrencia": (
+                pendentes["ocorrencia"].get("operacao", "criar")
+                if decisao.intencao == "ocorrencia" and decisao.continua_pendente and "ocorrencia" in pendentes
+                else getattr(decisao, "operacao_ocorrencia", "criar")
+            ),
             "operacao_solicitacao": (
                 pendentes["solicitacao"].get("operacao", "criar")
                 if decisao.intencao == "solicitacao" and decisao.continua_pendente and "solicitacao" in pendentes
@@ -391,16 +396,19 @@ async def executar_solicitacao(
     if tipo_registro == "evento" and perfil not in {"gestor", "administrador"}:
         return {"evidencias": evidencias, "erro": None,
                 "resposta_especialista": MENSAGENS['somente_gestores_e_administradores_podem_criar_eventos']}
+    if tipo_registro == "ocorrencia" and perfil not in {"tecnico", "gestor", "administrador"}:
+        return {"evidencias": evidencias, "erro": None,
+                "resposta_especialista": MENSAGENS["perfil_sem_permissao_para_ocorrencias"]}
     runtime.context.setdefault("operacoes_pendentes", [])
     contexto_agente = {**runtime.context, "intencao_atual": tipo_registro}
-    atualizacao = tipo_registro == "solicitacao" and (
-        estado.get("operacao_solicitacao") == "atualizar"
-        or (estado.get("continua_pendente") and (estado.get("solicitacao_pendente") or {}).get("operacao") == "atualizar")
+    atualizacao = tipo_registro in {"solicitacao", "ocorrencia"} and (
+        estado.get(f"operacao_{tipo_registro}") == "atualizar"
+        or (estado.get("continua_pendente") and (estado.get(f"{tipo_registro}_pendente") or {}).get("operacao") == "atualizar")
     )
     try:
         if tipo_registro in {"solicitacao", "ocorrencia", "evento"}:
             rascunho_atual = estado_agente.get(f"{tipo_registro}_pendente")
-            cadastro = estado.get("cadastro_em_andamento") or (
+            cadastro = atualizacao or estado.get("cadastro_em_andamento") or (
                 isinstance(rascunho_atual, dict)
                 and rascunho_atual.get("status_fluxo") == "coletando_dados"
                 and not rascunho_atual.get("pausado")
@@ -451,7 +459,8 @@ async def executar_solicitacao(
             "O roteador classificou a intenção atual como "
             f"{tipo_registro}. "
             + {
-                "ocorrencia": "Trate este relato como registro de manutenção já realizada. Use o fluxo de ocorrência.",
+                "ocorrencia": ("Use buscar_ocorrencias_para_atualizar e atualizar_ocorrencia. Não crie outro registro."
+                               if atualizacao else "Trate este relato como registro de manutenção já realizada. Use o fluxo de ocorrência."),
                 "solicitacao": ("Use buscar_solicitacoes_para_atualizar e atualizar_solicitacao. Não crie outro registro."
                                 if atualizacao else "Trate este relato como pedido de cadastro de uma solicitação de manutenção."),
                 "evento": "Use o fluxo de evento. Colete local, descrição, início e fim; não peça foto nem categoria de equipamento.",
@@ -496,8 +505,8 @@ async def executar_solicitacao(
             )
             if rascunho.get("operacao") == "atualizar":
                 instrucao_rascunho = (
-                    "Esta proposta atualiza uma solicitação existente, não cria outra. "
-                    "Use atualizar_solicitacao para selecionar, guardar alterações, confirmar a seleção "
+                    f"Esta proposta atualiza uma {tipo} existente, não cria outra. "
+                    f"Use atualizar_{tipo} para selecionar, guardar alterações, confirmar a seleção "
                     "e, em outro turno, preparar a atualização da proposta final. "
                     "Na etapa busca use somente candidatos da busca específica; não use ferramentas de criação. "
                     "Fotos novas exigem escolha explícita entre adicionar e substituir todas."

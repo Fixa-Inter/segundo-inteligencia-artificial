@@ -14,39 +14,15 @@ from app.memory.persistencia import (
 from app.services.solicitacoes import atualizarSolicitacao as servico
 from app.services.operacoes import dados_atualizacao, preparar_operacao
 from app.tools.ajuda_geral.edicoes import _contexto, _imagens
+from app.tools.atualizacoes import salvar_proposta, confirmou_selecao as _confirmou_selecao
 
 
 async def _salvar(contexto: dict, rascunho: dict, **campos) -> dict:
-    campos = {**campos, "versao": rascunho["versao"] + 1, "turno_id": contexto["turno_id"]}
-    alterou = await atualizar_rascunho_solicitacao(
-        contexto["session_id"], contexto["usuario"].usuario_id, campos,
-        rascunho_id=rascunho["id"], versao=rascunho["versao"],
-        status_esperados={rascunho["status_fluxo"]}, exigir_ativo=True,
-    )
-    if not alterou:
-        raise ValueError(MENSAGENS["atualizacao_proposta_mudou"])
-    return {**rascunho, **campos}
+    return await salvar_proposta(contexto, rascunho, atualizar_rascunho_solicitacao, **campos)
 
 
 def _resposta(rascunho: dict) -> dict:
     return {"status": "AGUARDANDO_CONFIRMACAO", "proposta": metadados_proposta(rascunho)}
-
-
-def _confirmou_selecao(texto: str) -> bool:
-    """Identificar o registro não autoriza a gravação da proposta final."""
-    if "?" in texto:
-        return False
-    normalizada = normalizar_mensagem(texto)
-    if aceite_explicito(texto) or normalizada in {
-        "e essa", "e essa mesma", "essa mesma", "sim e essa", "sim e essa mesma", "sim essa mesma",
-    }:
-        return True
-    return bool(re.fullmatch(
-        r"(?:sim(?: e essa(?: mesma)?)?|e essa(?: mesma)?|essa mesma) "
-        r"(?:(?:pode|quero) )?(?:adicionar|adicione|substituir|substitua) "
-        r"(?:todas )?(?:as )?(?:novas )?(?:fotos|imagens)(?: as existentes)?",
-        normalizada,
-    ))
 
 
 def _erro(erro: Exception) -> dict:

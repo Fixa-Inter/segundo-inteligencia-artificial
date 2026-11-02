@@ -83,7 +83,7 @@ def test_administrador_nao_recebe_criacao_exclusiva_de_tecnico_e_solicitante():
     assert resumo["status"] == "ACESSO_NEGADO"
 
 
-def test_consultas_do_administrador_preservam_unidade_sem_restricao_de_tecnico(monkeypatch):
+def test_consultas_do_administrador_preservam_unidade_e_edicao_de_ocorrencia_exige_autoria(monkeypatch):
     usuario = usuario_administrador()
     consulta = AsyncMock(return_value=[])
     monkeypatch.setattr(ordens, "executar_consulta", consulta)
@@ -94,7 +94,8 @@ def test_consultas_do_administrador_preservam_unidade_sem_restricao_de_tecnico(m
     assert "os.usuario_id = :usuario_id" not in sql
     assert "unidade_registro.cnpj = unidade_autenticada.cnpj" in sql
     assert parametros["usuario_id"] == usuario.usuario_id
-    assert "o.usuario_id = :usuario_id" not in _sql_alvo("ocorrencia", usuario)
+    # A consulta gerencial de ordens continua ampla; a edição de ocorrência é própria.
+    assert "o.usuario_id = :usuario_id" in _sql_alvo("ocorrencia", usuario)
     assert "os.usuario_id = :usuario_id" not in _sql_alvo("observacao_conclusao", usuario)
 
 

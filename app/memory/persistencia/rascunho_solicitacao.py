@@ -237,7 +237,7 @@ async def salvar_rascunho_solicitacao(
         atual = documento.get(campo) or {}
         status_atual = atual.get("status_fluxo")
         if atual.get("operacao") == "atualizar" and status_atual in STATUS_ATIVOS and not atual.get("pausado"):
-            raise ValueError(MENSAGENS["atualizacao_usar_ferramenta"])
+            raise ValueError(MENSAGENS["ocorrencia_atualizacao_usar_ferramenta" if tipo == "ocorrencia" else "atualizacao_usar_ferramenta"])
         if status_atual in {"enviando", "resultado_indeterminado"}:
             raise ValueError(
                 "O envio anterior precisa ser reconciliado antes de abrir outro rascunho."
