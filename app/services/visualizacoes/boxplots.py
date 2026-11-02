@@ -1,5 +1,6 @@
 """SQL dos boxplots: população completa, resumos e extremos limitados."""
 
+
 import math
 import sys
 
@@ -9,6 +10,8 @@ from app.schemas.visualizacao import (
 from .normalizacao import ErroRespostaDatabricks, campo, grupo as normalizar_grupo, inteiro, numero
 from .limites import MAXIMO_EXTREMOS_POR_GRAFICO, MAXIMO_EXTREMOS_POR_GRUPO, MAXIMO_GRUPOS
 from .resumos import MINIMO_REGISTROS_BOXPLOT, resumir_grupo_pequeno
+
+from app.core.respostas import MENSAGENS
 
 
 class LimiteBoxplotExcedido(ValueError):
@@ -123,28 +126,28 @@ def normalizar_boxplot(analise, linhas, filtros_permitidos, unidade_id):
         if tipo == 0:
             quantidade_grupos = inteiro(campo(linha, "qtd_grupos"))
             if quantidade_grupos > MAXIMO_GRUPOS:
-                raise LimiteBoxplotExcedido("O gráfico excede 50 grupos; refine os filtros.")
+                raise LimiteBoxplotExcedido(MENSAGENS['o_grafico_excede_50_grupos_refine_os_filtros'])
             if indice in cabecalhos:
-                raise ErroRespostaDatabricks("Grupo repetido na resposta.")
+                raise ErroRespostaDatabricks(MENSAGENS['grupo_repetido_na_resposta'])
             cabecalhos[indice] = linha
         elif tipo in {1, 2}:
             pontos.append((tipo, indice, linha))
         else:
-            raise ErroRespostaDatabricks("Tipo de linha incompatível com o boxplot.")
+            raise ErroRespostaDatabricks(MENSAGENS['tipo_de_linha_incompativel_com_o_boxplot'])
     if not cabecalhos or set(cabecalhos) != set(range(1, len(cabecalhos) + 1)):
-        raise ErroRespostaDatabricks("Grupos incompletos na resposta.")
+        raise ErroRespostaDatabricks(MENSAGENS['grupos_incompletos_na_resposta'])
     grupos, bases, estatisticas, amostras, vistos = {}, {}, {}, {}, set()
     for indice, linha in sorted(cabecalhos.items()):
         if inteiro(campo(linha, "qtd_grupos")) != len(cabecalhos):
-            raise ErroRespostaDatabricks("A quantidade de grupos não corresponde à resposta.")
+            raise ErroRespostaDatabricks(MENSAGENS['a_quantidade_de_grupos_nao_corresponde_a_resposta'])
         if inteiro(campo(linha, "qtd_registros_invalidos")) or inteiro(campo(linha, "qtd_chaves_invalidas")):
-            raise ErroRespostaDatabricks("Valores ou chaves de OS incompatíveis com a fonte.")
+            raise ErroRespostaDatabricks(MENSAGENS['valores_ou_chaves_de_os_incompativeis_com_a_fonte'])
         dimensoes = normalizar_grupo(analise, linha, filtros_permitidos)
         if "unidade_id" in dimensoes and dimensoes["unidade_id"] != unidade_id:
-            raise ErroRespostaDatabricks("A unidade retornada não corresponde ao escopo da consulta.")
+            raise ErroRespostaDatabricks(MENSAGENS['a_unidade_retornada_nao_corresponde_ao_escopo_da_consulta'])
         chave_grupo = tuple(dimensoes.items())
         if chave_grupo in vistos:
-            raise ErroRespostaDatabricks("Dimensões de grupo repetidas na resposta.")
+            raise ErroRespostaDatabricks(MENSAGENS['dimensoes_de_grupo_repetidas_na_resposta'])
         vistos.add(chave_grupo)
         base = BaseCalculoVisualizacao(
             qtd_registros_total=inteiro(campo(linha, "qtd_registros_total")),
@@ -152,7 +155,7 @@ def normalizar_boxplot(analise, linhas, filtros_permitidos, unidade_id):
             qtd_tempos_negativos_excluidos=inteiro(campo(linha, "qtd_tempos_negativos_excluidos")),
         )
         if not base.qtd_registros_total:
-            raise ErroRespostaDatabricks("Um grupo observado exige registros na fonte.")
+            raise ErroRespostaDatabricks(MENSAGENS['um_grupo_observado_exige_registros_na_fonte'])
         grupos[indice], bases[indice], amostras[indice] = dimensoes, base, []
         campos_estatisticas = [
             "minimo", "q1", "mediana", "q3", "maximo", "media", "limite_inferior",
@@ -163,18 +166,18 @@ def normalizar_boxplot(analise, linhas, filtros_permitidos, unidade_id):
         n = base.qtd_registros_elegiveis
         if not n:
             if any(v is not None for v in valores.values()) or extremos:
-                raise ErroRespostaDatabricks("Grupo sem base contém estatísticas.")
+                raise ErroRespostaDatabricks(MENSAGENS['grupo_sem_base_contem_estatisticas'])
             estatisticas[indice] = {"qtd_extremos_total": 0}
             continue
         for c in campos_estatisticas[:6]:
             valores[c] = numero(valores[c])
         if not 0 <= valores["minimo"] <= valores["q1"] <= valores["mediana"] <= valores["q3"] <= valores["maximo"]:
-            raise ErroRespostaDatabricks("Estatísticas incompatíveis com os tempos elegíveis.")
+            raise ErroRespostaDatabricks(MENSAGENS['estatisticas_incompativeis_com_os_tempos_elegiveis'])
         if not valores["minimo"] <= valores["media"] <= valores["maximo"]:
-            raise ErroRespostaDatabricks("Média fora dos extremos observados.")
+            raise ErroRespostaDatabricks(MENSAGENS['media_fora_dos_extremos_observados'])
         if n < MINIMO_REGISTROS_BOXPLOT:
             if any(valores[c] is not None for c in campos_estatisticas[6:]) or extremos:
-                raise ErroRespostaDatabricks("Grupo pequeno recebeu estatísticas de boxplot.")
+                raise ErroRespostaDatabricks(MENSAGENS['grupo_pequeno_recebeu_estatisticas_de_boxplot'])
         else:
             for c in campos_estatisticas[6:]:
                 valores[c] = numero(valores[c])
@@ -182,26 +185,26 @@ def normalizar_boxplot(analise, linhas, filtros_permitidos, unidade_id):
             if valores["limite_inferior"] != valores["q1"] - 1.5 * iqr or (
                 valores["limite_superior"] != valores["q3"] + 1.5 * iqr
             ):
-                raise ErroRespostaDatabricks("Limites não correspondem à regra de 1,5 IQR.")
+                raise ErroRespostaDatabricks(MENSAGENS['limites_nao_correspondem_a_regra_de_1_5_iqr'])
         estatisticas[indice] = {**valores, "qtd_extremos_total": extremos}
 
     chaves_os, globais = set(), []
     for tipo, indice, linha in pontos:
         if indice not in grupos:
-            raise ErroRespostaDatabricks("Observação sem grupo correspondente.")
+            raise ErroRespostaDatabricks(MENSAGENS['observacao_sem_grupo_correspondente'])
         chave_os = inteiro(campo(linha, "chave_os"), nao_negativo=False)
         if chave_os in chaves_os:
-            raise ErroRespostaDatabricks("Uma OS foi repetida nas observações retornadas.")
+            raise ErroRespostaDatabricks(MENSAGENS['uma_os_foi_repetida_nas_observacoes_retornadas'])
         chaves_os.add(chave_os)
         valor, ordem = numero(campo(linha, "valor")), inteiro(campo(linha, "ordem_grupo"))
         n, stats = bases[indice].qtd_registros_elegiveis, estatisticas[indice]
         if valor < 0 or (tipo == 1) != (n >= MINIMO_REGISTROS_BOXPLOT) or not n:
-            raise ErroRespostaDatabricks("Observação incompatível com o grupo.")
+            raise ErroRespostaDatabricks(MENSAGENS['observacao_incompativel_com_o_grupo'])
         if tipo == 1:
             afastamento = numero(campo(linha, "afastamento"))
             esperado = max(stats["limite_inferior"] - valor, valor - stats["limite_superior"])
             if afastamento != esperado or afastamento <= 0:
-                raise ErroRespostaDatabricks("Afastamento incompatível com o extremo.")
+                raise ErroRespostaDatabricks(MENSAGENS['afastamento_incompativel_com_o_extremo'])
             global_ = inteiro(campo(linha, "ordem_global"))
             globais.append((global_, -afastamento, valor, indice, chave_os))
             amostras[indice].append((ordem, -afastamento, valor, chave_os))
@@ -212,28 +215,28 @@ def normalizar_boxplot(analise, linhas, filtros_permitidos, unidade_id):
         min(s["qtd_extremos_total"], MAXIMO_EXTREMOS_POR_GRUPO) for s in estatisticas.values()
     ), MAXIMO_EXTREMOS_POR_GRAFICO)
     if len(globais) != esperado_globais or sorted(g[0] for g in globais) != list(range(1, len(globais) + 1)):
-        raise ErroRespostaDatabricks("A seleção global dos extremos está incompleta.")
+        raise ErroRespostaDatabricks(MENSAGENS['a_selecao_global_dos_extremos_esta_incompleta'])
     if sorted(globais) != sorted(globais, key=lambda g: g[1:]):
-        raise ErroRespostaDatabricks("Extremos não estão priorizados pelo afastamento.")
+        raise ErroRespostaDatabricks(MENSAGENS['extremos_nao_estao_priorizados_pelo_afastamento'])
     resultados = []
     for indice, dimensoes in grupos.items():
         base, stats, amostra = bases[indice], estatisticas[indice], sorted(amostras[indice])
         n = base.qtd_registros_elegiveis
         if [p[0] for p in amostra] != list(range(1, len(amostra) + 1)) or amostra != sorted(amostra, key=lambda p: p[1:]):
-            raise ErroRespostaDatabricks("Observações do grupo estão incompletas ou fora de ordem.")
+            raise ErroRespostaDatabricks(MENSAGENS['observacoes_do_grupo_estao_incompletas_ou_fora_de_ordem'])
         if not n:
             resultado = GrupoSemBaseBoxplot(analise_id=analise.id, grupo=dimensoes, base_calculo=base)
         elif n < MINIMO_REGISTROS_BOXPLOT:
             if len(amostra) != n:
-                raise ErroRespostaDatabricks("Resumo sem sua população completa.")
+                raise ErroRespostaDatabricks(MENSAGENS['resumo_sem_sua_populacao_completa'])
             resultado = resumir_grupo_pequeno(analise, grupo=dimensoes, valores=[p[1] for p in amostra])
             for c in ["minimo", "maximo", "media", "mediana"]:
                 if not math.isclose(getattr(resultado, c), stats[c], rel_tol=1e-12, abs_tol=1e-12):
-                    raise ErroRespostaDatabricks("Resumo incompatível com as estatísticas da fonte.")
+                    raise ErroRespostaDatabricks(MENSAGENS['resumo_incompativel_com_as_estatisticas_da_fonte'])
             resultado.base_calculo = base
         else:
             if len(amostra) > min(stats["qtd_extremos_total"], MAXIMO_EXTREMOS_POR_GRUPO):
-                raise ErroRespostaDatabricks("A seleção excede os extremos do grupo.")
+                raise ErroRespostaDatabricks(MENSAGENS['a_selecao_excede_os_extremos_do_grupo'])
             resultado = GrupoBoxplot(
                 analise_id=analise.id, grupo=dimensoes, qtd_registros=n, base_calculo=base,
                 **{c: v for c, v in stats.items() if c != "media"},

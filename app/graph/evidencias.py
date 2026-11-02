@@ -42,7 +42,7 @@ def extrair_evidencias(mensagens, ids_anteriores: set[str], formato_saida: str) 
                 pass
         # O status de transporte nao equivale ao sucesso da operacao de negocio.
         status = resultado.get("status") if isinstance(resultado, dict) else None
-        if chamadas[chamada_id] in {"criar_solicitacao", "criar_ocorrencia"}:
+        if chamadas[chamada_id] in {"criar_solicitacao", "criar_ocorrencia", "criar_evento"}:
             texto_status = str(status or "").upper()
             resultado_operacao = (
                 "success" if texto_status == "SUCESSO"
@@ -52,7 +52,7 @@ def extrair_evidencias(mensagens, ids_anteriores: set[str], formato_saida: str) 
                 else "error"
             )
             registrar_operacao(
-                "solicitacao" if chamadas[chamada_id] == "criar_solicitacao" else "ocorrencia",
+                chamadas[chamada_id].removeprefix("criar_"),
                 resultado_operacao,
             )
         evidencias.append(json.dumps({

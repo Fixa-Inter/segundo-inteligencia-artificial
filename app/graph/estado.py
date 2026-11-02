@@ -25,6 +25,7 @@ class EstadoGrafo(TypedDict, total=False):
         "faq",
         "solicitacao",
         "ocorrencia",
+        "evento",
         "analytics",
         "visualizacao",
         "feedback",
@@ -36,6 +37,7 @@ class EstadoGrafo(TypedDict, total=False):
     mensagem_anonimizada: str
     mapa_pii: dict[str, str]
     motivo_bloqueio: str | None
+    motivo_resposta_padrao: Literal["ferramenta_indisponivel", "faq_sem_informacao"] | None
 
     justificativa_roteamento: str
 
@@ -69,6 +71,7 @@ class EstadoGrafo(TypedDict, total=False):
     solicitacao_pendente: dict | None
 
     ocorrencia_pendente: dict | None
+    evento_pendente: dict | None
     ajuda_geral_pendente: dict | None
     analise_compra_pendente: dict | None
     imagens_recebidas: bool

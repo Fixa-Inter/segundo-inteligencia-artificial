@@ -1,12 +1,15 @@
 """Prepara gravações e vincula a aprovação aos dados exatos da operação."""
 
+
 import hashlib
 import json
 from datetime import datetime, timezone
 
 from app.schemas import UsuarioContexto
 
-TIPOS = {"solicitacao", "ocorrencia", "feedback", "edicao"}
+from app.core.respostas import MENSAGENS
+
+TIPOS = {"solicitacao", "ocorrencia", "evento", "feedback", "edicao"}
 
 
 def calcular_hash(dados: dict) -> str:
@@ -23,9 +26,9 @@ async def preparar_operacao(contexto: dict, tipo: str, referencia: str, dados: d
 
     usuario = contexto.get("usuario")
     if not isinstance(usuario, UsuarioContexto) or not contexto.get("session_id") or not contexto.get("turno_id"):
-        raise ValueError("Usuário, sessão e turno são obrigatórios para preparar uma operação.")
+        raise ValueError(MENSAGENS['usuario_sessao_e_turno_sao_obrigatorios_para_preparar_uma_operacao'])
     if tipo not in TIPOS:
-        raise ValueError("Tipo de operação não permitido.")
+        raise ValueError(MENSAGENS['tipo_de_operacao_nao_permitido'])
     identidade = {"usuario": usuario.usuario_id, "sessao": contexto["session_id"],
                   "tipo": tipo, "referencia": referencia}
     documento = {
@@ -40,10 +43,10 @@ async def preparar_operacao(contexto: dict, tipo: str, referencia: str, dados: d
     pendentes = contexto.setdefault("operacoes_pendentes", [])
     if operacao not in pendentes:
         if any(item["id"] == operacao["id"] for item in pendentes):
-            raise ValueError("A mesma operação foi preparada com dados diferentes.")
+            raise ValueError(MENSAGENS['a_mesma_operacao_foi_preparada_com_dados_diferentes'])
         pendentes.append(operacao)
     return {"status": "OPERACAO_PREPARADA", "operacao": operacao,
-            "mensagem": "Operação preparada para validação interna. Ainda não houve gravação definitiva. Não peça uma nova confirmação ao usuário."}
+            "mensagem": MENSAGENS['operacao_preparada_para_validacao_interna_ainda_nao_houve_gravacao_definitiva_nao_peca']}
 
 
 def aprovacao_operacoes(operacoes: list[dict], contexto: dict) -> dict:

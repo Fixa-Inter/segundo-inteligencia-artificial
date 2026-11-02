@@ -6,6 +6,9 @@ from pydantic import BaseModel, Field
 
 from app.agents.modelos import llm_rapido
 
+from app.core.respostas import MENSAGENS, RESPOSTAS_BLOQUEIO
+from app.graph.respostas_padrao import resposta_bloqueio_seguranca
+
 
 PII = [
     (
@@ -105,25 +108,6 @@ será responsável por identificar assuntos fora do escopo.
 Mensagem:
 {mensagem}
 """
-
-
-RESPOSTAS_BLOQUEIO = {
-    "PERIGOSO": {
-        "motivo": "pedido_perigoso",
-        "mensagem": (
-            "Não posso orientar uma ação que possa colocar pessoas "
-            "ou instalações em risco. Registre a ocorrência e aguarde "
-            "um profissional autorizado."
-        ),
-    },
-    "ILICITO": {
-        "motivo": "pedido_ilicito",
-        "mensagem": (
-            "Não posso auxiliar com atividades ilegais, invasões "
-            "ou sabotagem."
-        ),
-    },
-}
 
 
 def bloquear(
@@ -231,7 +215,7 @@ def proteger_entrada(
             return bloquear(
                 motivo="prompt_injection",
                 mensagem=(
-                    "Não consigo processar essa solicitação."
+                    MENSAGENS['nao_consigo_processar_essa_solicitacao']
                 ),
             )
 
@@ -244,8 +228,7 @@ def proteger_entrada(
             return bloquear(
                 motivo="acesso_dados_internos",
                 mensagem=(
-                    "Não posso compartilhar informações "
-                    "internas ou credenciais do sistema."
+                    MENSAGENS['nao_posso_compartilhar_informacoes_internas_ou_credenciais_do_sistema']
                 ),
             )
 
@@ -260,15 +243,8 @@ def proteger_entrada(
         # Uma indisponibilidade do classificador não derruba o chat.
         return aprovar()
 
-    if classificacao.categoria in RESPOSTAS_BLOQUEIO:
-        return {
-            "bloqueado": True,
-            **RESPOSTAS_BLOQUEIO[
-                classificacao.categoria
-            ],
-        }
-
-    return aprovar()
+    bloqueio = resposta_bloqueio_seguranca(classificacao.categoria)
+    return bloqueio if bloqueio is not None else aprovar()
 
 
 def proteger_saida(

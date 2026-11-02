@@ -1,10 +1,13 @@
 """Intervalos e agregação completa dos histogramas aprovados."""
 
+
 import math
 import sys
 
 from app.schemas.visualizacao import Analise, DadosHistograma, IntervaloHistograma
 from .limites import MAXIMO_INTERVALOS_HISTOGRAMA
+
+from app.core.respostas import MENSAGENS
 
 
 def _limite_sql(indice):
@@ -65,12 +68,12 @@ def montar_sql_histograma(analise: Analise, condicoes: list[str]):
 def construir_histograma(minimo, maximo, frequencias, quantidade):
     """Usa os mesmos limites do SQL, sem arredondar observações ou fronteiras."""
     if len(frequencias) != MAXIMO_INTERVALOS_HISTOGRAMA:
-        raise ValueError("O agregado deve conter as dez frequências aprovadas.")
+        raise ValueError(MENSAGENS['o_agregado_deve_conter_as_dez_frequencias_aprovadas'])
     if minimo < 0 or maximo < minimo:
-        raise ValueError("Limites incompatíveis com a população do histograma.")
+        raise ValueError(MENSAGENS['limites_incompativeis_com_a_populacao_do_histograma'])
     if minimo == maximo:
         if frequencias[0] != quantidade or any(frequencias[1:]):
-            raise ValueError("Valores iguais exigem uma única frequência.")
+            raise ValueError(MENSAGENS['valores_iguais_exigem_uma_unica_frequencia'])
         intervalos = [IntervaloHistograma(
             inferior=minimo, superior=maximo, frequencia=quantidade, inclui_superior=True,
         )]
@@ -82,7 +85,7 @@ def construir_histograma(minimo, maximo, frequencias, quantidade):
         if any(not math.isfinite(v) for v in limites) or any(
             inferior >= superior for inferior, superior in zip(limites, limites[1:])
         ):
-            raise ValueError("A precisão disponível não permite representar dez intervalos distintos.")
+            raise ValueError(MENSAGENS['a_precisao_disponivel_nao_permite_representar_dez_intervalos_distintos'])
         intervalos = [
             IntervaloHistograma(
                 inferior=limites[indice], superior=limites[indice + 1],

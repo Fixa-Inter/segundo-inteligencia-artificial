@@ -13,6 +13,8 @@ from app.services.gerais.perfil import (
     consultar_perfil,
 )
 
+from app.core.respostas import MENSAGENS
+
 
 bearer_scheme = HTTPBearer(
     auto_error=False,
@@ -28,7 +30,7 @@ async def obter_usuario_atual(
     if credenciais is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de acesso não informado.",
+            detail=MENSAGENS['token_de_acesso_nao_informado'],
             headers={
                 "WWW-Authenticate": "Bearer",
             },
@@ -37,7 +39,7 @@ async def obter_usuario_atual(
     if credenciais.scheme.lower() != "bearer":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Esquema de autenticação inválido.",
+            detail=MENSAGENS['esquema_de_autenticacao_invalido'],
             headers={
                 "WWW-Authenticate": "Bearer",
             },
@@ -72,6 +74,6 @@ async def obter_usuario_atual(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=(
-                "A API FIXA retornou dados de perfil incompatíveis."
+                MENSAGENS['a_api_fixa_retornou_dados_de_perfil_incompativeis']
             ),
         ) from None

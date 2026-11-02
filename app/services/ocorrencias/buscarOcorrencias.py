@@ -10,6 +10,9 @@ from app.services.ordensServico.buscarOrdensServico import (
     inicio_periodo,
 )
 
+from app.core.respostas import MENSAGENS
+from app.graph.respostas_padrao import escolher_resposta
+
 
 registrador = logging.getLogger(__name__)
 
@@ -19,13 +22,13 @@ def _data_iso(valor) -> str:
         return valor.date().isoformat()
     if isinstance(valor, date):
         return valor.isoformat()
-    raise ValueError("Data retornada pelo banco em formato invalido.")
+    raise ValueError(MENSAGENS['data_retornada_pelo_banco_em_formato_invalido'])
 
 
 async def buscar_equipamento_por_codigo(codigo: str, usuario: UsuarioContexto) -> dict:
     """Resolve codigo de equipamento ativo no endereco do usuario autenticado."""
     if not isinstance(codigo, str) or not codigo.strip():
-        return {"status": "ERRO_VALIDACAO", "mensagem": "Informe o codigo do equipamento."}
+        return {"status": "ERRO_VALIDACAO", "mensagem": MENSAGENS['informe_o_codigo_do_equipamento']}
 
     sql = """
         SELECT equipamento.id, equipamento.codigo,
@@ -63,18 +66,18 @@ async def buscar_equipamento_por_codigo(codigo: str, usuario: UsuarioContexto) -
         registrador.exception("Falha ao consultar equipamento por codigo no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "Nao foi possivel consultar o equipamento no banco.",
+            "mensagem": MENSAGENS['nao_foi_possivel_consultar_o_equipamento_no_banco'],
         }
 
     if not encontrados:
         return {
             "status": "AGUARDANDO_INFORMACAO",
-            "mensagem": "Equipamento nao encontrado pelo codigo informado. Peça ao usuario para conferir o codigo.",
+            "mensagem": MENSAGENS['equipamento_nao_encontrado_pelo_codigo_informado_peca_ao_usuario_para_conferir_o'],
         }
     if len(encontrados) != 1:
         return {
             "status": "AGUARDANDO_INFORMACAO",
-            "mensagem": "O codigo corresponde a mais de um equipamento neste endereco. Esclareca o cadastro antes de continuar.",
+            "mensagem": MENSAGENS['o_codigo_corresponde_a_mais_de_um_equipamento_neste_endereco_esclareca_o'],
         }
     return {"status": "SUCESSO", "equipamento": encontrados[0]}
 
@@ -128,7 +131,7 @@ async def consultar_minhas_ocorrencias(usuario: UsuarioContexto) -> dict:
             categoria = CATEGORIA_PROBLEMA_POR_ID.get(linha["categoria_id"])
             prioridade = PRIORIDADE_POR_ID.get(linha["prioridade_id"])
             if categoria is None or prioridade is None:
-                raise ValueError("Categoria ou prioridade de ocorrencia desconhecida.")
+                raise ValueError(MENSAGENS['categoria_ou_prioridade_de_ocorrencia_desconhecida'])
             ocorrencias.append({
                 "titulo": linha["titulo"],
                 "descricaoOcorrencia": linha["descricaoOcorrencia"],
@@ -143,16 +146,14 @@ async def consultar_minhas_ocorrencias(usuario: UsuarioContexto) -> dict:
         registrador.exception("Falha ao consultar ocorrencias no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "Nao foi possivel consultar as ocorrencias no banco.",
+            "mensagem": MENSAGENS['nao_foi_possivel_consultar_as_ocorrencias_no_banco'],
         }
 
     return {
         "status": "SUCESSO" if ocorrencias else "SEM_RESULTADO",
         "ocorrencias": ocorrencias,
-        "orientacao": "Para consultar suas ocorrências, acesse a área Minhas ocorrências no app.",
+        "orientacao": MENSAGENS['para_consultar_suas_ocorrencias_acesse_a_area_minhas_ocorrencias_no_app'],
         "mensagem": (
-            "Ocorrencias consultadas com sucesso."
-            if ocorrencias
-            else "Nenhuma ocorrencia encontrada neste endereco nos ultimos tres meses."
+            escolher_resposta(ocorrencias, 'ocorrencias_consultadas_com_sucesso', 'nenhuma_ocorrencia_encontrada_neste_endereco_nos_ultimos_tres_meses')
         ),
     }

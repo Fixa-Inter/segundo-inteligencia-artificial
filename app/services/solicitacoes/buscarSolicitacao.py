@@ -6,6 +6,9 @@ from app.core.clients.postgres import executar_consulta
 from app.schemas import UsuarioContexto
 from app.services.ordensServico.buscarOrdensServico import inicio_periodo
 
+from app.core.respostas import MENSAGENS
+from app.graph.respostas_padrao import escolher_resposta
+
 
 registrador = logging.getLogger(__name__)
 
@@ -37,7 +40,7 @@ def _data_iso(valor) -> str:
         return valor.date().isoformat()
     if isinstance(valor, date):
         return valor.isoformat()
-    raise ValueError("Data retornada pelo banco em formato invalido.")
+    raise ValueError(MENSAGENS['data_retornada_pelo_banco_em_formato_invalido'])
 
 
 async def listar_solicitacoes_pendentes(usuario: UsuarioContexto) -> dict:
@@ -69,17 +72,15 @@ async def listar_solicitacoes_pendentes(usuario: UsuarioContexto) -> dict:
         registrador.exception("Falha ao consultar solicitacoes pendentes no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "Nao foi possivel consultar as solicitacoes no banco.",
+            "mensagem": MENSAGENS['nao_foi_possivel_consultar_as_solicitacoes_no_banco'],
         }
 
     return {
         "status": "SUCESSO" if solicitacoes else "SEM_RESULTADO",
         "solicitacoes": solicitacoes,
-        "orientacao": "Para consultar as pendências, acesse a tela de Solicitações abertas no app.",
+        "orientacao": MENSAGENS['para_consultar_as_pendencias_acesse_a_tela_de_solicitacoes_abertas_no_app'],
         "mensagem": (
-            "Solicitacoes pendentes consultadas com sucesso."
-            if solicitacoes
-            else "Nenhuma solicitacao pendente encontrada no endereco do gestor nos ultimos tres meses."
+            escolher_resposta(solicitacoes, 'solicitacoes_pendentes_consultadas_com_sucesso', 'nenhuma_solicitacao_pendente_encontrada_no_endereco_do_gestor_nos_ultimos_tres_meses')
         ),
     }
 
@@ -112,16 +113,14 @@ async def listar_minhas_solicitacoes(usuario: UsuarioContexto) -> dict:
         registrador.exception("Falha ao consultar solicitacoes proprias no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "Nao foi possivel consultar suas solicitacoes no banco.",
+            "mensagem": MENSAGENS['nao_foi_possivel_consultar_suas_solicitacoes_no_banco'],
         }
 
     return {
         "status": "SUCESSO" if solicitacoes else "SEM_RESULTADO",
         "solicitacoes": solicitacoes,
-        "orientacao": "Para consultar suas solicitações, acesse a área Minhas solicitações no app.",
+        "orientacao": MENSAGENS['para_consultar_suas_solicitacoes_acesse_a_area_minhas_solicitacoes_no_app'],
         "mensagem": (
-            "Solicitacoes consultadas com sucesso."
-            if solicitacoes
-            else "Nenhuma solicitacao encontrada para o usuario neste endereco nos ultimos tres meses."
+            escolher_resposta(solicitacoes, 'solicitacoes_consultadas_com_sucesso', 'nenhuma_solicitacao_encontrada_para_o_usuario_neste_endereco_nos_ultimos_tres_meses')
         ),
     }

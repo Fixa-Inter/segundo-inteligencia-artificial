@@ -3,6 +3,8 @@ import logging
 from app.core.clients.postgres import executar_consulta
 from app.schemas import UsuarioContexto
 
+from app.core.respostas import MENSAGENS
+
 
 registrador = logging.getLogger(__name__)
 
@@ -60,7 +62,7 @@ async def buscar_tecnicos_disponiveis(usuario: UsuarioContexto) -> dict:
     if usuario.tipo_acesso.lower() not in {"gestor", "administrador"}:
         return {
             "status": "ACESSO_NEGADO",
-            "mensagem": "Somente gestores e administradores podem consultar tecnicos disponiveis.",
+            "mensagem": MENSAGENS['somente_gestores_e_administradores_podem_consultar_tecnicos_disponiveis'],
         }
 
     try:
@@ -73,14 +75,14 @@ async def buscar_tecnicos_disponiveis(usuario: UsuarioContexto) -> dict:
         registrador.exception("Falha ao buscar tecnicos disponiveis no PostgreSQL")
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "Nao foi possivel consultar os tecnicos disponiveis.",
+            "mensagem": MENSAGENS['nao_foi_possivel_consultar_os_tecnicos_disponiveis'],
         }
 
     if not tecnicos:
         return {
             "status": "SEM_RESULTADO",
             "tecnicos": [],
-            "mensagem": "Nenhum tecnico ativo foi encontrado neste endereco.",
+            "mensagem": MENSAGENS['nenhum_tecnico_ativo_foi_encontrado_neste_endereco'],
         }
 
     sem_ordens_abertas = [
@@ -105,5 +107,5 @@ async def buscar_tecnicos_disponiveis(usuario: UsuarioContexto) -> dict:
         "status": "SUCESSO",
         "tecnicos": selecionados,
         "criterio": criterio,
-        "mensagem": "Tecnicos disponiveis consultados com sucesso.",
+        "mensagem": MENSAGENS['tecnicos_disponiveis_consultados_com_sucesso'],
     }

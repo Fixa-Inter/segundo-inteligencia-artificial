@@ -1,5 +1,6 @@
 """Executa somente operações que passaram pelo juiz e produz confirmações factuais."""
 
+
 import logging
 from types import SimpleNamespace
 
@@ -7,6 +8,9 @@ from langchain_core.messages import AIMessage
 
 from app.services.operacoes import aprovacao_operacoes, resumo
 from app.observability.metricas import registrar_operacao
+
+from app.core.respostas import MENSAGENS, RESPOSTA_APROVACAO_INVALIDA
+from app.graph.respostas_padrao import texto_resultados, resultado_indeterminado
 
 registrador = logging.getLogger(__name__)
 
@@ -21,6 +25,9 @@ async def executar_servico(documento: dict, contexto: dict) -> dict:
     if tipo == "ocorrencia":
         from app.tools.ocorrencias.criarOcorrencia import processar_ocorrencia
         return await processar_ocorrencia(runtime, operacao_aprovada=dados)
+    if tipo == "evento":
+        from app.tools.eventos.criarEvento import processar_evento
+        return await processar_evento(runtime, operacao_aprovada=dados)
     if tipo == "feedback":
         from app.services.feedback import criar_feedback
         return await criar_feedback(contexto["usuario"], **dados)
@@ -29,39 +36,11 @@ async def executar_servico(documento: dict, contexto: dict) -> dict:
         from app.tools.ajuda_geral.edicoes import _executar_pendente
         acao = await obter_acao(contexto["session_id"], contexto["usuario"].usuario_id)
         if not acao:
-            return {"status": "ERRO_VALIDACAO", "mensagem": "A proposta de alteração não está mais disponível."}
+            return {"status": "ERRO_VALIDACAO", "mensagem": MENSAGENS['a_proposta_de_alteracao_nao_esta_mais_disponivel']}
         return await _executar_pendente(
             contexto, contexto["usuario"], contexto["session_id"], acao, operacao_aprovada=dados,
         )
     raise ValueError("Operação não permitida.")
-
-
-def resultado_indeterminado() -> dict:
-    return {"status": "RESULTADO_INDETERMINADO",
-            "mensagem": "O processamento pode ter ocorrido. Confira seus registros antes de repetir o pedido."}
-
-
-def texto_resultados(resultados: list[dict]) -> str:
-    mensagens = []
-    nomes = {"solicitacao": "Solicitação cadastrada com sucesso.",
-             "ocorrencia": "Ocorrência cadastrada com sucesso.",
-             "feedback": "Feedback registrado com sucesso.", "edicao": "Alteração realizada com sucesso."}
-    for item in resultados:
-        resultado = item["resultado"]
-        status = resultado.get("status")
-        if status == "SUCESSO":
-            mensagem = nomes[item["tipo"]]
-        elif status == "RESULTADO_INDETERMINADO":
-            mensagem = resultado_indeterminado()["mensagem"]
-        else:
-            mensagem = {
-                "solicitacao": "A solicitação não foi enviada. Confira os dados e sua permissão antes de tentar novamente.",
-                "ocorrencia": "A ocorrência não foi enviada. Confira os dados e sua permissão antes de tentar novamente.",
-                "feedback": "O feedback não foi registrado. Confira o comentário e sua permissão antes de tentar novamente.",
-                "edicao": "A alteração não foi realizada. Confira a proposta e sua permissão antes de tentar novamente.",
-            }[item["tipo"]]
-        mensagens.append(mensagem)
-    return "\n\n".join(mensagens)
 
 
 def resposta_resultados(resultados: list[dict]) -> dict:
@@ -79,7 +58,7 @@ async def executar_operacoes(estado: dict, runtime) -> dict:
     operacoes = estado.get("operacoes_pendentes", [])
     if (not operacoes or estado.get("veredito") != "aprovado" or estado.get("erro")
             or estado.get("aprovacao_operacoes") != aprovacao_operacoes(operacoes, contexto)):
-        texto = "Não foi possível validar a aprovação. Nenhuma nova operação foi enviada."
+        texto = RESPOSTA_APROVACAO_INVALIDA
         return {"erro": "Não foi possível validar a aprovação da operação.",
                 "resposta_especialista": texto, "resposta_candidata": texto}
 
@@ -117,7 +96,7 @@ async def executar_operacoes(estado: dict, runtime) -> dict:
         resultados.append(item)
         contexto.setdefault("resultados_operacoes", []).append(item)
         if iniciou:
-            if operacao["tipo"] in {"solicitacao", "ocorrencia"}:
+            if operacao["tipo"] in {"solicitacao", "ocorrencia", "evento"}:
                 status = resultado["status"]
                 desfecho = ("success" if status == "SUCESSO" else
                             "indeterminate" if status == "RESULTADO_INDETERMINADO" else "error")

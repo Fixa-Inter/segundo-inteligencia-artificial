@@ -1,11 +1,14 @@
 """Consultas e mutações SQL com escopo do usuário autenticado."""
 
+
 from sqlalchemy import text
 
 from app.core.clients.postgres import executar_consulta, obter_motor
 from app.schemas import UsuarioContexto
 from app.schemas.imagem import LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem
 from app.services.gerais import obter_unidade_id
+
+from app.core.respostas import MENSAGENS
 
 
 CAMPOS_EDITAVEIS = {
@@ -23,7 +26,7 @@ FKS_FOTO = {
 
 def _validar_id(registro_id: int) -> None:
     if type(registro_id) is not int or registro_id <= 0:
-        raise ValueError("O ID do registro deve ser um inteiro positivo.")
+        raise ValueError(MENSAGENS['o_id_do_registro_deve_ser_um_inteiro_positivo'])
 
 
 def _sql_alvo(tipo: str, usuario: UsuarioContexto) -> str:
@@ -64,7 +67,7 @@ def _sql_alvo(tipo: str, usuario: UsuarioContexto) -> str:
               AND local.unidade_id = :unidade_id AND local.esta_ativo IS TRUE
               {responsavel}
         """
-    raise PermissionError("Perfil sem acesso a esse tipo de registro.")
+    raise PermissionError(MENSAGENS['perfil_sem_acesso_a_esse_tipo_de_registro'])
 
 
 async def localizar_registro(usuario: UsuarioContexto, tipo: str, registro_id: int) -> dict | None:
@@ -100,7 +103,7 @@ async def localizar_opcao(
               AND criador.unidade_id = :unidade_id
         """
     else:
-        raise ValueError("Campo relacional inválido.")
+        raise ValueError(MENSAGENS['campo_relacional_invalido'])
     linhas = await executar_consulta(usuario.tipo_acesso, sql, {
         "identificador": identificador, "unidade_id": unidade_id,
     })
@@ -112,11 +115,11 @@ async def alterar_solicitacao(
 ) -> dict | None:
     _validar_id(registro_id)
     if campo not in CAMPOS_EDITAVEIS and campo not in CAMPOS_RELACIONAIS:
-        raise ValueError("Campo não permitido para edição.")
+        raise ValueError(MENSAGENS['campo_nao_permitido_para_edicao'])
     if campo in CAMPOS_RELACIONAIS:
         _validar_id(valor)
     elif not isinstance(valor, str) or not valor.strip() or len(valor.strip()) > CAMPOS_EDITAVEIS[campo]:
-        raise ValueError("O novo valor está vazio ou excede o limite do campo.")
+        raise ValueError(MENSAGENS['o_novo_valor_esta_vazio_ou_excede_o_limite_do_campo'])
     unidade_id = await obter_unidade_id(usuario)
     validacao_destino = ""
     if campo == "local_unidade_id":
@@ -170,9 +173,9 @@ async def anexar_fotos(
 ) -> list[int] | None:
     _validar_id(registro_id)
     if tipo not in FKS_FOTO:
-        raise ValueError("Tipo de foto não permitido.")
+        raise ValueError(MENSAGENS['tipo_de_foto_nao_permitido'])
     if not urls or len(urls) > LIMITE_IMAGENS_POR_MENSAGEM:
-        raise ValueError("Envie de uma a três imagens.")
+        raise ValueError(MENSAGENS['envie_de_uma_a_tres_imagens'])
     urls = [validar_url_imagem(url) for url in urls]
     unidade_id = await obter_unidade_id(usuario)
     parametros = {

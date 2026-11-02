@@ -16,6 +16,9 @@ from app.observability.metricas import adicionar_resolucao_pendente
 from app.services.gerais import obter_unidade_id
 from app.services.operacoes import dados_cadastro, preparar_operacao
 
+from app.core.respostas import MENSAGENS
+from app.graph.respostas_padrao import escolher_resposta
+
 registrador = logging.getLogger(__name__)
 
 
@@ -41,9 +44,9 @@ async def salvar_rascunho_ocorrencia(
     """
     contexto, usuario, sessao_id = _contexto(runtime)
     if contexto.get("intencao_atual") not in {None, "ocorrencia"}:
-        return {"status": "INTENCAO_DIVERGENTE", "mensagem": "Prepare o tipo de registro solicitado nesta mensagem."}
+        return {"status": "INTENCAO_DIVERGENTE", "mensagem": MENSAGENS['prepare_o_tipo_de_registro_solicitado_nesta_mensagem']}
     if usuario.tipo_acesso not in {"tecnico", "gestor", "administrador"}:
-        return {"status": "ACESSO_NEGADO", "mensagem": "Perfil sem permissão para ocorrências."}
+        return {"status": "ACESSO_NEGADO", "mensagem": MENSAGENS['perfil_sem_permissao_para_ocorrencias']}
     dados = CriarOcorrenciaEntrada(
         local_endereco_id=local_endereco_id, categoria_equipamento_id=categoria_equipamento_id,
         categoria_problema_id=categoria_problema_id, titulo=titulo,
@@ -57,8 +60,8 @@ async def salvar_rascunho_ocorrencia(
             "proposta": metadados_proposta(rascunho),
             "imagens_recebidas": len(rascunho["imagens"]),
             "imagens_associadas_ao_rascunho": bool(rascunho["imagens"]),
-            "mensagem": "Mostre somente os dados pendentes. Não repita a confirmação dos campos já aceitos. "
-                        + ("A foto já foi recebida." if rascunho["imagens"] else "Ainda é necessária uma foto.")}
+            "mensagem": MENSAGENS['mostre_somente_os_dados_pendentes_nao_repita_a_confirmacao_dos_campos_ja']
+                        + (escolher_resposta(rascunho['imagens'], 'a_foto_ja_foi_recebida', 'ainda_e_necessaria_uma_foto'))}
 
 
 @tool
@@ -74,17 +77,17 @@ async def criar_ocorrencia(runtime: ToolRuntime) -> dict:
 async def processar_ocorrencia(runtime: ToolRuntime, *, operacao_aprovada: dict | None = None) -> dict:
     contexto, usuario, sessao_id = _contexto(runtime)
     if usuario.tipo_acesso not in {"tecnico", "gestor", "administrador"}:
-        return {"status": "ACESSO_NEGADO", "mensagem": "Perfil sem permissão para ocorrências."}
+        return {"status": "ACESSO_NEGADO", "mensagem": MENSAGENS['perfil_sem_permissao_para_ocorrencias']}
     rascunho = await obter_rascunho_solicitacao(sessao_id, usuario.usuario_id, tipo="ocorrencia")
     if not rascunho:
-        return {"status": "SEM_RASCUNHO", "mensagem": "Prepare e salve a proposta antes do cadastro."}
+        return {"status": "SEM_RASCUNHO", "mensagem": MENSAGENS['prepare_e_salve_a_proposta_antes_do_cadastro']}
     status = rascunho.get("status_fluxo")
     if status == "cadastrada":
-        return {"status": "SUCESSO", "ocorrencia_id": rascunho.get("ocorrencia_id_api"), "mensagem": "Ocorrência já cadastrada."}
+        return {"status": "SUCESSO", "ocorrencia_id": rascunho.get("ocorrencia_id_api"), "mensagem": MENSAGENS['ocorrencia_ja_cadastrada']}
     if status in {"enviando", "resultado_indeterminado"}:
-        return {"status": "RESULTADO_INDETERMINADO", "mensagem": "Consulte os registros antes de repetir o envio."}
+        return {"status": "RESULTADO_INDETERMINADO", "mensagem": MENSAGENS['consulte_os_registros_antes_de_repetir_o_envio']}
     if status not in {"aguardando_confirmacao", "aguardando_imagem", "erro_api"}:
-        return {"status": "RASCUNHO_INDISPONIVEL", "mensagem": "Rascunho indisponível para cadastro."}
+        return {"status": "RASCUNHO_INDISPONIVEL", "mensagem": MENSAGENS['rascunho_indisponivel_para_cadastro']}
     bloqueio = avaliar_confirmacao(rascunho, contexto)
     if bloqueio:
         if bloqueio["status"] == "CONFIRMACAO_PARCIAL":
@@ -96,7 +99,7 @@ async def processar_ocorrencia(runtime: ToolRuntime, *, operacao_aprovada: dict 
                 versao=rascunho["versao"], exigir_ativo=True,
             )
             if not atualizou:
-                return {"status": "RESULTADO_INDETERMINADO", "mensagem": "A proposta mudou. Releia os dados."}
+                return {"status": "RESULTADO_INDETERMINADO", "mensagem": MENSAGENS['a_proposta_mudou_releia_os_dados']}
             rascunho = {**rascunho, "dados_confirmados": aceitos}
         if rascunho.get("id") and rascunho.get("versao") and rascunho.get("tipo"):
             bloqueio["proposta"] = metadados_proposta(rascunho)
@@ -107,12 +110,12 @@ async def processar_ocorrencia(runtime: ToolRuntime, *, operacao_aprovada: dict 
         status_esperados={status}, tipo="ocorrencia", **controle,
     )
     if not confirmou:
-        return {"status": "RESULTADO_INDETERMINADO", "mensagem": "A proposta mudou. Confira os dados antes de repetir."}
+        return {"status": "RESULTADO_INDETERMINADO", "mensagem": MENSAGENS['a_proposta_mudou_confira_os_dados_antes_de_repetir']}
     if not rascunho.get("imagens"):
         await atualizar_rascunho_solicitacao(sessao_id, usuario.usuario_id,
             {"confirmado": True, "status_fluxo": "aguardando_imagem"},
             status_esperados={status}, tipo="ocorrencia", **controle)
-        return {"status": "AGUARDANDO_INFORMACAO", "mensagem": "Proposta confirmada. Envie pelo menos uma foto."}
+        return {"status": "AGUARDANDO_INFORMACAO", "mensagem": MENSAGENS['proposta_confirmada_envie_pelo_menos_uma_foto']}
     dados = CriarOcorrenciaEntrada.model_validate(rascunho["dados"])
     if operacao_aprovada is None:
         return await preparar_operacao(
@@ -120,24 +123,24 @@ async def processar_ocorrencia(runtime: ToolRuntime, *, operacao_aprovada: dict 
             dados_cadastro(rascunho),
         )
     if dados_cadastro(rascunho) != operacao_aprovada:
-        return {"status": "ERRO_VALIDACAO", "mensagem": "A proposta ou suas fotos mudaram após a aprovação. Confira os dados novamente."}
+        return {"status": "ERRO_VALIDACAO", "mensagem": MENSAGENS['a_proposta_ou_suas_fotos_mudaram_apos_a_aprovacao_confira_os_dados']}
     unidade_id = await obter_unidade_id(usuario)
     async with abrir_cliente_qdrant() as cliente:
         try:
             await validar_selecao(QDRANT_COLECAO_LOCAL, dados.local_endereco_id, unidade_id, cliente)
             await validar_selecao(QDRANT_COLECAO_CATEGORIA, dados.categoria_equipamento_id, unidade_id, cliente)
         except ValueError:
-            return {"status": "ERRO_VALIDACAO", "mensagem": "Local ou categoria indisponível. Consulte e confirme novamente."}
+            return {"status": "ERRO_VALIDACAO", "mensagem": MENSAGENS['local_ou_categoria_indisponivel_consulte_e_confirme_novamente']}
     iniciou = await atualizar_rascunho_solicitacao(sessao_id, usuario.usuario_id,
         {"status_fluxo": "enviando", "confirmado": True}, status_esperados={status}, tipo="ocorrencia", **controle)
     if not iniciou:
-        return {"status": "RESULTADO_INDETERMINADO", "mensagem": "Outro envio pode estar em andamento. Consulte os registros."}
+        return {"status": "RESULTADO_INDETERMINADO", "mensagem": MENSAGENS['outro_envio_pode_estar_em_andamento_consulte_os_registros']}
     try:
         resultado = await adicionar_ocorrencia(dados, usuario.access_token,
             usuario_id=usuario.usuario_id, imagens=rascunho["imagens"])
     except Exception:
         registrador.exception("Falha ao enviar ocorrência")
-        resultado = {"status": "RESULTADO_INDETERMINADO", "mensagem": "Consulte os registros antes de repetir o envio."}
+        resultado = {"status": "RESULTADO_INDETERMINADO", "mensagem": MENSAGENS['consulte_os_registros_antes_de_repetir_o_envio']}
     status_resultado = resultado.get("status", "ERRO_FERRAMENTA")
     resultado_operacao = (
         "success" if status_resultado == "SUCESSO"

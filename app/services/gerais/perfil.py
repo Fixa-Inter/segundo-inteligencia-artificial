@@ -2,6 +2,8 @@ import httpx
 
 from app.core.configuracao import FIXA_URL_BASE_API
 
+from app.core.respostas import MENSAGENS
+
 
 class ErroConsultaPerfil(Exception):
     def __init__(self, status_code: int, mensagem: str):
@@ -14,13 +16,13 @@ async def consultar_perfil(access_token: str) -> dict:
     if not FIXA_URL_BASE_API:
         raise ErroConsultaPerfil(
             500,
-            "FIXA_API_BASE_URL não foi configurada.",
+            MENSAGENS['fixa_api_base_url_nao_foi_configurada'],
         )
 
     if not access_token.strip():
         raise ErroConsultaPerfil(
             401,
-            "Token de acesso não informado.",
+            MENSAGENS['token_de_acesso_nao_informado'],
         )
 
     try:
@@ -38,31 +40,31 @@ async def consultar_perfil(access_token: str) -> dict:
     except httpx.TimeoutException:
         raise ErroConsultaPerfil(
             503,
-            "A consulta do perfil excedeu o tempo limite.",
+            MENSAGENS['a_consulta_do_perfil_excedeu_o_tempo_limite'],
         ) from None
 
     except httpx.HTTPError:
         raise ErroConsultaPerfil(
             503,
-            "Não foi possível conectar à API FIXA.",
+            MENSAGENS['nao_foi_possivel_conectar_a_api_fixa'],
         ) from None
 
     if resposta.status_code == 401:
         raise ErroConsultaPerfil(
             401,
-            "Token inválido ou expirado.",
+            MENSAGENS['token_invalido_ou_expirado'],
         )
 
     if resposta.status_code == 403:
         raise ErroConsultaPerfil(
             403,
-            "Usuário sem permissão de acesso.",
+            MENSAGENS['usuario_sem_permissao_de_acesso'],
         )
 
     if resposta.status_code != 200:
         raise ErroConsultaPerfil(
             502,
-            "A API FIXA não conseguiu consultar o perfil.",
+            MENSAGENS['a_api_fixa_nao_conseguiu_consultar_o_perfil'],
         )
 
     try:
@@ -70,13 +72,13 @@ async def consultar_perfil(access_token: str) -> dict:
     except ValueError:
         raise ErroConsultaPerfil(
             502,
-            "A API FIXA retornou um perfil inválido.",
+            MENSAGENS['a_api_fixa_retornou_um_perfil_invalido'],
         ) from None
 
     if not isinstance(dados, dict):
         raise ErroConsultaPerfil(
             502,
-            "A API FIXA retornou um perfil em formato inválido.",
+            MENSAGENS['a_api_fixa_retornou_um_perfil_em_formato_invalido'],
         )
 
     return dados

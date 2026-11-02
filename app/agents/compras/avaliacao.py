@@ -1,5 +1,6 @@
 """Confere requisitos somente contra o texto das promoções recebidas."""
 
+
 import json
 import re
 import unicodedata
@@ -11,6 +12,8 @@ from pydantic import BaseModel, Field
 from app.agents.modelos import llm_especialista
 
 from .coleta import DadosCompra, dados_persistiveis
+
+from app.core.respostas import MENSAGENS
 
 
 class Verificacao(BaseModel):
@@ -56,7 +59,7 @@ def oferta_sem_avaliacao(dados: DadosCompra, produto: dict) -> dict | None:
             "descricao": texto_curto(produto.get("title") or produto.get("short_description"), 130),
             "preco": produto.get("price"), "url": url, "confirmados": [],
             "ausentes": [*(dados.requisitos_obrigatorios or []), *([dados.exclusoes] if dados.exclusoes else [])],
-            "motivo": "Promoção encontrada para comparação; confirme os requisitos ausentes."}
+            "motivo": MENSAGENS['promocao_encontrada_para_comparacao_confirme_os_requisitos_ausentes']}
 
 
 async def avaliar(dados: DadosCompra, produtos: list[dict]) -> tuple[list[dict], str]:
@@ -92,6 +95,6 @@ async def avaliar(dados: DadosCompra, produtos: list[dict]) -> tuple[list[dict],
         oferta["confirmados"] = confirmados
         oferta["ausentes"] = [r for r in requisitos_validos if r not in confirmados]
         if not oferta["ausentes"]:
-            oferta["motivo"] = "Requisitos indicados no anúncio; compare preço, modelo e acessórios."
+            oferta["motivo"] = MENSAGENS['requisitos_indicados_no_anuncio_compare_preco_modelo_e_acessorios']
         saida.append(oferta)
     return saida, avaliacao.diferencas[:250]

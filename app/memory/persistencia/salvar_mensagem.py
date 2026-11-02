@@ -1,5 +1,3 @@
-import json
-
 from bson import BSON
 from fastapi import HTTPException, status
 from pymongo.errors import PyMongoError
@@ -15,6 +13,8 @@ from app.services.visualizacoes.publicacao import (
     validar_visualizacao_publica, LimiteVisualizacaoExcedido,
     MAXIMO_BYTES_CONVERSA_COM_VISUALIZACAO,
 )
+
+from app.core.respostas import MENSAGENS
 
 
 async def salvar_mensagem(
@@ -40,11 +40,11 @@ async def salvar_mensagem(
     except (PyMongoError, TimeoutError, OSError, RuntimeError):
         if visualizacao is None:
             raise
-        raise HTTPException(status_code=503, detail="Não foi possível acessar a conversa para salvar a resposta.") from None
+        raise HTTPException(status_code=503, detail=MENSAGENS['nao_foi_possivel_acessar_a_conversa_para_salvar_a_resposta']) from None
     if not documento_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Inicie uma conversa para salvar a mensagem!",
+            detail=MENSAGENS['inicie_uma_conversa_para_salvar_a_mensagem'],
             headers={
                 "WWW-Authenticate": "Bearer",
             },
@@ -70,6 +70,7 @@ async def salvar_mensagem(
         async with abrir_cliente_mongo() as cliente:
             banco = cliente[MONGO_BANCO_DADOS]
             colecao_sessoes = banco[MONGO_COLECAO_SESSOES]
+            mensagem["timestamp"] = agora()
             if visualizacao is not None:
                 await _salvar_com_visualizacao(colecao_sessoes, documento_id, sessao_id, usuario_id, mensagem)
             else:
@@ -77,14 +78,14 @@ async def salvar_mensagem(
                     {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
                     {
                         "$push": {"mensagens": mensagem},
-                        "$set": {"atualizada_em": agora()},
+                        "$set": {"atualizada_em": mensagem["timestamp"]},
                     },
                 )
     except (PyMongoError, TimeoutError, OSError, RuntimeError):
         if visualizacao is None:
             raise
         raise HTTPException(status_code=503, detail=(
-            "Não foi possível confirmar a gravação da resposta. Consulte o histórico antes de repetir."
+            MENSAGENS['nao_foi_possivel_confirmar_a_gravacao_da_resposta_consulte_o_historico_antes']
         )) from None
 
     if papel == "human" and imagens_validas and associar_imagens:
@@ -97,8 +98,8 @@ async def salvar_mensagem(
 
 async def _salvar_com_visualizacao(colecao, documento_id, sessao_id, usuario_id, mensagem):
     if len(BSON.encode(mensagem)) > MAXIMO_BYTES_CONVERSA_COM_VISUALIZACAO:
-        raise HTTPException(status_code=413, detail="A resposta excede o limite de tamanho da conversa.")
-    instante = agora()
+        raise HTTPException(status_code=413, detail=MENSAGENS['a_resposta_excede_o_limite_de_tamanho_da_conversa'])
+    instante = mensagem["timestamp"]
     base = {"_id": documento_id, "session_id": sessao_id, "user_id": usuario_id, "esta_ativo": True}
     proximo = {"$mergeObjects": ["$$ROOT", {
         "mensagens": {"$concatArrays": [{"$ifNull": ["$mensagens", []]}, {"$literal": [mensagem]}]},
@@ -124,17 +125,21 @@ async def _salvar_com_visualizacao(colecao, documento_id, sessao_id, usuario_id,
         }}})
     except (PyMongoError, TimeoutError, OSError):
         raise HTTPException(status_code=503, detail=(
-            "Não foi possível confirmar a gravação da resposta. Consulte o histórico antes de repetir."
+            MENSAGENS['nao_foi_possivel_confirmar_a_gravacao_da_resposta_consulte_o_historico_antes']
         )) from None
     if existente is None:
-        raise HTTPException(status_code=404, detail="Conversa não encontrada.")
+        raise HTTPException(status_code=404, detail=MENSAGENS['conversa_nao_encontrada'])
     anteriores = existente.get("mensagens", [])
     if anteriores:
-        if json.dumps(anteriores, sort_keys=True) == json.dumps([mensagem], sort_keys=True):
+        # Uma repetição idêntica conserva o instante da primeira gravação.
+        if len(anteriores) == 1 and (
+            {k: v for k, v in anteriores[0].items() if k != "timestamp"}
+            == {k: v for k, v in mensagem.items() if k != "timestamp"}
+        ):
             return
-        raise HTTPException(status_code=409, detail="Já existe uma resposta diferente para este turno.")
+        raise HTTPException(status_code=409, detail=MENSAGENS['ja_existe_uma_resposta_diferente_para_este_turno'])
     raise HTTPException(status_code=413, detail=(
-        "A conversa excederia 8 MiB. Inicie outra conversa para gerar a visualização."
+        MENSAGENS['a_conversa_excederia_8_mib_inicie_outra_conversa_para_gerar_a_visualizacao']
     ))
 
 
@@ -143,7 +148,7 @@ async def marcar_confirmacao_mensagem(
 ) -> None:
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if not documento_id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversa não encontrada.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=MENSAGENS['conversa_nao_encontrada'])
 
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
@@ -157,4 +162,4 @@ async def marcar_confirmacao_mensagem(
             {"$set": {"mensagens.$.confirmacao": "sim"}},
         )
     if resultado.matched_count == 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversa não encontrada.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=MENSAGENS['conversa_nao_encontrada'])

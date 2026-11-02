@@ -1,5 +1,6 @@
 """Consultas de métricas e KPIs de solicitações (problemas) na camada gold."""
 
+
 import logging
 from datetime import date, datetime, time
 from typing import Any
@@ -12,6 +13,8 @@ from app.services.indicadores.gerais.databricks import (
 )
 from app.services.indicadores.gerais.unidade import validar_unidade_id
 
+from app.core.respostas import MENSAGENS
+
 
 registrador = logging.getLogger(__name__)
 
@@ -20,12 +23,12 @@ def _validar_periodo(inicio: date, fim: date) -> dict | None:
     if type(inicio) is not date or type(fim) is not date:
         return {
             "status": "ERRO_VALIDACAO",
-            "mensagem": "Informe início e fim do período como datas válidas.",
+            "mensagem": MENSAGENS['informe_inicio_e_fim_do_periodo_como_datas_validas'],
         }
     if inicio >= fim:
         return {
             "status": "ERRO_VALIDACAO",
-            "mensagem": "O início deve ser anterior ao fim exclusivo do período.",
+            "mensagem": MENSAGENS['o_inicio_deve_ser_anterior_ao_fim_exclusivo_do_periodo'],
         }
     return None
 
@@ -50,31 +53,31 @@ async def _consultar(
     except TimeoutConsultaDatabricks:
         return {
             "status": "TIMEOUT",
-            "mensagem": "A consulta de indicadores excedeu o tempo limite.",
+            "mensagem": MENSAGENS['a_consulta_de_indicadores_excedeu_o_tempo_limite'],
         }
     except ConfiguracaoDatabricksAusente as erro:
         registrador.error("Configuração Databricks ausente: %s", erro)
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "A consulta de indicadores não está configurada.",
+            "mensagem": MENSAGENS['a_consulta_de_indicadores_nao_esta_configurada'],
         }
     except ErroDatabricks:
         registrador.exception("Falha ao consultar indicador no Databricks")
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "Não foi possível consultar o indicador no Databricks.",
+            "mensagem": MENSAGENS['nao_foi_possivel_consultar_o_indicador_no_databricks'],
         }
     except Exception:
         registrador.exception("Falha inesperada ao consultar indicador no Databricks")
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "Não foi possível consultar o indicador no Databricks.",
+            "mensagem": MENSAGENS['nao_foi_possivel_consultar_o_indicador_no_databricks'],
         }
 
     if not linhas:
         return {
             "status": "SEM_RESULTADO",
-            "mensagem": "A consulta não retornou resultados.",
+            "mensagem": MENSAGENS['a_consulta_nao_retornou_resultados'],
         }
     return linhas if retornar_linhas else linhas[0]
 
@@ -310,7 +313,7 @@ async def obter_solicitacoes_por_periodo(
     if granularidade not in {"dia", "mes", "ano"}:
         return {
             "status": "ERRO_VALIDACAO",
-            "mensagem": "Granularidade inválida; use dia, mes ou ano.",
+            "mensagem": MENSAGENS['granularidade_invalida_use_dia_mes_ou_ano'],
         }
     linhas = await _consultar(
         """

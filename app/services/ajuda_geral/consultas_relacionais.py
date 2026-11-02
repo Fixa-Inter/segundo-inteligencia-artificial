@@ -1,5 +1,6 @@
 """Consultas exatas no FIXA, com descrições obtidas do Qdrant."""
 
+
 from datetime import date, datetime, timedelta
 
 from qdrant_client import models
@@ -21,10 +22,12 @@ from app.services.ajuda_geral.consultas import (
     _validar_usuario,
 )
 
+from app.core.respostas import MENSAGENS
+
 
 def _somente_tecnico_gestor(usuario: UsuarioContexto) -> None:
     if usuario.tipo_acesso not in {"tecnico", "gestor", "administrador"}:
-        raise PermissionError("Consulta disponível apenas para técnicos e gestores.")
+        raise PermissionError(MENSAGENS['consulta_disponivel_apenas_para_tecnicos_e_gestores'])
 
 
 def _texto_busca(valor: str | None) -> str | None:
@@ -54,7 +57,7 @@ async def _consultar(
 
     ids = [linha["entidade_id"] for linha in linhas]
     if any(type(identificador) is not int or identificador <= 0 for identificador in ids):
-        raise RuntimeError("O banco retornou um ID inválido.")
+        raise RuntimeError(MENSAGENS['o_banco_retornou_um_id_invalido'])
     condicao = models.FieldCondition(
         key=configuracao.QDRANT_CAMPO_ENTIDADE_ID,
         match=models.MatchAny(any=list(set(ids))),
@@ -120,7 +123,7 @@ async def consultar_situacao_problema(
     try:
         _validar_usuario(usuario)
         if type(problema_id) is not int or problema_id <= 0:
-            raise ValueError("problema_id deve ser positivo.")
+            raise ValueError(MENSAGENS['problema_id_deve_ser_positivo'])
         filtro_dono = "AND p.usuario_id = :usuario_id" if usuario.tipo_acesso == "solicitante" else ""
         return await _consultar(usuario, "problema", f"""
             SELECT p.id AS entidade_id,
@@ -145,7 +148,7 @@ async def consultar_modelos_por_marca_categoria(
 ) -> dict:
     try:
         if marca is None and categoria is None:
-            raise ValueError("Informe marca ou categoria.")
+            raise ValueError(MENSAGENS['informe_marca_ou_categoria'])
         filtros = []
         parametros = {}
         if marca is not None:
@@ -218,7 +221,7 @@ async def encontrar_codigo_equipamento(
                 filtros.append(f"{campo}.nome ILIKE :{campo}")
                 parametros[campo] = _texto_busca(valor)
         if not filtros:
-            raise ValueError("Informe ao menos modelo, local, marca ou categoria.")
+            raise ValueError(MENSAGENS['informe_ao_menos_modelo_local_marca_ou_categoria'])
         return await _consultar(
             usuario, "equipamento",
             _EQUIPAMENTO_BASE + " AND " + " AND ".join(filtros)
@@ -274,7 +277,7 @@ async def listar_tarefas_da_ordem(
         _validar_usuario(usuario)
         _somente_tecnico_gestor(usuario)
         if type(ordem_servico_id) is not int or ordem_servico_id <= 0:
-            raise ValueError("ordem_servico_id deve ser positivo.")
+            raise ValueError(MENSAGENS['ordem_servico_id_deve_ser_positivo'])
         return await _consultar(usuario, "tarefa", """
             SELECT tarefa.id AS entidade_id, tarefa.ordem_servico_id,
                    CASE tarefa.status_ordem_servico
@@ -301,7 +304,7 @@ async def listar_observacoes_da_ordem(
         _validar_usuario(usuario)
         _somente_tecnico_gestor(usuario)
         if type(ordem_servico_id) is not int or ordem_servico_id <= 0:
-            raise ValueError("ordem_servico_id deve ser positivo.")
+            raise ValueError(MENSAGENS['ordem_servico_id_deve_ser_positivo'])
         return await _consultar(usuario, "observacao_conclusao", """
             SELECT observacao.id AS entidade_id, observacao.ordem_servico_id,
                    CASE observacao.dificuldade WHEN 1 THEN 'Fácil'
@@ -328,9 +331,9 @@ async def listar_eventos_por_local_e_periodo(
         _validar_usuario(usuario)
         _somente_tecnico_gestor(usuario)
         if not isinstance(data_inicio, date) or not isinstance(data_fim, date):
-            raise ValueError("Informe datas válidas.")
+            raise ValueError(MENSAGENS['informe_datas_validas'])
         if data_inicio > data_fim or data_fim == date.max:
-            raise ValueError("O período informado é inválido.")
+            raise ValueError(MENSAGENS['o_periodo_informado_e_invalido'])
         return await _consultar(usuario, "evento", """
             SELECT evento.id AS entidade_id, local.nome AS local,
                    evento.data_hora_inicio, evento.data_hora_fim

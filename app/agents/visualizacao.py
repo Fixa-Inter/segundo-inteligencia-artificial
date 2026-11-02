@@ -9,6 +9,8 @@ from app.services.visualizacoes.limites import MAXIMO_CONSULTAS_POR_EXECUCAO
 
 from app.agents.agentsResult import VisualizacaoResultado
 
+from app.core.respostas import MENSAGENS
+
 
 class LimiteConsultasVisualizacao(ToolCallLimitMiddleware):
     """Orçamento compartilhado das seis tools, contado antes do lote executar.
@@ -30,8 +32,7 @@ class LimiteConsultasVisualizacao(ToolCallLimitMiddleware):
             conteudo = ResultadoConsultaVisualizacao(
                 status="ERRO_VALIDACAO",
                 mensagem=(
-                    "Limite de consultas desta execução atingido. Finalize com os resultados "
-                    "já obtidos ou peça um recorte mais específico; não faça novas consultas analíticas."
+                    MENSAGENS['limite_de_consultas_desta_execucao_atingido_finalize_com_os_resultados_ja_obtidos']
                 ),
             ).model_dump_json()
             atualizacao["messages"] = [

@@ -27,6 +27,8 @@ from app.agents.prompts.reutilizaveis import (
 from app.services.gerais.jev import consultar_jev, ler_choice, ler_noul
 from app.services.operacoes import aprovacao_operacoes
 
+from app.graph.respostas_padrao import resposta_padrao_validada
+
 
 POLITICAS_PERFIL = {
     "solicitante": SOLICITANTE_INSTRUCAO,
@@ -312,6 +314,14 @@ async def _julgar_resposta(
             ),
         }
 
+    padrao = resposta_padrao_validada(estado) if visualizacao is None else None
+    if padrao:
+        # O texto fixo do backend só informa uma limitação, sem executar ações.
+        # O guardrail de saída continua obrigatório após esta validação.
+        return {"veredito": "aprovado", "resposta_especialista": padrao, "resposta_candidata": padrao,
+                "feedback_juiz": "Resposta padrão de limitação validada pelo backend.",
+                "tentativas": estado.get("tentativas", 0), "erro": None}
+
     if not resposta:
         return {
             "veredito": "bloqueado",
@@ -333,7 +343,7 @@ async def _julgar_resposta(
     )
     situacao_fluxos = {
         tipo: {campo: proposta.get(campo) for campo in ("id", "status_fluxo", "status", "pausado")}
-        for tipo in ("solicitacao_pendente", "ocorrencia_pendente", "ajuda_geral_pendente")
+        for tipo in ("solicitacao_pendente", "ocorrencia_pendente", "evento_pendente", "ajuda_geral_pendente")
         if isinstance(proposta := estado.get(tipo), dict)
     }
 

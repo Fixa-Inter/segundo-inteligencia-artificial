@@ -23,6 +23,8 @@ from app.observability.metricas import (
     restaurar_resolucoes_pendentes,
 )
 
+from app.core.respostas import MENSAGENS
+
 
 async def _processar_chat(
     dados: ConversaEntrada,
@@ -31,7 +33,7 @@ async def _processar_chat(
     if usuario.tipo_acesso.strip().lower() not in PERFIS_VALIDOS:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Perfil sem permissão de acesso ao chat.",
+            detail=MENSAGENS['perfil_sem_permissao_de_acesso_ao_chat'],
         )
 
     if dados.thread_id is None:
@@ -47,7 +49,7 @@ async def _processar_chat(
         if not acessivel:
             raise HTTPException(
                 status_code=404,
-                detail="Conversa não encontrada.",
+                detail=MENSAGENS['conversa_nao_encontrada'],
             )
 
     
@@ -63,7 +65,7 @@ async def _processar_chat(
     if not isinstance(resposta, str) or not resposta.strip():
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="A Manu não conseguiu gerar uma resposta. Sua mensagem foi preservada na conversa.",
+            detail=MENSAGENS['a_manu_nao_conseguiu_gerar_uma_resposta_sua_mensagem_foi_preservada_na'],
         )
 
     visualizacao = resultado.get("visualizacao_publica")
@@ -73,7 +75,7 @@ async def _processar_chat(
             or resultado.get("intencao") != "visualizacao"
             or resultado.get("erro") or resultado.get("saida_bloqueada")
         ):
-            raise HTTPException(status_code=502, detail="Visualização indisponível para esta resposta.")
+            raise HTTPException(status_code=502, detail=MENSAGENS['visualizacao_indisponivel_para_esta_resposta'])
         visualizacao = validar_visualizacao_publica(visualizacao)
     return ConversaSaida(
         thread_id=dados.thread_id,

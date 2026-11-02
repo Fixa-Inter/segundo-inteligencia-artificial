@@ -34,6 +34,8 @@ from app.observability.metricas import (
     marcar_falha_requisicao,
 )
 
+from app.core.respostas import MENSAGENS
+
 
 Perfil = Literal[
     "solicitante",
@@ -56,12 +58,12 @@ def criar_estado_inicial(
 ) -> EstadoGrafo:
 
     if not mensagens:
-        raise ValueError("A mensagem não pode estar vazia.")
+        raise ValueError(MENSAGENS['a_mensagem_nao_pode_estar_vazia'])
 
     perfil_normalizado = usuario.tipo_acesso.strip().lower()
 
     if perfil_normalizado not in PERFIS_VALIDOS:
-        raise ValueError("O perfil de usuário é inválido.")
+        raise ValueError(MENSAGENS['o_perfil_de_usuario_e_invalido'])
 
     perfil = cast(Perfil, perfil_normalizado)
 
@@ -86,6 +88,7 @@ def criar_estado_inicial(
         "mensagem_anonimizada": "",
         "mapa_pii": {},
         "motivo_bloqueio": None,
+        "motivo_resposta_padrao": None,
         "justificativa_roteamento": "",
         "veredito": None,
         "intencao": None,
@@ -109,7 +112,7 @@ async def executar_grafo(
     usuario_id = usuario.usuario_id
 
     if not thread_id:
-        raise ValueError("O thread_id não pode estar vazio.")
+        raise ValueError(MENSAGENS['o_thread_id_nao_pode_estar_vazio'])
 
     sessao_id_interno = (
         f"{usuario_id}:{thread_id}"
@@ -165,6 +168,9 @@ async def executar_grafo(
     estado_inicial["ocorrencia_pendente"] = await obter_rascunho_solicitacao(
         thread_id, usuario_id, tipo="ocorrencia",
     )
+    estado_inicial["evento_pendente"] = await obter_rascunho_solicitacao(
+        thread_id, usuario_id, tipo="evento",
+    )
     estado_inicial["ajuda_geral_pendente"] = await obter_acao(thread_id, usuario_id)
     estado_inicial["analise_compra_pendente"] = await obter_analise_compra(thread_id, usuario_id)
     estado_inicial["imagens_recebidas"] = bool(imagens)
@@ -216,7 +222,7 @@ async def executar_grafo(
         marcar_falha_requisicao()
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="A Manu não conseguiu gerar uma resposta. Sua mensagem foi preservada na conversa.",
+            detail=MENSAGENS['a_manu_nao_conseguiu_gerar_uma_resposta_sua_mensagem_foi_preservada_na'],
         )
 
     try:
@@ -224,7 +230,7 @@ async def executar_grafo(
     except LimiteVisualizacaoExcedido as erro:
         raise HTTPException(status_code=413, detail=str(erro)) from None
     except (ValueError, TypeError, KeyError):
-        raise HTTPException(status_code=502, detail="Não foi possível validar a visualização para entrega.") from None
+        raise HTTPException(status_code=502, detail=MENSAGENS['nao_foi_possivel_validar_a_visualizacao_para_entrega']) from None
     visualizacao_json = visualizacao.model_dump(mode="json") if visualizacao is not None else None
     try:
         await salvar_mensagem(
@@ -237,7 +243,7 @@ async def executar_grafo(
         if not resultado.get("resultados_operacoes"):
             raise
         logging.getLogger(__name__).exception("Resultado da operação sem persistir mensagem do chat")
-        resultado["resposta_final"] += "\n\nNão consegui atualizar o histórico da conversa. O resultado da operação informado acima permanece válido."
+        resultado["resposta_final"] += MENSAGENS['nao_consegui_atualizar_o_historico_da_conversa_o_resultado_da_operacao_informado']
         resultado["confirmacao"] = "nao"
         return resultado
     # Só fica disponível à API depois de confirmar a persistência da mensagem.
@@ -256,7 +262,7 @@ async def executar_grafo(
         if apresentada and len(propostas_apresentadas) == 1:
             resultado["confirmacao"] = "sim"
 
-    if not propostas_apresentadas and resultado.get("intencao") in {"solicitacao", "ocorrencia"}:
+    if not propostas_apresentadas and resultado.get("intencao") in {"solicitacao", "ocorrencia", "evento"}:
         rascunho = resultado.get(f"{resultado['intencao']}_pendente")
         if (
             isinstance(rascunho, dict)

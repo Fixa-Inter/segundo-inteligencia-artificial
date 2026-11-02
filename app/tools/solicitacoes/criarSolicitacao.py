@@ -20,6 +20,8 @@ from app.services.gerais import obter_unidade_id
 from app.services.operacoes import dados_cadastro, preparar_operacao
 from app.tools.toolsRequest import CriarSolicitacaoEntrada
 
+from app.core.respostas import MENSAGENS
+
 
 registrador = logging.getLogger(__name__)
 
@@ -29,7 +31,7 @@ class _ArgumentosCriarSolicitacao(CriarSolicitacaoEntrada):
     @classmethod
     def validar_titulo(cls, valor):
         if len(valor.split()) > 10:
-            raise ValueError("O título deve conter no máximo 10 palavras.")
+            raise ValueError(MENSAGENS['o_titulo_deve_conter_no_maximo_10_palavras'])
         return valor
 
     @model_validator(mode="before")
@@ -43,13 +45,13 @@ class _ArgumentosCriarSolicitacao(CriarSolicitacaoEntrada):
 def _contexto(runtime: ToolRuntime) -> tuple[dict[str, Any], UsuarioContexto, str]:
     contexto = runtime.context
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
-        raise ValueError("Forneça UsuarioContexto em context['usuario'].")
+        raise ValueError(MENSAGENS['forneca_usuariocontexto_em_context_usuario_2'])
 
     sessao_id = contexto.get("session_id")
     if not isinstance(sessao_id, str) or not sessao_id.strip():
-        raise ValueError("A sessão atual não foi informada ao agente.")
+        raise ValueError(MENSAGENS['a_sessao_atual_nao_foi_informada_ao_agente'])
     if not isinstance(contexto.get("turno_id"), str) or not contexto["turno_id"].strip():
-        raise ValueError("O turno atual não foi informado ao agente.")
+        raise ValueError(MENSAGENS['o_turno_atual_nao_foi_informado_ao_agente'])
 
     return contexto, contexto["usuario"], sessao_id
 
@@ -91,11 +93,11 @@ async def salvar_rascunho_solicitacao(
     """
     contexto, usuario, sessao_id = _contexto(runtime)
     if contexto.get("intencao_atual") not in {None, "solicitacao"}:
-        return {"status": "INTENCAO_DIVERGENTE", "mensagem": "Prepare o tipo de registro solicitado nesta mensagem."}
+        return {"status": "INTENCAO_DIVERGENTE", "mensagem": MENSAGENS['prepare_o_tipo_de_registro_solicitado_nesta_mensagem']}
     if usuario.tipo_acesso.lower() not in {"tecnico", "solicitante"}:
         return {
             "status": "ACESSO_NEGADO",
-            "mensagem": "Somente técnicos e solicitantes podem criar solicitações.",
+            "mensagem": MENSAGENS['somente_tecnicos_e_solicitantes_podem_criar_solicitacoes'],
         }
 
     dados = _ArgumentosCriarSolicitacao(
@@ -115,7 +117,7 @@ async def salvar_rascunho_solicitacao(
     return {
         "status": "RASCUNHO_SALVO",
         "proposta": metadados_proposta(rascunho),
-        "mensagem": "Apresente somente os dados pendentes. Preserve os campos já confirmados; não peça autorização de cadastro novamente.",
+        "mensagem": MENSAGENS['apresente_somente_os_dados_pendentes_preserve_os_campos_ja_confirmados_nao_peca'],
         "dados_salvos": rascunho["dados"],
         "imagens_recebidas": len(rascunho.get("imagens", [])),
         "imagens_associadas_ao_rascunho": bool(rascunho.get("imagens")),
@@ -138,14 +140,14 @@ async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict
     if usuario.tipo_acesso.lower() not in {"tecnico", "solicitante"}:
         return {
             "status": "ACESSO_NEGADO",
-            "mensagem": "Somente técnicos e solicitantes podem criar solicitações.",
+            "mensagem": MENSAGENS['somente_tecnicos_e_solicitantes_podem_criar_solicitacoes'],
         }
 
     rascunho = await obter_rascunho_solicitacao(sessao_id, usuario.usuario_id)
     if not rascunho:
         return {
             "status": "SEM_RASCUNHO",
-            "mensagem": "Não há uma proposta salva para cadastrar.",
+            "mensagem": MENSAGENS['nao_ha_uma_proposta_salva_para_cadastrar'],
         }
 
     status_fluxo = rascunho.get("status_fluxo")
@@ -154,20 +156,19 @@ async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict
             "status": "SUCESSO",
             "problema_id": rascunho.get("problema_id_api"),
             "status_backend": rascunho.get("status_backend"),
-            "mensagem": "Esta solicitação já foi cadastrada.",
+            "mensagem": MENSAGENS['esta_solicitacao_ja_foi_cadastrada'],
         }
     if status_fluxo in {"enviando", "resultado_indeterminado"}:
         return {
             "status": "RESULTADO_INDETERMINADO",
             "mensagem": (
-                "O envio anterior pode ter sido processado. Consulte a solicitação "
-                "na API antes de tentar novamente."
+                MENSAGENS['o_envio_anterior_pode_ter_sido_processado_consulte_a_solicitacao_na_api']
             ),
         }
     if status_fluxo not in {"aguardando_confirmacao", "aguardando_imagem", "erro_api"}:
         return {
             "status": "RASCUNHO_INDISPONIVEL",
-            "mensagem": "O rascunho não está em uma etapa que permita cadastro.",
+            "mensagem": MENSAGENS['o_rascunho_nao_esta_em_uma_etapa_que_permita_cadastro'],
         }
 
     # Rascunhos anteriores à exigência da API podem ter descrição nula.
@@ -176,8 +177,7 @@ async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict
         return {
             "status": "AGUARDANDO_INFORMACAO",
             "mensagem": (
-                "Informe os detalhes do local. Atualize o rascunho e confirme "
-                "a proposta corrigida antes de cadastrar."
+                MENSAGENS['informe_os_detalhes_do_local_atualize_o_rascunho_e_confirme_a_proposta']
             ),
         }
 
@@ -192,7 +192,7 @@ async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict
                 versao=rascunho["versao"], exigir_ativo=True,
             )
             if not atualizou:
-                return {"status": "RESULTADO_INDETERMINADO", "mensagem": "A proposta mudou. Releia os dados."}
+                return {"status": "RESULTADO_INDETERMINADO", "mensagem": MENSAGENS['a_proposta_mudou_releia_os_dados']}
             rascunho = {**rascunho, "dados_confirmados": aceitos}
         if rascunho.get("id") and rascunho.get("versao") and rascunho.get("tipo"):
             bloqueio["proposta"] = metadados_proposta(rascunho)
@@ -205,7 +205,7 @@ async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict
         status_esperados={"aguardando_confirmacao", "aguardando_imagem", "erro_api"}, **controle,
     )
     if not confirmado:
-        return {"status": "RESULTADO_INDETERMINADO", "mensagem": "A proposta mudou. Confira os dados antes de repetir."}
+        return {"status": "RESULTADO_INDETERMINADO", "mensagem": MENSAGENS['a_proposta_mudou_confira_os_dados_antes_de_repetir']}
 
     imagens = rascunho.get("imagens", [])
     if not imagens:
@@ -218,7 +218,7 @@ async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict
         return {
             "status": "AGUARDANDO_INFORMACAO",
             "mensagem": (
-                "A proposta foi confirmada. Envie pelo menos uma imagem para concluir o cadastro."
+                MENSAGENS['a_proposta_foi_confirmada_envie_pelo_menos_uma_imagem_para_concluir_o']
             ),
         }
 
@@ -229,7 +229,7 @@ async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict
             dados_cadastro(rascunho),
         )
     if dados_cadastro(rascunho) != operacao_aprovada:
-        return {"status": "ERRO_VALIDACAO", "mensagem": "A proposta ou suas fotos mudaram após a aprovação. Confira os dados novamente."}
+        return {"status": "ERRO_VALIDACAO", "mensagem": MENSAGENS['a_proposta_ou_suas_fotos_mudaram_apos_a_aprovacao_confira_os_dados']}
     unidade_id = await obter_unidade_id(usuario)
     async with abrir_cliente_qdrant() as cliente:
         await validar_selecao(
@@ -254,7 +254,7 @@ async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict
     if not iniciou_envio:
         return {
             "status": "RESULTADO_INDETERMINADO",
-            "mensagem": "O envio já está em andamento. Consulte a API antes de repetir.",
+            "mensagem": MENSAGENS['o_envio_ja_esta_em_andamento_consulte_a_api_antes_de_repetir'],
         }
 
     try:
@@ -268,8 +268,7 @@ async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict
         resultado = {
             "status": "RESULTADO_INDETERMINADO",
             "mensagem": (
-                "Não foi possível confirmar o resultado do envio. "
-                "Consulte a solicitação na API antes de repetir."
+                MENSAGENS['nao_foi_possivel_confirmar_o_resultado_do_envio_consulte_a_solicitacao_na']
             ),
         }
 

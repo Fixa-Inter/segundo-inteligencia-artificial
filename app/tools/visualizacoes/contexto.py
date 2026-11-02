@@ -1,15 +1,13 @@
 """Adapta a política gerencial existente ao contrato das visualizações."""
 
+
 from app.schemas import UsuarioContexto
 from app.schemas.visualizacao import ResultadoConsultaVisualizacao
 from app.services.visualizacoes import PERFIS_VISUALIZACOES
 from app.tools.metricas_kpis import contexto as contexto_indicadores
 
-
-MENSAGEM_BLOQUEIO_MOBILE = (
-    "A criação de gráficos não está disponível no aplicativo para celular. "
-    "Acesse o site e faça a mesma solicitação."
-)
+from app.core.respostas import MENSAGENS, MENSAGEM_BLOQUEIO_MOBILE
+from app.graph.respostas_padrao import escolher_resposta
 
 
 def validar_acesso(runtime) -> ResultadoConsultaVisualizacao | None:
@@ -22,7 +20,7 @@ def validar_acesso(runtime) -> ResultadoConsultaVisualizacao | None:
     # O contexto já vem da autenticação; não coagir IDs adulterados em memória.
     if isinstance(usuario, UsuarioContexto) and type(usuario.usuario_id) is not int:
         return ResultadoConsultaVisualizacao(
-            status="ACESSO_NEGADO", mensagem="Usuário autenticado inválido para consultar visualizações.",
+            status="ACESSO_NEGADO", mensagem=MENSAGENS['usuario_autenticado_invalido_para_consultar_visualizacoes'],
         )
     try:
         negado = contexto_indicadores.validar_gestor(runtime, perfis_permitidos=PERFIS_VISUALIZACOES)
@@ -31,7 +29,7 @@ def validar_acesso(runtime) -> ResultadoConsultaVisualizacao | None:
     if negado:
         return ResultadoConsultaVisualizacao(
             status="ACESSO_NEGADO",
-            mensagem="É necessário um contexto autenticado de gestor ou administrador para consultar visualizações.",
+            mensagem=MENSAGENS['e_necessario_um_contexto_autenticado_de_gestor_ou_administrador_para_consultar_visualizacoes'],
         )
     return None
 
@@ -48,8 +46,7 @@ async def resolver_unidade(runtime) -> int | ResultadoConsultaVisualizacao:
         return ResultadoConsultaVisualizacao(
             status="ACESSO_NEGADO" if negado else "ERRO_FERRAMENTA",
             mensagem=(
-                "Não foi possível validar sua unidade para consultar visualizações."
-                if negado else "Não foi possível resolver a unidade autenticada agora."
+                escolher_resposta(negado, 'nao_foi_possivel_validar_sua_unidade_para_consultar_visualizacoes', 'nao_foi_possivel_resolver_a_unidade_autenticada_agora')
             ),
         )
     return resultado

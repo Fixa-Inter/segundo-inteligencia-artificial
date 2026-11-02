@@ -6,6 +6,8 @@ from app.core.clients.qdrant import abrir_cliente_qdrant
 from app.schemas import UsuarioContexto
 from app.services.gerais import obter_unidade_id
 
+from app.core.respostas import MENSAGENS
+
 
 @tool
 async def buscar_opcoes_solicitacao(
@@ -18,7 +20,7 @@ async def buscar_opcoes_solicitacao(
     """
     contexto = runtime.context
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
-        raise ValueError("Forneça uma instância de UsuarioContexto em context['usuario'].")
+        raise ValueError(MENSAGENS['forneca_uma_instancia_de_usuariocontexto_em_context_usuario'])
     usuario = contexto["usuario"]
     unidade_id = await obter_unidade_id(usuario)
 

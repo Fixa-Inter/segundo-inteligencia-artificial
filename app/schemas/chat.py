@@ -47,6 +47,7 @@ class ConversaSaida(BaseModel):
         "faq",
         "solicitacao",
         "ocorrencia",
+        "evento",
         "analytics",
         "visualizacao",
         "feedback",

@@ -1,5 +1,6 @@
 """Projeção do resultado aprovado para o contrato público e sua validação."""
 
+
 import json
 
 from app.guardrails import proteger_saida
@@ -8,6 +9,8 @@ from app.schemas.visualizacao import VisualizacaoPublica
 from . import obter_analise
 from .aprovacao import liberar_visualizacao
 from .limites import validar_limites_resultado
+
+from app.core.respostas import MENSAGENS
 
 
 MAXIMO_BYTES_VISUALIZACAO = 256 * 1024
@@ -25,7 +28,7 @@ def validar_visualizacao_publica(dados) -> VisualizacaoPublica:
     validar_limites_resultado(visualizacao.dados)
     tamanho = len(visualizacao.model_dump_json().encode("utf-8"))
     if tamanho > MAXIMO_BYTES_VISUALIZACAO:
-        raise LimiteVisualizacaoExcedido("A visualização excede 256 KiB; reduza o período ou os grupos.")
+        raise LimiteVisualizacaoExcedido(MENSAGENS['a_visualizacao_excede_256_kib_reduza_o_periodo_ou_os_grupos'])
     return visualizacao
 
 
@@ -34,11 +37,11 @@ def publicar_visualizacao(estado, contexto) -> VisualizacaoPublica | None:
         return None
     aprovado = liberar_visualizacao(estado, contexto)
     if aprovado is None or json.dumps(aprovado, sort_keys=True) != json.dumps(estado.get("visualizacao_aprovada"), sort_keys=True):
-        raise ValueError("Resultado público diferente do resultado liberado.")
+        raise ValueError(MENSAGENS['resultado_publico_diferente_do_resultado_liberado'])
     texto = estado["visualizacao_aprovacao"]["texto_avaliado"]
     protegido = proteger_saida(texto, estado.get("mapa_pii", {}))
     if protegido.get("bloqueado") or protegido["conteudo"] != estado.get("resposta_final"):
-        raise ValueError("O texto final não corresponde ao conteúdo protegido.")
+        raise ValueError(MENSAGENS['o_texto_final_nao_corresponde_ao_conteudo_protegido'])
     meta = aprovado["metadados"]
     analise = obter_analise(meta["analise_id"])
     publico = validar_visualizacao_publica({

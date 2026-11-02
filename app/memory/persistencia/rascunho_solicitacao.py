@@ -1,4 +1,4 @@
-"""Persistência de rascunhos de solicitação e ocorrência e seus anexos por sessão."""
+"""Persistência de rascunhos de cadastro e seus anexos por sessão."""
 
 import uuid
 from datetime import datetime, timezone
@@ -9,11 +9,12 @@ from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
 from app.memory.persistencia.utilitarios import obter_documento_sessao_id
 
 
-TipoRascunho = Literal["solicitacao", "ocorrencia"]
+TipoRascunho = Literal["solicitacao", "ocorrencia", "evento"]
+ARQUIVOS_RASCUNHOS = {"solicitacao": "solicitacoes", "ocorrencia": "ocorrencias", "evento": "eventos"}
 
 
 def _campo_rascunho(tipo: TipoRascunho) -> str:
-    if tipo not in {"solicitacao", "ocorrencia"}:
+    if tipo not in ARQUIVOS_RASCUNHOS:
         raise ValueError("Tipo de rascunho inválido.")
     return f"{tipo}_pendente"
 
@@ -40,6 +41,17 @@ def _urls_validas(imagens: list[str]) -> list[str]:
     ))
 
 
+def _anexos_legados(documento: dict, tipo: TipoRascunho) -> list[str]:
+    if tipo == "evento":
+        return []
+    outros_ativos = any(
+        (outro := documento.get(_campo_rascunho(outro_tipo)) or {}).get("status_fluxo") in STATUS_ATIVOS
+        and not outro.get("pausado")
+        for outro_tipo in ARQUIVOS_RASCUNHOS if outro_tipo != tipo
+    )
+    return [] if outros_ativos else _urls_validas(documento.get("anexos_pendentes", []))
+
+
 async def obter_quantidade_anexos_pendentes(sessao_id: str, usuario_id: int) -> int:
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if not documento_id:
@@ -61,7 +73,6 @@ async def registrar_coleta_parcial(
     if not turno_id or not isinstance(relato, str):
         raise ValueError("O turno e o texto da coleta são obrigatórios.")
     campo = _campo_rascunho(tipo)
-    outro_campo = _campo_rascunho("ocorrencia" if tipo == "solicitacao" else "solicitacao")
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if not documento_id:
         raise ValueError("Sessão não encontrada para salvar a coleta.")
@@ -70,7 +81,7 @@ async def registrar_coleta_parcial(
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
             {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
-            {campo: 1, outro_campo: 1, "anexos_pendentes": 1},
+            {**{_campo_rascunho(t): 1 for t in ARQUIVOS_RASCUNHOS}, "anexos_pendentes": 1},
         )
         if not documento:
             raise ValueError("Sessão não encontrada para salvar a coleta.")
@@ -99,11 +110,8 @@ async def registrar_coleta_parcial(
                 raise ValueError("A coleta mudou. Releia os dados antes de atualizar.")
             return novo
 
-        outro = documento.get(outro_campo) or {}
         # Anexos legados sem tipo só podem ser migrados quando não há outra proposta ativa.
-        anexos_legados = _urls_validas(documento.get("anexos_pendentes", [])) if not (
-            outro.get("status_fluxo") in STATUS_ATIVOS and not outro.get("pausado")
-        ) else []
+        anexos_legados = _anexos_legados(documento, tipo)
         agora = _agora()
         rascunho = {
             "id": str(uuid.uuid4()), "versao": 1, "turno_id": turno_id, "tipo": tipo,
@@ -117,7 +125,7 @@ async def registrar_coleta_parcial(
         if anexos_legados:
             atualizacao["$unset"] = {"anexos_pendentes": ""}
         if status == "cadastrada":
-            arquivo = "solicitacoes" if tipo == "solicitacao" else "ocorrencias"
+            arquivo = ARQUIVOS_RASCUNHOS[tipo]
             atualizacao["$push"] = {arquivo: atual}
         elif atual:
             atualizacao["$push"] = {"rascunhos_arquivados": atual}
@@ -141,6 +149,8 @@ async def adicionar_imagens_sessao(
     imagens: list[str],
     *, tipo: TipoRascunho | None = None,
 ) -> None:
+    if tipo == "evento":
+        return
     urls = _urls_validas(imagens)
     if not urls:
         return
@@ -189,7 +199,6 @@ async def salvar_rascunho_solicitacao(
     if not turno_id:
         raise ValueError("Informe o turno que produziu a proposta.")
     campo = _campo_rascunho(tipo)
-    outro_campo = _campo_rascunho("ocorrencia" if tipo == "solicitacao" else "solicitacao")
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if not documento_id:
         raise ValueError("Sessão não encontrada para salvar o rascunho.")
@@ -198,7 +207,7 @@ async def salvar_rascunho_solicitacao(
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
             {"_id": documento_id, "user_id": usuario_id, "esta_ativo": True},
-            {campo: 1, outro_campo: 1, "anexos_pendentes": 1},
+            {**{_campo_rascunho(t): 1 for t in ARQUIVOS_RASCUNHOS}, "anexos_pendentes": 1},
         )
         if not documento:
             raise ValueError("Sessão não encontrada para salvar o rascunho.")
@@ -217,12 +226,9 @@ async def salvar_rascunho_solicitacao(
             if mesmo_rascunho and chave in dados and dados[chave] == valor
         }
         imagens = _urls_validas(
-            atual.get("imagens", []) if mesmo_rascunho else []
+            atual.get("imagens", []) if mesmo_rascunho and tipo != "evento" else []
         )
-        outro = documento.get(outro_campo) or {}
-        anexos_legados = _urls_validas(documento.get("anexos_pendentes", [])) if not (
-            outro.get("status_fluxo") in STATUS_ATIVOS and not outro.get("pausado")
-        ) else []
+        anexos_legados = _anexos_legados(documento, tipo)
         imagens.extend(url for url in anexos_legados if url not in imagens)
 
         agora = _agora()
@@ -254,7 +260,7 @@ async def salvar_rascunho_solicitacao(
         if anexos_legados:
             atualizacao["$unset"] = {"anexos_pendentes": ""}
         if status_atual == "cadastrada":
-            arquivo = "solicitacoes" if tipo == "solicitacao" else "ocorrencias"
+            arquivo = ARQUIVOS_RASCUNHOS[tipo]
             atualizacao["$push"] = {arquivo: atual}
         elif atual and not mesmo_rascunho:
             atualizacao["$push"] = {"rascunhos_arquivados": atual}

@@ -19,13 +19,14 @@ from app.services.sessoes import (
     excluir_conversa,
 )
 
+from app.core.respostas import MENSAGENS
+
 
 router = APIRouter(prefix="/sessoes", tags=["Sessões"])
 
 
 def _traduzir_erro(erro: ErroConsultaHistorico) -> HTTPException:
     return HTTPException(status_code=erro.status_code, detail=erro.mensagem)
-
 
 
 @router.get("", response_model=TodasConversasSaida)
@@ -42,13 +43,13 @@ async def pegar_todas_conversas_usuario(
     if not conversas:
         return TodasConversasSaida(
             status="SEM_DADOS",
-            mensagem="Você ainda não possui conversas salvas.",
+            mensagem=MENSAGENS['voce_ainda_nao_possui_conversas_salvas'],
             conversas=[],
         )
 
     return TodasConversasSaida(
         status="SUCESSO",
-        mensagem="Conversas carregadas com sucesso.",
+        mensagem=MENSAGENS['conversas_carregadas_com_sucesso'],
         conversas=conversas,
     )
 
@@ -73,12 +74,12 @@ async def pegar_conversa_especifica(
     if conversa is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="A conversa solicitada não foi encontrada.",
+            detail=MENSAGENS['a_conversa_solicitada_nao_foi_encontrada'],
         )
 
     return ConversaEspecificaSaida(
         status="SUCESSO",
-        mensagem="Conversa carregada com sucesso.",
+        mensagem=MENSAGENS['conversa_carregada_com_sucesso'],
         conversa=conversa,
     )
 
@@ -104,11 +105,11 @@ async def excluir_conversa_historico(
     if not excluida:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="A conversa solicitada não foi encontrada.",
+            detail=MENSAGENS['a_conversa_solicitada_nao_foi_encontrada'],
         )
 
     return ExcluirConversaSaida(
         session_id=session_id,
         status="EXCLUIDA",
-        mensagem="Conversa removida do histórico.",
+        mensagem=MENSAGENS['conversa_removida_do_historico'],
     )

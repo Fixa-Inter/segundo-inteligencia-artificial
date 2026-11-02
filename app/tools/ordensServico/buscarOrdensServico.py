@@ -7,6 +7,8 @@ from app.schemas import UsuarioContexto
 from app.services.ordensServico import buscar_ordens_servico as consultar_ordens
 from app.tools.ordensServico.utilitarios import montar_tabelas
 
+from app.core.respostas import MENSAGENS
+
 
 class _ArgumentosBuscarOrdensServico(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
@@ -49,13 +51,13 @@ async def buscar_ordem_servico(
     if not isinstance(contexto, dict) or not isinstance(
         contexto.get("usuario"), UsuarioContexto
     ):
-        raise ValueError("Forneca UsuarioContexto em context['usuario'].")
+        raise ValueError(MENSAGENS['forneca_usuariocontexto_em_context_usuario'])
 
     usuario = contexto["usuario"]
     if usuario.tipo_acesso.lower() not in {"tecnico", "gestor", "administrador"}:
         return {
             "status": "ACESSO_NEGADO",
-            "mensagem": "Somente tecnicos e gestores podem consultar ordens de servico.",
+            "mensagem": MENSAGENS['somente_tecnicos_e_gestores_podem_consultar_ordens_de_servico'],
         }
 
     resultado = await consultar_ordens(

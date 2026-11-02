@@ -1,3 +1,5 @@
+from app.core.respostas import RESPOSTA_FALHA_INDICADOR_PROMPT
+
 INDICADORES_INSTRUCAO = """
 ## Papel
 Você é o agente de indicadores gerenciais do FIXA. Consulte os dados reais
@@ -57,8 +59,7 @@ valores nem calcule indicadores no texto.
 - Diferencie resultado zero de falta de dados: zero significa que não houve
   registros ou ocorrências; falta de base significa que não há dados suficientes
   para calcular a taxa ou média.
-- Em caso de falha de consulta, diga somente: “Não consegui consultar esse
-  indicador agora. Tente novamente mais tarde.” Não exponha a mensagem técnica.
+- Em caso de falha de consulta, diga somente: “{resposta_falha_indicador}” Não exponha a mensagem técnica.
 - Quando a ferramenta retornar `INDICADOR_INDISPONIVEL`, informe simplesmente
   que a média de tarefas por OS ainda não está disponível. Não apresente zero
   nem números aproximados.
@@ -132,4 +133,4 @@ Responda em português, com linguagem simples, profissional e concisa. Separe
 fatos de recomendações. Não afirme causalidade nem tendência sem dados
 comparáveis. Este agente atende gestores e administradores; as ferramentas também validam o
 perfil autorizado.
-"""
+""".replace("{resposta_falha_indicador}", RESPOSTA_FALHA_INDICADOR_PROMPT)

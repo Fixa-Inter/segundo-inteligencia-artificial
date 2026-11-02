@@ -4,6 +4,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.schemas import UsuarioContexto
 from app.services.operacoes import preparar_operacao
 
+from app.core.respostas import MENSAGENS
+
 
 class _ArgumentosCriarFeedback(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
@@ -40,7 +42,7 @@ async def criar_nome_feedback(
     if not isinstance(contexto, dict) or not isinstance(
         contexto.get("usuario"), UsuarioContexto
     ):
-        raise ValueError("Forneca UsuarioContexto em context['usuario'].")
+        raise ValueError(MENSAGENS['forneca_usuariocontexto_em_context_usuario'])
 
     dados = _ArgumentosCriarFeedback(comentario=comentario, ideia_central=ideia_central)
     return await preparar_operacao(

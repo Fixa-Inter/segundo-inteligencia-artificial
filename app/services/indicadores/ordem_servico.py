@@ -1,5 +1,6 @@
 """Consultas de métricas e KPIs de ordens de serviço na camada gold."""
 
+
 import logging
 from datetime import date, datetime, time
 from typing import Any
@@ -12,6 +13,8 @@ from app.services.indicadores.gerais.databricks import (
 )
 from app.services.indicadores.gerais.unidade import validar_unidade_id
 
+from app.core.respostas import MENSAGENS
+
 
 registrador = logging.getLogger(__name__)
 
@@ -20,12 +23,12 @@ def _validar_periodo(inicio: date, fim: date) -> dict | None:
     if type(inicio) is not date or type(fim) is not date:
         return {
             "status": "ERRO_VALIDACAO",
-            "mensagem": "Informe início e fim do período como datas válidas.",
+            "mensagem": MENSAGENS['informe_inicio_e_fim_do_periodo_como_datas_validas'],
         }
     if inicio >= fim:
         return {
             "status": "ERRO_VALIDACAO",
-            "mensagem": "O início deve ser anterior ao fim exclusivo do período.",
+            "mensagem": MENSAGENS['o_inicio_deve_ser_anterior_ao_fim_exclusivo_do_periodo'],
         }
     return None
 
@@ -77,31 +80,31 @@ async def _consultar_linhas(
     except TimeoutConsultaDatabricks:
         return {
             "status": "TIMEOUT",
-            "mensagem": "A consulta de indicadores excedeu o tempo limite.",
+            "mensagem": MENSAGENS['a_consulta_de_indicadores_excedeu_o_tempo_limite'],
         }
     except ConfiguracaoDatabricksAusente as erro:
         registrador.error("Configuração Databricks ausente: %s", erro)
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "A consulta de indicadores não está configurada.",
+            "mensagem": MENSAGENS['a_consulta_de_indicadores_nao_esta_configurada'],
         }
     except ErroDatabricks:
         registrador.exception("Falha ao consultar indicador no Databricks")
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "Não foi possível consultar o indicador no Databricks.",
+            "mensagem": MENSAGENS['nao_foi_possivel_consultar_o_indicador_no_databricks'],
         }
     except Exception:
         registrador.exception("Falha inesperada ao consultar indicador no Databricks")
         return {
             "status": "ERRO_FERRAMENTA",
-            "mensagem": "Não foi possível consultar o indicador no Databricks.",
+            "mensagem": MENSAGENS['nao_foi_possivel_consultar_o_indicador_no_databricks'],
         }
 
     if not linhas:
         return {
             "status": "SEM_RESULTADO",
-            "mensagem": "A consulta não retornou resultados.",
+            "mensagem": MENSAGENS['a_consulta_nao_retornou_resultados'],
         }
     return linhas
 
@@ -468,7 +471,6 @@ async def obter_media_tarefas_por_os(inicio: date, fim: date, *, unidade_id: int
         "resultado": {"os_criadas": None, "media_tarefas_por_os": None},
         "periodo": _periodo_legivel(inicio, fim),
         "mensagem": (
-            "A média consolidada de tarefas por OS está indisponível até a "
-            "publicação das contagens de tarefas e de OS com tarefas pelo BI."
+            MENSAGENS['a_media_consolidada_de_tarefas_por_os_esta_indisponivel_ate_a_publicacao']
         ),
     }

@@ -1,7 +1,10 @@
 """Normalização estrita dos valores e dimensões publicados pelo Databricks."""
 
+
 import math
 import re
+
+from app.core.respostas import MENSAGENS
 
 
 class ErroRespostaDatabricks(RuntimeError):
@@ -10,7 +13,7 @@ class ErroRespostaDatabricks(RuntimeError):
 
 def campo(linha, campo):
     if campo not in linha:
-        raise ErroRespostaDatabricks("Coluna esperada ausente na resposta.")
+        raise ErroRespostaDatabricks(MENSAGENS['coluna_esperada_ausente_na_resposta'])
     return linha[campo]
 
 
@@ -20,22 +23,22 @@ def inteiro(valor, *, nao_negativo=True):
     elif isinstance(valor, str) and re.fullmatch(r"[+-]?\d+", valor.strip()):
         numero = int(valor)
     else:
-        raise ErroRespostaDatabricks("A resposta não contém um inteiro válido.")
+        raise ErroRespostaDatabricks(MENSAGENS['a_resposta_nao_contem_um_inteiro_valido'])
     if nao_negativo and numero < 0:
-        raise ErroRespostaDatabricks("A resposta contém uma contagem negativa.")
+        raise ErroRespostaDatabricks(MENSAGENS['a_resposta_contem_uma_contagem_negativa'])
     return numero
 
 
 def numero(valor):
     if type(valor) not in {int, float, str}:
-        raise ErroRespostaDatabricks("A resposta não contém um número válido.")
+        raise ErroRespostaDatabricks(MENSAGENS['a_resposta_nao_contem_um_numero_valido'])
     if isinstance(valor, str) and not re.fullmatch(
         r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?", valor.strip()
     ):
-        raise ErroRespostaDatabricks("A resposta não contém um número válido.")
+        raise ErroRespostaDatabricks(MENSAGENS['a_resposta_nao_contem_um_numero_valido'])
     numero = float(valor)
     if not math.isfinite(numero):
-        raise ErroRespostaDatabricks("A resposta contém uma medida não finita.")
+        raise ErroRespostaDatabricks(MENSAGENS['a_resposta_contem_uma_medida_nao_finita'])
     return numero
 
 
@@ -50,6 +53,6 @@ def grupo(analise, linha, filtros_permitidos, *, temporal=False):
             if tipo in {"INT", "BIGINT"}:
                 valor = inteiro(valor, nao_negativo=False)
             elif tipo not in {"STRING", "VARCHAR"} or type(valor) is not str:
-                raise ErroRespostaDatabricks("Rótulo incompatível com o esquema.")
+                raise ErroRespostaDatabricks(MENSAGENS['rotulo_incompativel_com_o_esquema'])
         grupo[dimensao] = valor
     return grupo

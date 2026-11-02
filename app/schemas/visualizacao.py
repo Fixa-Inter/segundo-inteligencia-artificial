@@ -4,6 +4,7 @@ Os serviços preenchem estes contratos com as regras de cada domínio. O contrat
 público transporta dados analíticos, sem opções de renderização Recharts.
 """
 
+
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Annotated, Literal
@@ -12,6 +13,8 @@ from pydantic import (
     BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr,
     field_validator, model_validator,
 )
+
+from app.core.respostas import MENSAGENS
 
 
 FormatoDados = Literal["serie_temporal", "categorias", "histograma", "boxplot"]
@@ -70,12 +73,12 @@ class ResumoGrupoPequeno(BaseModel):
     @model_validator(mode="after")
     def validar_estatisticas(self):
         if self.base_calculo is not None and self.qtd_registros != self.base_calculo.qtd_registros_elegiveis:
-            raise ValueError("A quantidade do resumo deve corresponder à base elegível.")
+            raise ValueError(MENSAGENS['a_quantidade_do_resumo_deve_corresponder_a_base_elegivel'])
         if not (
             self.minimo <= self.media <= self.maximo
             and self.minimo <= self.mediana <= self.maximo
         ):
-            raise ValueError("Média e mediana devem estar entre mínimo e máximo.")
+            raise ValueError(MENSAGENS['media_e_mediana_devem_estar_entre_minimo_e_maximo'])
         return self
 
 
@@ -101,12 +104,12 @@ class PeriodoVisualizacao(_ContratoVisualizacao):
             return valor
         if isinstance(valor, str) and len(valor) == 10 and valor[4] == valor[7] == "-":
             return date.fromisoformat(valor)
-        raise ValueError("Informe a data no formato YYYY-MM-DD.")
+        raise ValueError(MENSAGENS['informe_a_data_no_formato_yyyy_mm_dd'])
 
     @model_validator(mode="after")
     def validar_intervalo(self):
         if self.inicio >= self.fim:
-            raise ValueError("O início deve ser anterior ao fim exclusivo do período.")
+            raise ValueError(MENSAGENS['o_inicio_deve_ser_anterior_ao_fim_exclusivo_do_periodo'])
         return self
 
 
@@ -134,7 +137,7 @@ class ReferenciaVisualizacao(_ContratoVisualizacao):
     @classmethod
     def validar_identificador(cls, valor):
         if not valor.strip() or valor != valor.strip():
-            raise ValueError("A referência deve preservar o identificador retornado pela tool.")
+            raise ValueError(MENSAGENS['a_referencia_deve_preservar_o_identificador_retornado_pela_tool'])
         return valor
 
 
@@ -152,7 +155,7 @@ class BaseCalculoVisualizacao(_ContratoVisualizacao):
     @model_validator(mode="after")
     def validar_quantidades(self):
         if self.qtd_registros_elegiveis + self.qtd_tempos_negativos_excluidos > self.qtd_registros_total:
-            raise ValueError("Elegíveis e negativos excluídos não podem exceder o total.")
+            raise ValueError(MENSAGENS['elegiveis_e_negativos_excluidos_nao_podem_exceder_o_total'])
         return self
 
 
@@ -166,9 +169,9 @@ class PontoCategoria(_ContratoVisualizacao):
     def validar_base_calculo(self):
         if self.base_calculo is not None:
             if self.qtd_registros != self.base_calculo.qtd_registros_elegiveis:
-                raise ValueError("A quantidade do ponto deve corresponder à base elegível.")
+                raise ValueError(MENSAGENS['a_quantidade_do_ponto_deve_corresponder_a_base_elegivel'])
             if (self.valor is None) != (self.qtd_registros == 0):
-                raise ValueError("Uma medida sem base deve ser nula; medida com base exige valor.")
+                raise ValueError(MENSAGENS['uma_medida_sem_base_deve_ser_nula_medida_com_base_exige_valor'])
         return self
 
 
@@ -185,9 +188,9 @@ class PeriodoSerieTemporal(_ContratoVisualizacao):
             self.calendario.inicio <= self.consultado.inicio
             and self.consultado.fim <= self.calendario.fim
         ):
-            raise ValueError("O trecho consultado deve estar contido no período do calendário.")
+            raise ValueError(MENSAGENS['o_trecho_consultado_deve_estar_contido_no_periodo_do_calendario'])
         if self.parcial != (self.calendario != self.consultado):
-            raise ValueError("A indicação de período parcial deve corresponder ao trecho consultado.")
+            raise ValueError(MENSAGENS['a_indicacao_de_periodo_parcial_deve_corresponder_ao_trecho_consultado'])
         return self
 
 
@@ -198,7 +201,7 @@ class PontoSerieTemporal(PontoCategoria):
     @model_validator(mode="after")
     def validar_referencia_periodo(self):
         if self.periodo is not None and self.data_referencia != self.periodo.calendario.inicio:
-            raise ValueError("A data de referência deve identificar o início do período do calendário.")
+            raise ValueError(MENSAGENS['a_data_de_referencia_deve_identificar_o_inicio_do_periodo_do_calendario'])
         return self
 
 
@@ -221,7 +224,7 @@ class IntervaloHistograma(_ContratoVisualizacao):
     @model_validator(mode="after")
     def validar_limites(self):
         if self.inferior > self.superior:
-            raise ValueError("O limite inferior não pode exceder o superior.")
+            raise ValueError(MENSAGENS['o_limite_inferior_nao_pode_exceder_o_superior'])
         return self
 
 
@@ -233,7 +236,7 @@ class DadosHistograma(_ContratoVisualizacao):
     @model_validator(mode="after")
     def validar_frequencias(self):
         if sum(intervalo.frequencia for intervalo in self.intervalos) != self.qtd_registros:
-            raise ValueError("As frequências devem cobrir a população do histograma.")
+            raise ValueError(MENSAGENS['as_frequencias_devem_cobrir_a_populacao_do_histograma'])
         return self
 
 
@@ -260,26 +263,26 @@ class GrupoBoxplot(_ContratoVisualizacao):
     @model_validator(mode="after")
     def validar_estatisticas(self):
         if self.base_calculo is not None and self.qtd_registros != self.base_calculo.qtd_registros_elegiveis:
-            raise ValueError("A quantidade do boxplot deve corresponder à base elegível.")
+            raise ValueError(MENSAGENS['a_quantidade_do_boxplot_deve_corresponder_a_base_elegivel'])
         if not self.minimo <= self.q1 <= self.mediana <= self.q3 <= self.maximo:
-            raise ValueError("Os quartis devem estar ordenados entre mínimo e máximo.")
+            raise ValueError(MENSAGENS['os_quartis_devem_estar_ordenados_entre_minimo_e_maximo'])
         if not (
             self.minimo <= self.bigode_inferior <= self.bigode_superior <= self.maximo
             and self.limite_inferior <= self.bigode_inferior
             and self.bigode_superior <= self.limite_superior
         ):
-            raise ValueError("Bigodes devem representar valores dentro dos limites.")
+            raise ValueError(MENSAGENS['bigodes_devem_representar_valores_dentro_dos_limites'])
         if not (
             len(self.valores_extremos) + self.qtd_extremos_omitidos == self.qtd_extremos_total
             and self.qtd_extremos_total <= self.qtd_registros
         ):
-            raise ValueError("As contagens de pontos extremos são inconsistentes.")
+            raise ValueError(MENSAGENS['as_contagens_de_pontos_extremos_sao_inconsistentes'])
         if any(
             not self.minimo <= valor <= self.maximo
             or self.limite_inferior <= valor <= self.limite_superior
             for valor in self.valores_extremos
         ):
-            raise ValueError("Pontos extremos devem estar fora dos limites do boxplot.")
+            raise ValueError(MENSAGENS['pontos_extremos_devem_estar_fora_dos_limites_do_boxplot'])
         return self
 
 
@@ -297,7 +300,7 @@ class GrupoSemBaseBoxplot(_ContratoVisualizacao):
     @model_validator(mode="after")
     def validar_base(self):
         if self.base_calculo.qtd_registros_elegiveis or not self.base_calculo.qtd_registros_total:
-            raise ValueError("Um grupo sem base exige registros observados e nenhum elegível.")
+            raise ValueError(MENSAGENS['um_grupo_sem_base_exige_registros_observados_e_nenhum_elegivel'])
         return self
 
 
@@ -340,7 +343,7 @@ class MetadadosConsultaVisualizacao(_ContratoVisualizacao):
     @classmethod
     def validar_fuso_consulta(cls, valor):
         if valor.tzinfo is None or valor.utcoffset() is None:
-            raise ValueError("O instante da consulta deve informar o fuso horário.")
+            raise ValueError(MENSAGENS['o_instante_da_consulta_deve_informar_o_fuso_horario'])
         return valor
 
     @model_validator(mode="after")
@@ -348,11 +351,11 @@ class MetadadosConsultaVisualizacao(_ContratoVisualizacao):
         if self.base_calculo is not None and (
             self.qtd_registros_considerados != self.base_calculo.qtd_registros_elegiveis
         ):
-            raise ValueError("A quantidade considerada deve corresponder à base elegível.")
+            raise ValueError(MENSAGENS['a_quantidade_considerada_deve_corresponder_a_base_elegivel'])
         if self.periodo is not None and self.instante_snapshot is not None:
-            raise ValueError("Uma consulta não pode representar período e snapshot simultaneamente.")
+            raise ValueError(MENSAGENS['uma_consulta_nao_pode_representar_periodo_e_snapshot_simultaneamente'])
         if self.granularidade is not None and self.periodo is None:
-            raise ValueError("Granularidade temporal exige um período.")
+            raise ValueError(MENSAGENS['granularidade_temporal_exige_um_periodo'])
         return self
 
 
@@ -379,12 +382,12 @@ class ResultadoConsultaVisualizacao(_ContratoVisualizacao):
     def validar_conteudo(self):
         sucesso = self.status in {"SUCESSO", "SUCESSO_PARCIAL"}
         if sucesso and (self.dados is None or self.metadados is None):
-            raise ValueError("Sucesso exige dados e metadados da consulta.")
+            raise ValueError(MENSAGENS['sucesso_exige_dados_e_metadados_da_consulta'])
         if not sucesso and self.dados is not None:
-            raise ValueError("Resultados sem sucesso não podem liberar dados de gráfico.")
+            raise ValueError(MENSAGENS['resultados_sem_sucesso_nao_podem_liberar_dados_de_grafico'])
         if self.dados is not None and self.metadados is not None:
             if self.dados.tipo != self.metadados.formato_dados:
-                raise ValueError("O formato dos dados não corresponde aos metadados.")
+                raise ValueError(MENSAGENS['o_formato_dos_dados_nao_corresponde_aos_metadados'])
             if isinstance(self.dados, DadosSerieTemporal):
                 for ponto in self.dados.pontos:
                     if ponto.periodo is None:
@@ -395,11 +398,11 @@ class ResultadoConsultaVisualizacao(_ContratoVisualizacao):
                         ponto.periodo.consultado.inicio != max(periodo.inicio, calendario.inicio)
                         or ponto.periodo.consultado.fim != min(periodo.fim, calendario.fim)
                     ):
-                        raise ValueError("O trecho do ponto deve coincidir com o recorte dos metadados.")
+                        raise ValueError(MENSAGENS['o_trecho_do_ponto_deve_coincidir_com_o_recorte_dos_metadados'])
             if isinstance(self.dados, DadosBoxplot) and any(
                 grupo.analise_id != self.metadados.analise_id for grupo in self.dados.grupos
             ):
-                raise ValueError("Os grupos devem pertencer à análise da consulta.")
+                raise ValueError(MENSAGENS['os_grupos_devem_pertencer_a_analise_da_consulta'])
         return self
 
 
@@ -441,17 +444,17 @@ class MetadadosVisualizacaoPublica(_ContratoVisualizacao):
     @classmethod
     def validar_fuso(cls, valor):
         if valor.tzinfo is None or valor.utcoffset() is None:
-            raise ValueError("O instante da consulta exige fuso horário.")
+            raise ValueError(MENSAGENS['o_instante_da_consulta_exige_fuso_horario'])
         return valor
 
     @model_validator(mode="after")
     def validar_metadados(self):
         if self.periodo is not None and self.instante_snapshot is not None:
-            raise ValueError("Período e snapshot não podem coexistir.")
+            raise ValueError(MENSAGENS['periodo_e_snapshot_nao_podem_coexistir'])
         if self.granularidade is not None and self.periodo is None:
-            raise ValueError("Granularidade exige período.")
+            raise ValueError(MENSAGENS['granularidade_exige_periodo'])
         if self.base_calculo is not None and self.qtd_registros_considerados != self.base_calculo.qtd_registros_elegiveis:
-            raise ValueError("Quantidade incompatível com a base elegível.")
+            raise ValueError(MENSAGENS['quantidade_incompativel_com_a_base_elegivel'])
         return self
 
 
@@ -471,15 +474,15 @@ class VisualizacaoPublica(_ContratoVisualizacao):
         if isinstance(self.dados, DadosBoxplot) and any(
             g.analise_id != self.metadados.analise_id for g in self.dados.grupos
         ):
-            raise ValueError("Os grupos não pertencem à análise da visualização.")
+            raise ValueError(MENSAGENS['os_grupos_nao_pertencem_a_analise_da_visualizacao'])
         if isinstance(self.dados, DadosSerieTemporal):
             periodo = self.metadados.periodo
             if periodo is None or self.metadados.granularidade is None:
-                raise ValueError("Séries exigem período e granularidade.")
+                raise ValueError(MENSAGENS['series_exigem_periodo_e_granularidade'])
             for ponto in self.dados.pontos:
                 if ponto.periodo is not None and (
                     ponto.periodo.consultado.inicio != max(periodo.inicio, ponto.periodo.calendario.inicio)
                     or ponto.periodo.consultado.fim != min(periodo.fim, ponto.periodo.calendario.fim)
                 ):
-                    raise ValueError("O ponto não corresponde ao período consultado.")
+                    raise ValueError(MENSAGENS['o_ponto_nao_corresponde_ao_periodo_consultado'])
         return self
