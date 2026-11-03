@@ -56,6 +56,15 @@ def test_core_nao_importa_grafo_agentes_servicos_ou_ferramentas():
     assert proibidas == []
 
 
+def test_anotacoes_contexto_cadastro_resolvem_sem_nomes_ausentes():
+    """Força avaliação adiada no Python 3.14 para detectar nomes que impedem o import no 3.12."""
+    from typing import get_type_hints
+    from app.tools import obter_contexto_cadastro
+
+    anotacoes = get_type_hints(obter_contexto_cadastro)
+    assert "runtime" in anotacoes and "return" in anotacoes
+
+
 def test_fachada_observa_substituicao_no_modulo_proprietario(monkeypatch):
     """Evita congelar referências de modelo/cliente ao centralizar importações."""
     import app.agents as agentes

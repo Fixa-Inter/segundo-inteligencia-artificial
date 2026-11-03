@@ -79,6 +79,7 @@ Verifica refatoracao importacoes; os cenários e auxiliares estão listados abai
 
 - `test_importar_interfaces_nao_inicializa_grafo_modelos_ou_bancos(ordem)`: Importações dos namespaces devem ser leves e não iniciar recursos externos.
 - `test_todas_exportacoes_resolvem_em_processo_limpo_sem_ciclos()`: Resolve funções/classes/constantes de todas as fachadas sem abrir conexões.
+- `test_anotacoes_contexto_cadastro_resolvem_sem_nomes_ausentes()`: Avalia os tipos da função compartilhada de contexto com `typing.get_type_hints`, detectando imports de tipos ausentes mesmo no Python 3.14, que adia a avaliação. Reproduz a causa do `NameError` observado na inicialização com Python 3.12.
 - `test_core_nao_importa_grafo_agentes_servicos_ou_ferramentas()`: Regras comuns não podem voltar a depender da orquestração de aplicação.
 - `test_fachada_observa_substituicao_no_modulo_proprietario(monkeypatch)`: Evita congelar referências de modelo/cliente ao centralizar importações.
 - Constantes, aliases e estado de módulo: `RAIZ`, `PACOTES`.

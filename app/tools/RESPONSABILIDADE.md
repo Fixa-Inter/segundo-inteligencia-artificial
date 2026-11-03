@@ -81,6 +81,8 @@ Regras compartilhadas de versionamento e identificação de registros.
 
 Contexto autenticado das ferramentas de cadastro; compartilhado entre domínios.
 
+As anotações deste módulo importam explicitamente os tipos utilizados, incluindo `typing.Any`, para permitir sua avaliação durante o import no Python 3.12 do Docker. O teste de importações força a resolução das anotações também em versões que adiam essa avaliação.
+
 - `obter_contexto_cadastro(runtime: ToolRuntime) -> tuple[dict[str, Any], UsuarioContexto, str]`: Executa a etapa obter contexto cadastro no escopo de contexto. Usado pelo fluxo de tools.
 
 ### [propostas.py](propostas.py)

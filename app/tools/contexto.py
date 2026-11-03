@@ -1,5 +1,7 @@
 """Contexto autenticado das ferramentas de cadastro; compartilhado entre domínios."""
 
+from typing import Any
+
 from langchain.tools import ToolRuntime
 from app.schemas import UsuarioContexto
 from app.core import MENSAGENS
