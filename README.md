@@ -1,172 +1,53 @@
-# Assistente FIXA
+<div align="center">
 
-Aplicação multiagente para gestão de manutenção, com LangGraph, orquestrador e especialistas por perfil, julgamento pelo JEV, proteção de mensagens e persistência de conversas.
+# FIXA · Assistente de IA
 
-A revisão do fluxo interno, as divergências reproduzidas e as sugestões de modularização estão em [docs/validacao_fluxo.md](docs/validacao_fluxo.md). A validação funcional da API está fora dessa revisão.
+Sistema multiagente para apoio aos fluxos de manutenção.
 
-## Fluxo interno
+![badge](https://img.shields.io/badge/Python-AI-3776AB?logo=python&logoColor=white) ![badge](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white) ![badge](https://img.shields.io/badge/LangGraph-Agents-1C3C3C) ![badge](https://img.shields.io/badge/License-MIT-green)
 
-1. `app/graph/executor.py` recupera o histórico e os rascunhos, anonimiza a mensagem e prepara o contexto autenticado.
-2. `app/graph/fluxo.py` conecta validação de entrada, supervisor, especialista e julgamento. O supervisor resolve confirmações, pausas e retomadas explícitas por código; o agente orquestrador analisa o histórico e os rascunhos do MongoDB para as demais mensagens, inclusive retomadas de propostas pausadas.
-3. O JEV aprova, bloqueia ou pede uma revisão de texto a partir das evidências. A revisão não repete ferramentas de cadastro.
-4. A proteção de saída remove dados pessoais; o executor persiste a resposta final no MongoDB. A API retorna `confirmacao: "sim"` somente quando uma proposta é exibida e sua apresentação é registrada; nos demais casos retorna `"nao"`.
-5. Ao encerrar a conversa, a persistência pode gerar um resumo e indexá-lo no Qdrant.
+</div>
 
-## Organização
+---
 
-| Pasta | Responsabilidade |
+## ✨ Visão geral
+
+O assistente interpreta a mensagem, seleciona o especialista adequado, consulta informações e prepara operações. Mudanças sensíveis passam por confirmação e julgamento.
+
+## 🚀 Funcionalidades
+
+- Orquestração de agentes especializados por perfil
+- Continuidade e persistência das conversas
+- Criação e atualização de solicitações e ocorrências
+- Criação de eventos e consulta de feedbacks
+- Pesquisa de materiais, peças e equipamentos
+- Rascunhos e confirmação de operações sensíveis
+- Julgamento das respostas antes da execução
+- Proteção de dados pessoais
+- Memória vetorial e resumo de sessões
+- Integração com as APIs do FIXA
+- Métricas de uso, duração e custo
+- Observabilidade dos fluxos
+
+## 🧰 Tecnologias
+
+| Área | Tecnologias |
 | --- | --- |
-| `app/agents` | Fábricas, modelos, registro dos agentes e instruções por perfil |
-| `app/graph` | Estado, contexto, decisões, nós e execução do fluxo |
-| `app/tools` | Ferramentas disponíveis aos agentes e seus argumentos |
-| `app/services` | Consultas e operações dos domínios |
-| `app/memory` | Persistência, rascunhos, histórico e vetorização |
-| `app/guardrails` | Validações de entrada e proteção de dados pessoais |
-| `app/schemas` | Contratos de entrada, saída e usuário autenticado |
-| `app/core` | Configuração e clientes dos bancos |
-| `app/observability` | Métricas de execução, custo e operações |
-| `app/tests` | Testes e reproduções das divergências |
-| `docs` | Esquema SQL, enums, referências e relatório da revisão |
+| **API** | Python e FastAPI |
+| **Agentes** | LangGraph e LangChain |
+| **Modelos** | OpenAI |
+| **Persistência** | MongoDB e PostgreSQL |
+| **Busca vetorial** | Qdrant |
+| **Contratos** | Pydantic |
+| **Observabilidade** | Prometheus e Grafana |
+| **Testes e entrega** | Pytest e Docker |
 
-## Importações
+## 📄 Licença
 
-Os `__init__.py` declaram as interfaces públicas dos domínios. Exemplos:
+Este projeto é distribuído sob a licença MIT. Consulte o arquivo [LICENSE](LICENSE).
 
-```python
-from app.graph import EstadoGrafo, ContextoGrafo
-from app.agents import criar_agente_faq
-from app.schemas import UsuarioContexto
-from app.services.gerais import obter_unidade_id
-from app.tools.ajuda_geral import consultar_situacao_problema
-from app.memory.persistencia import salvar_mensagem
-```
+---
 
-Dentro de um pacote, importe seus detalhes diretamente quando necessário para evitar ciclos. O pacote `app.graph` não compila o fluxo ao exportar os tipos.
-
-A configuração está em `app/core/configuracao.py`. `OPENAI_API_KEY` é usada pelo agente orquestrador; `TYPESAFE_API_KEY` é necessária para a classificação de problemas e o julgamento. `JEV_MODEL` permite fixar uma versão durante avaliações; sem ela, é usado `jev-latest`.
-
-## Validação
-
-O comando da seleção interna está em [docs/validacao_fluxo.md](docs/validacao_fluxo.md#testes-e-limites). As reproduções com `xfail(strict=True)` indicam divergências ainda pendentes; não significam que o problema foi corrigido.
-
-Os testes em `app/tests/test_orquestrador.py` verificam o roteamento e a continuidade dos rascunhos; `app/tests/test_jev_fluxos.py` verifica o cliente JEV e o julgamento sem acesso externo. O cliente JEV registra duração, resultado, modelo resolvido e tokens; os limiares de julgamento devem ser acompanhados com casos reais anonimizados antes de alterações de versão do modelo.
-
-Para Prometheus e Grafana, consulte [docs/observabilidade.md](docs/observabilidade.md).
-
-## Respostas de limitações e horários das mensagens
-
-A ausência de ferramenta para uma ação e uma busca no FAQ sem informação
-suficiente recebem respostas padronizadas, com convite para enviar outra mensagem
-como feedback de melhoria. Erros técnicos, restrições de acesso e resultados de
-cadastro mantêm seu tratamento próprio. Dúvidas sobre quais dados fornecer para
-um cadastro seguem para o FAQ.
-
-Cada nova mensagem humana ou do assistente recebe `timestamp` em UTC no MongoDB.
-`GET /api/v1/sessoes` e `POST /api/v1/sessoes/conversa` retornam esse campo em todas
-as mensagens, como ISO 8601 com `Z`. Mensagens antigas sem horário registrado
-retornam `null`. Para adicionar o campo nulo também aos documentos antigos no
-banco, execute uma vez por ambiente:
-
-```bash
-python -m app.scripts.migrar_timestamps_mensagens
-```
-
-A migração pode ser repetida e preserva timestamps já existentes.
-
-## Feedbacks e atualização de solicitações próprias
-
-Todos os perfis podem pedir para listar seus feedbacks. A consulta usa somente
-o ID autenticado e ordena por data e ID decrescentes, sem aplicar o limite de
-três registros ou de três meses de outras ferramentas.
-
-Para atualizar uma solicitação, o agente busca candidatos no Qdrant restritos
-aos registros próprios pendentes e à unidade autenticada. A seleção é
-conferida no PostgreSQL e apresentada assim, sem linha vazia entre título e
-descrição:
-
-```markdown
-A solicitação que você quer alterar é esta?
-
-**Título da solicitação**
-Descrição da solicitação.
-```
-
-O primeiro aceite identifica o registro. Depois são coletadas alterações de
-título, descrição do problema, detalhes do local, local, categoria do equipamento
-e fotos. Novas fotos exigem escolha entre adicionar às existentes ou substituir
-todas; a substituição remove os registros antigos da tabela `foto`, preservando
-os arquivos no Cloudinary. Sem novas imagens, as fotos existentes são mantidas.
-
-O rascunho permanece em `solicitacao_pendente`, com `operacao` igual a `criar`
-ou `atualizar` (rascunhos antigos sem o campo representam criação). Ele guarda
-o registro selecionado, os dados originais, as alterações, a etapa e a escolha
-das fotos. A proposta final exige outro aceite depois de ser salva no histórico.
-Somente então a operação é preparada, avaliada pelo juiz e executada no nó de
-operações. A transação verifica novamente propriedade, unidade, status `0`
-e se os campos e fotos originais continuam iguais. Se algo mudou, pede uma
-nova consulta. Textos e fotos são alterados juntos; resultados indeterminados
-impedem reenvio automático.
-
-Testes específicos (sem chamadas externas):
-
-```bash
-python -m pytest app/tests/test_listar_feedbacks.py app/tests/test_atualizacao_solicitacao.py -q
-```
-
-## Atualização de ocorrências próprias
-
-Técnicos, gestores e administradores podem atualizar somente suas próprias
-ocorrências ativas. Gestor e administrador não podem editar ocorrências de
-outros usuários, inclusive ao anexar fotos. Não há filtro de status: o bloqueio
-é por autoria, unidade e inatividade.
-
-O fluxo busca candidatos no Qdrant restritos aos registros próprios ativos e
-confere os dados no PostgreSQL. A primeira confirmação identifica o registro,
-com título em negrito e descrição na linha seguinte, sem linha vazia entre eles.
-A segunda confirma a proposta final. O rascunho `ocorrencia_pendente` guarda
-`operacao=criar` ou `operacao=atualizar`, versões, dados originais, alterações,
-etapa e escolha sobre fotos. As regras de versionamento e identificação são
-compartilhadas com a atualização de solicitações.
-
-São editáveis título, descrição da ocorrência, detalhes do local, local,
-categoria do equipamento, categoria do problema, prioridade e fotos.
-Categoria do problema e prioridade usam os enums já existentes, convertidos
-para os inteiros do PostgreSQL. Os campos não alterados são preservados.
-Novas imagens exigem escolha entre adicionar e substituir todas; sem novas
-imagens, as fotos existentes são mantidas. Arquivos no Cloudinary não são apagados.
-
-Somente a operação aprovada pelo juiz é executada no nó de operações. A mesma
-transação trava a ocorrência e verifica novamente autor, unidade, atividade
-e dados originais, antes de alterar campos e fotos. Propostas alteradas exigem
-nova conferência; resultados indeterminados impedem reenvio automático.
-
-As permissões adicionais estão em
-[`docs/database/permissoes_atualizacao_ocorrencias.sql`](docs/database/permissoes_atualizacao_ocorrencias.sql).
-O script complementa as permissões básicas; não substitui a configuração existente
-nem implementa RLS. Aplique-o no ambiente antes de validar a integração real.
-
-```bash
-python -m pytest app/tests/test_atualizacao_ocorrencia.py app/tests/test_atualizacao_solicitacao.py -q
-```
-
-## Criação de eventos
-
-Gestores e administradores podem criar eventos pela web ou pelo mobile. O agente
-`solicitacoes` coleta a descrição, o local e as datas e horas de início e fim,
-busca o local no Qdrant e guarda `evento_pendente` na sessão do MongoDB. Detalhes
-do local e observação ausentes recebem "Não foi especificado". Eventos não exigem
-foto nem categoria de equipamento.
-
-Horários sem fuso usam `America/Sao_Paulo` e são enviados em UTC (`Z`). O fim deve
-ser estritamente posterior ao início; eventos no passado são permitidos. O usuário
-confere a proposta antes do aceite. A tool prepara a operação, o juiz a avalia e
-somente então `executar_operacoes` faz `POST /api/v1/eventos`, usando a identidade
-e o Bearer do usuário autenticado. Resultados indeterminados impedem reenvio automático.
-
-## Pesquisa de compras
-
-Técnicos, administradores e gestores podem pedir lojas ou comparar materiais, peças e equipamentos. O fluxo `analista_compras` guarda `analise_compra_pendente` no documento MongoDB da sessão. Só o nome do item é obrigatório. O especialista oferece uma vez os filtros opcionais (loja, categoria e faixa de preço) e detalhes para avaliar as ofertas (especificações, quantidade e exclusões). Se a pessoa dispensar os opcionais, a pesquisa prossegue com a palavra chave. Loja e categoria são convertidas para os slugs do Pechincha.ai por `list_stores` e `list_categories`.
-
-O cliente usa o MCP público `https://pechincha.ai/mcp`, sem chave de API, e consulta `search_deals`, `list_stores` e `list_categories`. A métrica `fixa_pechincha_requests_total` registra chamadas e erros. Uma busca vazia significa que não há promoções ativas cadastradas para os critérios, não que o produto esteja indisponível em todas as lojas. Preços devem ser confirmados na loja.
-
-Os testes locais do contrato e do fluxo estão em `tests/test_pechincha_mcp.py` e `tests/test_compras_unit.py`. Para testar o serviço real explicitamente no PowerShell, defina `RUN_PECHINCHA_LIVE_TESTS=1` e rode `python -m pytest tests/test_pechincha_mcp_contract.py -q`.
+<div align="center">
+  Desenvolvido pela <strong>Fixa-Inter</strong>.
+</div>
