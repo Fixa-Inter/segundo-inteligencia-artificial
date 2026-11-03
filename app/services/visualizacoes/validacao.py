@@ -1,19 +1,18 @@
 """Validação compartilhada por serviços analíticos e argumentos das tools."""
 
-
 import json
 from collections.abc import Mapping
-
-from app.schemas.visualizacao import (
-    Analise, ConsultaVisualizacaoPeriodo, ConsultaVisualizacaoSnapshot,
+from app.schemas import (
+    Analise,
+    ConsultaVisualizacaoPeriodo,
+    ConsultaVisualizacaoSnapshot,
     ResultadoConsultaVisualizacao,
 )
 from .limites import validar_periodo_consulta, validar_limites_resultado
+from app.core import MENSAGENS
+from app.core.apresentacao import formatar_resposta
 
-from app.core.respostas import MENSAGENS
-from app.graph.respostas_padrao import formatar_resposta
-
-
+# MAXIMO_VALORES_POR_FILTRO: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 MAXIMO_VALORES_POR_FILTRO = 50
 
 
@@ -23,6 +22,7 @@ def validar_argumentos_analise(
     filtros_permitidos: Mapping[str, str],
 ) -> None:
     """Restringe campos e valores; não substitui a autorização do usuário."""
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if consulta.analise_id != analise.id:
         raise ValueError(MENSAGENS['a_consulta_nao_corresponde_a_analise_selecionada'])
     if analise.fonte.campo_periodo is None:

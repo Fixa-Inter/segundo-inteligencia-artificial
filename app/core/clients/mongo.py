@@ -1,10 +1,9 @@
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
-
-from app.core.configuracao import MONGODB_URI, MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
+from app.core import MONGODB_URI, MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
 from pymongo import AsyncMongoClient
 
-
+# _CLIENTE_MONGO: Recurso compartilhado de cliente mongo usado pelas funções deste módulo e pela interface pública.
 _CLIENTE_MONGO: AsyncMongoClient | None = None
 
 
@@ -54,5 +53,3 @@ async def fechar_cliente_mongo() -> None:
         cliente = _CLIENTE_MONGO
         _CLIENTE_MONGO = None
         await cliente.close()
-
-

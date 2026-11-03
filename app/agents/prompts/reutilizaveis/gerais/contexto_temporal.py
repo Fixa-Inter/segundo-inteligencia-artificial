@@ -3,8 +3,8 @@
 from datetime import datetime
 from app.core import FUSO_HORARIO, agora_local
 
-
 def construir_contexto_temporal(instante: datetime | None = None) -> str:
+    """Monta referência temporal do turno, convertendo instante informado para o fuso de negócio. Usado pelo fluxo de gerais."""
     if instante is not None and instante.tzinfo is None:
         raise ValueError("O instante deve informar seu fuso horário.")
     agora = agora_local() if instante is None else instante.astimezone(FUSO_HORARIO)

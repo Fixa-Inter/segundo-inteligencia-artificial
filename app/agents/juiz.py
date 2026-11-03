@@ -1,22 +1,24 @@
 import json
 import logging
 from copy import deepcopy
-
 from langchain_core.messages import HumanMessage, SystemMessage
-
 from pydantic import BaseModel, ConfigDict
 from langgraph.runtime import Runtime
-
-from app.graph import EstadoGrafo
-from app.graph.contexto import ContextoGrafo
-from app.graph.estado import limpar_visualizacao
-from app.services.visualizacoes.aprovacao import (
-    possui_visualizacao, validar_candidata, contexto_julgamento, criar_aprovacao,
+from app.graph import (
+    EstadoGrafo,
+    ContextoGrafo,
+    limpar_visualizacao,
+    preparar_resposta,
+    resposta_padrao_validada,
 )
-from app.agents.prompts.reutilizaveis import construir_contexto_temporal
-from app.graph.propostas import preparar_resposta
-
+from app.services.visualizacoes import (
+    possui_visualizacao,
+    validar_candidata,
+    contexto_julgamento,
+    criar_aprovacao,
+)
 from app.agents.prompts.reutilizaveis import (
+    construir_contexto_temporal,
     CONTEXTO_INSTRUCAO,
     GESTOR_INSTRUCAO,
     GLOSSARIO_INSTRUCAO,
@@ -24,12 +26,10 @@ from app.agents.prompts.reutilizaveis import (
     TECNICO_INSTRUCAO,
     ADMINISTRADOR_INSTRUCAO,
 )
-from app.services.gerais.jev import consultar_jev, ler_choice, ler_noul
-from app.services.operacoes import aprovacao_operacoes
+from app.services.gerais import consultar_jev, ler_choice, ler_noul
+from app.services import aprovacao_operacoes
 
-from app.graph.respostas_padrao import resposta_padrao_validada
-
-
+# POLITICAS_PERFIL: Recurso compartilhado de politicas perfil usado pelas funções deste módulo e pela interface pública.
 POLITICAS_PERFIL = {
     "solicitante": SOLICITANTE_INSTRUCAO,
     "tecnico": TECNICO_INSTRUCAO,
@@ -37,6 +37,7 @@ POLITICAS_PERFIL = {
     "administrador": ADMINISTRADOR_INSTRUCAO,
 }
 
+# CRITERIOS_VEREDITO: Recurso compartilhado de criterios veredito usado pelas funções deste módulo e pela interface pública.
 CRITERIOS_VEREDITO = {
     "aprovado": "Resposta atende ao pedido, é segura e afirma apenas o que as evidências sustentam.",
     "revisar": (
@@ -49,6 +50,7 @@ CRITERIOS_VEREDITO = {
     ),
 }
 
+# CRITERIOS_MOTIVO: Recurso compartilhado de criterios motivo usado pelas funções deste módulo e pela interface pública.
 CRITERIOS_MOTIVO = {
     "nenhum": "Nenhum problema material.",
     "resultado_sem_evidencia": "Afirma sucesso, estado ou resultado de uma operação da aplicação sem prova da ferramenta.",
@@ -59,6 +61,7 @@ CRITERIOS_MOTIVO = {
     "clareza": "Texto materialmente confuso ou inadequado ao perfil.",
 }
 
+# FEEDBACK_MOTIVO: Recurso compartilhado de feedback motivo usado pelas funções deste módulo e pela interface pública.
 FEEDBACK_MOTIVO = {
     "resultado_sem_evidencia": (
         "Remova a afirmação operacional não comprovada. Informe o que falta consultar; "
@@ -78,10 +81,12 @@ FEEDBACK_MOTIVO = {
 }
 
 
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 
 def obter_pergunta(estado: EstadoGrafo) -> str:
+    """Obtém a pergunta atual das mensagens do estado. Usado por _julgar_resposta."""
     for mensagem in reversed(estado.get("messages", [])):
         if isinstance(mensagem, HumanMessage):
             return str(mensagem.content).strip()
@@ -89,6 +94,7 @@ def obter_pergunta(estado: EstadoGrafo) -> str:
 
 
 def formatar_contexto_conversa(estado: EstadoGrafo) -> str:
+    """Serializa histórico e propostas relevantes para o julgamento. Usado por _revisar_resposta."""
     return json.dumps([
         {"papel": mensagem.type, "conteudo": mensagem.content}
         for mensagem in estado.get("messages", [])
@@ -96,12 +102,14 @@ def formatar_contexto_conversa(estado: EstadoGrafo) -> str:
     ], ensure_ascii=False)
 
 
+# RespostaRevisada: contrato/estrutura de juiz; usado pelos consumidores desta interface.
 class RespostaRevisada(BaseModel):
     model_config = ConfigDict(extra="forbid")
     resposta: str
 
 
 async def revisar_resposta(estado: EstadoGrafo, runtime: Runtime[ContextoGrafo] = None) -> dict:
+    """Revisa texto com base nas evidências, preserva dados capturados e exige novo julgamento. Usado pelo fluxo de agents."""
     if not possui_visualizacao(estado):
         return await _revisar_resposta(estado)
     try:
@@ -126,7 +134,7 @@ async def revisar_resposta(estado: EstadoGrafo, runtime: Runtime[ContextoGrafo] 
 
 async def _revisar_resposta(estado: EstadoGrafo, visualizacao=None) -> dict:
     """Corrige somente o texto; o revisor não recebe ferramentas de cadastro."""
-    from app.agents.modelos import llm_especialista
+    from app.agents import llm_especialista
 
     entrada = json.dumps({
         "perfil": estado.get("perfil"),
@@ -139,6 +147,7 @@ async def _revisar_resposta(estado: EstadoGrafo, visualizacao=None) -> dict:
         "contexto_temporal": estado.get("contexto_temporal") or construir_contexto_temporal(),
         **({"visualizacao": visualizacao} if visualizacao is not None else {}),
     }, ensure_ascii=False)
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         revisao = await llm_especialista.with_structured_output(RespostaRevisada).ainvoke([
             SystemMessage(content=(
@@ -187,6 +196,7 @@ async def _revisar_resposta(estado: EstadoGrafo, visualizacao=None) -> dict:
         return {"erro": "Não foi possível revisar a resposta."}
 
 
+# TABELAS_LISTAGEM: Recurso compartilhado de tabelas listagem usado pelas funções deste módulo e pela interface pública.
 TABELAS_LISTAGEM = {
     "listar_minhas_ocorrencias": ("tabela_markdown", "ocorrencias"),
     "listar_minhas_ordens_servico": ("tabelas_markdown", "ordens_servico"),
@@ -196,6 +206,7 @@ TABELAS_LISTAGEM = {
 
 
 def _evidencias_jev(evidencias: list[str]) -> list[dict | str]:
+    """Executa a etapa evidencias jev no escopo de juiz. Usado por _evidencias_avaliacao."""
     preparadas = []
     for evidencia in evidencias:
         try:
@@ -218,6 +229,7 @@ async def julgar_resposta(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo] = None,
 ) -> dict:
+    """Avalia resposta/evidências e aprova, bloqueia ou solicita revisão, vinculando operações e gráficos aprovados. Usado pelo fluxo de agents."""
     if not possui_visualizacao(estado):
         contexto = (runtime.context or {}) if runtime else {}
         operacoes = deepcopy(contexto.get("operacoes_pendentes", []))
@@ -252,6 +264,7 @@ async def julgar_resposta(
 
 
 def _evidencias_avaliacao(estado, visualizacao):
+    """Executa a etapa evidencias avaliacao no escopo de juiz. Usado por _julgar_resposta, _revisar_resposta."""
     evidencias = _evidencias_jev(estado.get("evidencias", []))
     if visualizacao is None:
         return evidencias
@@ -269,8 +282,9 @@ async def _julgar_resposta(
     estado: EstadoGrafo,
     visualizacao=None,
 ) -> dict:
+    """Executa a etapa julgar resposta no escopo de juiz. Usado por julgar_resposta."""
     if estado.get("intencao") == "analista_compras":
-        from app.agents.juiz_compras import julgar_compra
+        from app.agents import julgar_compra
         return await julgar_compra(estado)
     if estado.get("erro"):
         return {
@@ -464,6 +478,7 @@ async def _julgar_resposta(
                 ),
             }
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         reavaliado = False
         contexto_consulta = contexto
@@ -600,5 +615,3 @@ async def _julgar_resposta(
                 if visualizacao is not None else f"Erro durante o julgamento: {erro}"
             ),
         }
-
-

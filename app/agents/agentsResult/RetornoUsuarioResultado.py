@@ -1,19 +1,6 @@
-from typing import Literal
+"""Compatibilidade de importação; contratos canônicos estão em app/schemas/resultados_agentes."""
 
-from pydantic import BaseModel
+from app.schemas.resultados_agentes import RetornoUsuarioResultado
 
-
-class RetornoUsuarioResultado(BaseModel):
-    agente: str
-    resposta: str
-    status: Literal[
-        "OPERACAO_PREPARADA",
-        "SUCESSO",
-        "SUCESSO_PARCIAL",
-        "AGUARDANDO_INFORMACAO",
-        "SEM_RESULTADO",
-        "ERRO_VALIDACAO",
-        "ERRO_FERRAMENTA",
-        "ERRO_MODELO",
-        "TIMEOUT",
-    ]
+# Mantém os nomes históricos sem duplicar classes ou validadores.
+__all__ = ['RetornoUsuarioResultado']

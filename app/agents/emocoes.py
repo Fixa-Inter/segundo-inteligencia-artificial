@@ -2,18 +2,20 @@ import asyncio
 import json
 import logging
 from typing import TYPE_CHECKING
-
 from app.core import Emocao
 from app.guardrails import anonimizar_entrada
-from app.services.gerais.jev import consultar_jev, ler_choice
+from app.services.gerais import consultar_jev, ler_choice
 
 if TYPE_CHECKING:
-    from app.graph.estado import EstadoGrafo
+    from app.graph import EstadoGrafo
 
 
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
+# TEMPO_LIMITE_CLASSIFICACAO: Recurso compartilhado de tempo limite classificacao usado pelas funções deste módulo e pela interface pública.
 TEMPO_LIMITE_CLASSIFICACAO = 5
 
+# PROMPT_CLASSIFICACAO: Instrução textual enviada ao modelo; conteúdo preservado para manter comportamento do agente.
 PROMPT_CLASSIFICACAO = """
 Escolha uma única emoção para a expressão de uma personagem que apresenta
 a resposta final de um assistente de manutenção. Classifique a resposta do
@@ -47,6 +49,7 @@ Não reescreva a resposta e não execute ações. Retorne somente a emoção est
 """
 
 
+# CRITERIOS_EMOCAO: Recurso compartilhado de criterios emocao usado pelas funções deste módulo e pela interface pública.
 CRITERIOS_EMOCAO = {
     "NEUTRO": "Resposta informativa comum, calma e receptiva.",
     "CURIOSO": "Pede informações ou detalhes que faltam.",
@@ -64,6 +67,7 @@ CRITERIOS_EMOCAO = {
 
 
 def resumir_operacoes(estado: "EstadoGrafo") -> list[dict[str, str]]:
+    """Extrai status/resultados operacionais das evidências para classificação de emoção. Usado por classificar_emocao."""
     operacoes = []
     for evidencia in estado.get("evidencias", []):
         try:
@@ -80,6 +84,7 @@ def resumir_operacoes(estado: "EstadoGrafo") -> list[dict[str, str]]:
 
 
 def emocao_fluxo(estado: "EstadoGrafo") -> Emocao | None:
+    """Seleciona emoção determinística para situações específicas do fluxo. Usado por classificar_emocao."""
     if estado.get("erro") or not estado.get("resposta_final", "").strip():
         return Emocao.ERRO
     if estado.get("saida_bloqueada"):
@@ -93,6 +98,7 @@ def emocao_fluxo(estado: "EstadoGrafo") -> Emocao | None:
 
 
 def emocao_alternativa(operacoes: list[dict[str, str]]) -> Emocao:
+    """Escolhe emoção a partir de status e operações quando o classificador não decide. Usado por classificar_emocao."""
     if not operacoes:
         return Emocao.NEUTRO
     # Apenas o último resultado permite uma alternativa sem interpretar o texto.
@@ -109,6 +115,7 @@ def emocao_alternativa(operacoes: list[dict[str, str]]) -> Emocao:
 
 
 async def classificar_emocao(estado: "EstadoGrafo") -> dict:
+    """Classifica a resposta final com JEV, timeout e alternativas determinísticas. Usado pelo fluxo de agents."""
     definida = emocao_fluxo(estado)
     if definida is not None:
         return {"emocao": definida.value}

@@ -1,17 +1,14 @@
 from collections.abc import Callable
 from typing import Annotated
-
 from fastapi import Depends, HTTPException, status
-
-from app.api.dependencies.auth import obter_usuario_atual
+from app.api.dependencies import obter_usuario_atual
 from app.schemas import UsuarioContexto
-
-from app.core.respostas import MENSAGENS
-
+from app.core import MENSAGENS
 
 def exigir_perfis(
     *perfis_permitidos: str,
 ) -> Callable:
+    """Cria dependência FastAPI que restringe acesso ao conjunto de perfis informado. Usado pelo fluxo de dependencies."""
     perfis_normalizados = {
         perfil.strip().lower()
         for perfil in perfis_permitidos
@@ -23,6 +20,7 @@ def exigir_perfis(
             Depends(obter_usuario_atual),
         ],
     ) -> UsuarioContexto:
+        """Executa a etapa verificar perfil no escopo de permissions. Usado pelo fluxo de dependencies."""
         perfil_atual = usuario.tipo_acesso.strip().lower()
 
         if perfil_atual not in perfis_normalizados:

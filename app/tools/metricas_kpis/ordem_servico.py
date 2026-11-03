@@ -1,27 +1,18 @@
 """Tools gerenciais para métricas e KPIs de ordens de serviço."""
 
+from app.tools import ArgumentosComRuntime
 from datetime import date
-
 from langchain.tools import ToolRuntime, tool
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 from app.services.indicadores import ordem_servico as servico
-from app.tools.metricas_kpis.contexto import (
-    resolver_unidade_indicadores,
-)
+from app.tools.metricas_kpis import resolver_unidade_indicadores
 
-
-class _Argumentos(BaseModel):
+# _Argumentos: contrato/estrutura de ordem_servico; usado pelos consumidores desta interface.
+class _Argumentos(ArgumentosComRuntime):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-    @model_validator(mode="before")
-    @classmethod
-    def separar_runtime_injetado(cls, dados):
-        if isinstance(dados, dict) and isinstance(dados.get("runtime"), ToolRuntime):
-            return {chave: valor for chave, valor in dados.items() if chave != "runtime"}
-        return dados
 
-
+# _ArgumentosPeriodo: contrato/estrutura de ordem_servico; usado pelos consumidores desta interface.
 class _ArgumentosPeriodo(_Argumentos):
     inicio: date = Field(
         description="Data inicial inclusiva do período, no formato YYYY-MM-DD.",

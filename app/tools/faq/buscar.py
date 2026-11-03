@@ -2,11 +2,8 @@ from langchain.tools import ToolRuntime, tool
 from qdrant_client import models
 from app.schemas import UsuarioContexto
 from app.memory.embedding import gerar_vetor_documento
-from app.core.clients.qdrant import abrir_cliente_qdrant
-from app.core.configuracao import QDRANT_COLECAO_FAQ
-
-from app.core.respostas import MENSAGENS, TRECHO_FAQ_AUSENTE
-
+from app.core.clients import abrir_cliente_qdrant
+from app.core import QDRANT_COLECAO_FAQ, MENSAGENS, TRECHO_FAQ_AUSENTE
 
 @tool
 async def buscar_faq(pergunta: str, runtime: ToolRuntime) -> str:
@@ -16,18 +13,20 @@ async def buscar_faq(pergunta: str, runtime: ToolRuntime) -> str:
     """
     contexto = runtime.context
 
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
         raise ValueError(MENSAGENS['forneca_uma_instancia_de_usuariocontexto_em_context_usuario'])
-    
+
     perfil = contexto["usuario"].tipo_acesso.lower()
 
     if perfil not in {"solicitante", "tecnico", "gestor", "administrador"}:
         raise ValueError(MENSAGENS['perfil_de_faq_invalido'])
     # O administrador utiliza o mesmo conteúdo de FAQ do gestor.
     perfil_faq = "gestor" if perfil == "administrador" else perfil
-    
+
     vetor = await gerar_vetor_documento(pergunta)
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with abrir_cliente_qdrant() as qdrant:
         resultados = await qdrant.query_points(
             collection_name=QDRANT_COLECAO_FAQ,

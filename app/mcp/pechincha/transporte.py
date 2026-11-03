@@ -2,21 +2,21 @@
 
 import asyncio
 import json
-from typing import Any
-
 import httpx
+from typing import Any
+from app.observability import REQUISICOES_PECHINCHA
+from app.core import URL_PECHINCHA, VERSAO_PROTOCOLO
 
-from app.observability.metricas import REQUISICOES_PECHINCHA
-from app.core.configuracao import URL_PECHINCHA, VERSAO_PROTOCOLO
-
-
+# ErroPechincha: contrato/estrutura de transporte; usado pelos consumidores desta interface.
 class ErroPechincha(RuntimeError):
     def __init__(self, codigo: str, mensagem: str):
+        """Inicializa os atributos da instância para as operações da classe. Usado pelo fluxo de pechincha."""
         self.codigo = codigo
         super().__init__(mensagem)
 
 
 def _ler_resposta(resposta: httpx.Response) -> dict[str, Any]:
+    """Executa a etapa ler resposta no escopo de transporte. Usado por chamar_ferramenta."""
     try:
         if "text/event-stream" in resposta.headers.get("content-type", ""):
             eventos = []
@@ -44,6 +44,7 @@ def _ler_resposta(resposta: httpx.Response) -> dict[str, Any]:
 
 
 async def _post(cliente: httpx.AsyncClient, corpo: dict, headers: dict) -> httpx.Response:
+    """Executa a etapa post no escopo de transporte. Usado por chamar_ferramenta."""
     for tentativa in range(2):
         try:
             resposta = await cliente.post(URL_PECHINCHA, json=corpo, headers=headers)
@@ -67,6 +68,7 @@ async def _post(cliente: httpx.AsyncClient, corpo: dict, headers: dict) -> httpx
 async def chamar_ferramenta(nome: str, argumentos: dict) -> dict:
     """Abre uma sessão MCP, chama uma ferramenta e devolve seu conteúdo estruturado."""
     headers = {"Accept": "application/json, text/event-stream", "Content-Type": "application/json"}
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=5.0), follow_redirects=False) as cliente:
             inicio = await _post(cliente, {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {

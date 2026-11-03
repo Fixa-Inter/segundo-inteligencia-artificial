@@ -1,34 +1,34 @@
 import logging
+from app.tools import ArgumentosComRuntime, resolver_rotulos, obter_contexto_cadastro as _contexto
 from langchain.tools import ToolRuntime, tool
 from pydantic import model_validator
-from app.core.propostas import avaliar_confirmacao, metadados_proposta
-from app.tools.propostas import resolver_rotulos
-from app.core.configuracao import QDRANT_COLECAO_LOCAL, QDRANT_COLECAO_CATEGORIA
-from app.core.clients.qdrant import abrir_cliente_qdrant
-from app.memory.vectorSearch.busca import validar_selecao
+from app.core import (
+    avaliar_confirmacao,
+    metadados_proposta,
+    QDRANT_COLECAO_LOCAL,
+    QDRANT_COLECAO_CATEGORIA,
+    MENSAGENS,
+)
+from app.core.clients import abrir_cliente_qdrant
+from app.memory.vectorSearch import validar_selecao
 from app.memory.persistencia import (
-    salvar_rascunho_solicitacao, obter_rascunho_solicitacao, atualizar_rascunho_solicitacao,
+    salvar_rascunho_solicitacao,
+    obter_rascunho_solicitacao,
+    atualizar_rascunho_solicitacao,
 )
 from app.services.ocorrencias import adicionar_ocorrencia
-from app.tools.toolsRequest import CriarOcorrenciaEntrada, CategoriaProblema, Prioridade
-from app.tools.solicitacoes.criarSolicitacao import _contexto
-from app.observability.metricas import adicionar_resolucao_pendente
+from app.schemas.cadastros import CriarOcorrenciaEntrada, CategoriaProblema, Prioridade
+from app.observability import adicionar_resolucao_pendente
 from app.services.gerais import obter_unidade_id
 from app.services.operacoes import dados_cadastro, preparar_operacao
+from app.core.apresentacao import escolher_resposta
 
-from app.core.respostas import MENSAGENS
-from app.graph.respostas_padrao import escolher_resposta
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 
-class _ArgumentosCriarOcorrencia(CriarOcorrenciaEntrada):
-    @model_validator(mode="before")
-    @classmethod
-    def separar_runtime_injetado(cls, dados):
-        if isinstance(dados, dict) and isinstance(dados.get("runtime"), ToolRuntime):
-            return {k: v for k, v in dados.items() if k != "runtime"}
-        return dados
+class _ArgumentosCriarOcorrencia(CriarOcorrenciaEntrada, ArgumentosComRuntime):
+    """Argumentos do domínio com runtime confiável separado pela classe base."""
 
 
 @tool(args_schema=_ArgumentosCriarOcorrencia)
@@ -75,6 +75,7 @@ async def criar_ocorrencia(runtime: ToolRuntime) -> dict:
 
 
 async def processar_ocorrencia(runtime: ToolRuntime, *, operacao_aprovada: dict | None = None) -> dict:
+    """Confere proposta/aceite/fotos e prepara operação, ou envia a operação já aprovada. Usado por criar_ocorrencia."""
     contexto, usuario, sessao_id = _contexto(runtime)
     if usuario.tipo_acesso not in {"tecnico", "gestor", "administrador"}:
         return {"status": "ACESSO_NEGADO", "mensagem": MENSAGENS['perfil_sem_permissao_para_ocorrencias']}
@@ -127,6 +128,7 @@ async def processar_ocorrencia(runtime: ToolRuntime, *, operacao_aprovada: dict 
     if dados_cadastro(rascunho) != operacao_aprovada:
         return {"status": "ERRO_VALIDACAO", "mensagem": MENSAGENS['a_proposta_ou_suas_fotos_mudaram_apos_a_aprovacao_confira_os_dados']}
     unidade_id = await obter_unidade_id(usuario)
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with abrir_cliente_qdrant() as cliente:
         try:
             await validar_selecao(QDRANT_COLECAO_LOCAL, dados.local_endereco_id, unidade_id, cliente)

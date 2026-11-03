@@ -1,33 +1,35 @@
 """Ferramentas de consulta com relações verificadas no banco FIXA."""
 
 from datetime import date
-
 from langchain.tools import ToolRuntime, tool
 from pydantic import Field
-
 from app.tools.ajuda_geral.consultas import _Argumentos, _acesso_negado, _usuario
 from app.services.ajuda_geral import consultas_relacionais as servico
 
-
+# _PorLocal: contrato/estrutura de consultas_relacionais; usado pelos consumidores desta interface.
 class _PorLocal(_Argumentos):
     nome_local: str = Field(min_length=1, max_length=100)
     limite: int = Field(default=10, strict=True, ge=1, le=10)
 
 
+# _SituacaoProblema: contrato/estrutura de consultas_relacionais; usado pelos consumidores desta interface.
 class _SituacaoProblema(_Argumentos):
     problema_id: int = Field(strict=True, gt=0)
 
 
+# _Modelos: contrato/estrutura de consultas_relacionais; usado pelos consumidores desta interface.
 class _Modelos(_Argumentos):
     marca: str | None = Field(default=None, min_length=1, max_length=100)
     categoria: str | None = Field(default=None, min_length=1, max_length=100)
     limite: int = Field(default=10, strict=True, ge=1, le=10)
 
 
+# _Codigo: contrato/estrutura de consultas_relacionais; usado pelos consumidores desta interface.
 class _Codigo(_Argumentos):
     codigo: str = Field(min_length=1, max_length=100)
 
 
+# _EncontrarCodigo: contrato/estrutura de consultas_relacionais; usado pelos consumidores desta interface.
 class _EncontrarCodigo(_Argumentos):
     modelo: str | None = Field(default=None, min_length=1, max_length=100)
     local: str | None = Field(default=None, min_length=1, max_length=100)
@@ -36,11 +38,13 @@ class _EncontrarCodigo(_Argumentos):
     limite: int = Field(default=10, strict=True, ge=1, le=10)
 
 
+# _PorOrdem: contrato/estrutura de consultas_relacionais; usado pelos consumidores desta interface.
 class _PorOrdem(_Argumentos):
     ordem_servico_id: int = Field(strict=True, gt=0)
     limite: int = Field(default=20, strict=True, ge=1, le=20)
 
 
+# _Eventos: contrato/estrutura de consultas_relacionais; usado pelos consumidores desta interface.
 class _Eventos(_Argumentos):
     nome_local: str = Field(min_length=1, max_length=100)
     data_inicio: date

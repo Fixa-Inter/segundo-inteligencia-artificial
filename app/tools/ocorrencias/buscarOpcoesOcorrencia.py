@@ -1,12 +1,10 @@
 import asyncio
 from langchain.tools import ToolRuntime, tool
 from app.schemas import UsuarioContexto
-from app.memory.vectorSearch.busca import buscar_local_endereco, buscar_categoria_equipamento
-from app.core.clients.qdrant import abrir_cliente_qdrant
+from app.memory.vectorSearch import buscar_local_endereco, buscar_categoria_equipamento
+from app.core.clients import abrir_cliente_qdrant
 from app.services.gerais import obter_unidade_id
-
-from app.core.respostas import MENSAGENS
-
+from app.core import MENSAGENS
 
 @tool
 async def buscar_opcoes_ocorrencia(equipamento: str, local: str, runtime: ToolRuntime) -> dict:

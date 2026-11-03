@@ -1,21 +1,14 @@
 from qdrant_client import models
-from app.memory.embedding import (
-    gerar_vetor_documento
-)
-from app.core.configuracao import (
-    QDRANT_COLECAO_HISTORICO
-    ,MONGO_BANCO_DADOS
-    ,MONGO_COLECAO_SESSOES
-)
-from app.core.clients.qdrant import abrir_cliente_qdrant
-from app.core.clients.mongo import abrir_cliente_mongo
-
+from app.memory.embedding import gerar_vetor_documento
+from app.core import QDRANT_COLECAO_HISTORICO, MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
+from app.core.clients import abrir_cliente_qdrant, abrir_cliente_mongo
 
 async def recuperar_historico(
         usuario_id: int,
         busca: str = "",
         limite: int = 3
 ) -> list[dict]:
+    """Busca resumos e sessões abertas do usuário e devolve relatos anteriores autorizados. Usado pelo fluxo de vectorSearch."""
     if busca:
         vetor = await gerar_vetor_documento(busca)
 
@@ -68,6 +61,7 @@ async def recuperar_historico(
                         for ponto in pontos_ativos
                     ]
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with abrir_cliente_mongo() as cliente:
         banco = cliente[MONGO_BANCO_DADOS]
         colecao_sessoes = banco[MONGO_COLECAO_SESSOES]

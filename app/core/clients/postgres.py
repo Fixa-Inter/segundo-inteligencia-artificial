@@ -1,20 +1,21 @@
 from sqlalchemy import text
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-
 from app.core import configuracao
 
-
+# _URLS_POR_PERFIL: Recurso compartilhado de urls por perfil usado pelas funções deste módulo e pela interface pública.
 _URLS_POR_PERFIL = {
     "solicitante": configuracao.BANCO_URL_SOLICITANTE,
     "tecnico": configuracao.BANCO_URL_TECNICO,
     "administrador": configuracao.BANCO_URL_GESTOR,
     "gestor": configuracao.BANCO_URL_GESTOR,
 }
+# _MOTORES: Recurso compartilhado de motores usado pelas funções deste módulo e pela interface pública.
 _MOTORES: dict[tuple[str, str], AsyncEngine] = {}
 
 
 def _url_asyncpg(valor: str) -> URL:
+    """Executa a etapa url asyncpg no escopo de postgres. Usado por _motor_url."""
     url = make_url(valor)
     if url.drivername in {"postgres", "postgresql"}:
         url = url.set(drivername="postgresql+asyncpg")
@@ -30,6 +31,7 @@ def _url_asyncpg(valor: str) -> URL:
 
 
 def _motor_url(perfil: str, valor: str) -> AsyncEngine:
+    """Executa a etapa motor url no escopo de postgres. Usado por obter_motor."""
     chave = (perfil, valor)
     if chave not in _MOTORES:
         _MOTORES[chave] = create_async_engine(
@@ -42,6 +44,7 @@ def _motor_url(perfil: str, valor: str) -> AsyncEngine:
 
 
 def obter_motor(perfil: str) -> AsyncEngine:
+    """Seleciona/reutiliza motor SQLAlchemy assíncrono por perfil/configuração. Usado por executar_consulta, executar_insercao."""
     if perfil not in _URLS_POR_PERFIL:
         raise PermissionError("Perfil sem acesso ao banco.")
     url = _URLS_POR_PERFIL[perfil]
@@ -51,6 +54,7 @@ def obter_motor(perfil: str) -> AsyncEngine:
 
 
 async def executar_consulta(perfil: str, sql: str, parametros: dict) -> list[dict]:
+    """Executa SQL parametrizado no motor do perfil e devolve linhas como dicionários. Usado pelo fluxo de clients."""
     motor = obter_motor(perfil)
     async with motor.connect() as conexao:
         resultado = await conexao.execute(text(sql), parametros)
@@ -68,6 +72,7 @@ async def executar_insercao(perfil: str, sql: str, parametros: dict) -> list[dic
 
 
 async def fechar_conexoes_postgres() -> None:
+    """Descarta motores/pools PostgreSQL compartilhados e limpa o registro local. Usado pelo fluxo de clients."""
     for motor in _MOTORES.values():
         await motor.dispose()
     _MOTORES.clear()

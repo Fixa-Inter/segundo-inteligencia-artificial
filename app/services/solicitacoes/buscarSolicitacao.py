@@ -1,17 +1,19 @@
 import logging
 from datetime import date, datetime, timedelta
-
-from app.core import data_atual
-from app.core.clients.postgres import executar_consulta
+from app.core import (
+    data_atual,
+    inicio_periodo_listagem as inicio_periodo,
+    MENSAGENS,
+    data_iso_banco as _data_iso,
+)
+from app.core.clients import executar_consulta
 from app.schemas import UsuarioContexto
-from app.services.ordensServico.buscarOrdensServico import inicio_periodo
+from app.core.apresentacao import escolher_resposta
 
-from app.core.respostas import MENSAGENS
-from app.graph.respostas_padrao import escolher_resposta
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
+# _SQL_BASE: SQL parametrizado do domínio; mantém filtros, população e limites da consulta.
 _SQL_BASE = """
     SELECT
         p.titulo,
@@ -35,17 +37,10 @@ _SQL_BASE = """
 """
 
 
-def _data_iso(valor) -> str:
-    if isinstance(valor, datetime):
-        return valor.date().isoformat()
-    if isinstance(valor, date):
-        return valor.isoformat()
-    raise ValueError(MENSAGENS['data_retornada_pelo_banco_em_formato_invalido'])
-
-
 async def listar_solicitacoes_pendentes(usuario: UsuarioContexto) -> dict:
     """Lista ate cinco pendencias recentes da unidade nos ultimos tres meses."""
     hoje = data_atual()
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         linhas = await executar_consulta(
             usuario.tipo_acesso,
@@ -88,6 +83,7 @@ async def listar_solicitacoes_pendentes(usuario: UsuarioContexto) -> dict:
 async def listar_minhas_solicitacoes(usuario: UsuarioContexto) -> dict:
     """Lista as tres solicitacoes mais recentes do usuario nos ultimos tres meses."""
     hoje = data_atual()
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         linhas = await executar_consulta(
             usuario.tipo_acesso,

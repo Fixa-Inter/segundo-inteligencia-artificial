@@ -1,12 +1,10 @@
 """Contrato de entrada e normalização das respostas de promoções."""
 
 from urllib.parse import urlparse
-
 from pydantic import BaseModel, Field, model_validator
-
 from .transporte import ErroPechincha
 
-
+# BuscaOfertas: contrato/estrutura de modelos; usado pelos consumidores desta interface.
 class BuscaOfertas(BaseModel):
     query: str = Field(min_length=1)
     store: str | None = None
@@ -17,6 +15,7 @@ class BuscaOfertas(BaseModel):
 
     @model_validator(mode="after")
     def validar_faixa(self):
+        """Confere faixa conforme o contrato deste domínio. Usado pelo fluxo de pechincha."""
         self.query = self.query.strip()
         if not self.query:
             raise ValueError("A palavra chave é obrigatória.")
@@ -26,12 +25,14 @@ class BuscaOfertas(BaseModel):
 
 
 def _texto(valor: object) -> str:
+    """Normaliza texto fornecido pelo provedor externo. Usado por normalizar_ofertas."""
     if isinstance(valor, dict):
         return str(valor.get("name") or valor.get("nome") or "").strip()
     return str(valor or "").strip()
 
 
 def _url(valor: object) -> str | None:
+    """Valida URL pública da oferta antes de disponibilizar o link. Usado por normalizar_ofertas."""
     if not isinstance(valor, str):
         return None
     try:
@@ -42,6 +43,7 @@ def _url(valor: object) -> str | None:
 
 
 def normalizar_ofertas(conteudo: dict) -> dict:
+    """Valida formato e projeta título, preço, loja, descrição e URL das promoções recebidas. Usado pelo fluxo de pechincha."""
     ofertas = conteudo.get("deals")
     if not isinstance(ofertas, list) or any(not isinstance(item, dict) for item in ofertas):
         raise ErroPechincha("protocolo", "A busca não retornou uma lista válida de promoções.")

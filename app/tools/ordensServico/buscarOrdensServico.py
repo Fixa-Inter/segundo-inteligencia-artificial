@@ -1,16 +1,14 @@
+from app.tools import ArgumentosComRuntime
 from datetime import date
-
 from langchain.tools import ToolRuntime, tool
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 from app.schemas import UsuarioContexto
 from app.services.ordensServico import buscar_ordens_servico as consultar_ordens
-from app.tools.ordensServico.utilitarios import montar_tabelas
+from app.tools.ordensServico import montar_tabelas
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
-class _ArgumentosBuscarOrdensServico(BaseModel):
+# _ArgumentosBuscarOrdensServico: contrato/estrutura de buscarOrdensServico; usado pelos consumidores desta interface.
+class _ArgumentosBuscarOrdensServico(ArgumentosComRuntime):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     status: str | None = Field(default=None, min_length=1, max_length=100, description="Status: Não Iniciada/Não iniciadas, Atrasada, Pausada, Em andamento ou Concluída/Finalizadas.")
@@ -23,13 +21,6 @@ class _ArgumentosBuscarOrdensServico(BaseModel):
     data_criacao_fim: date | None = Field(default=None, description="Fim do periodo de criacao, em YYYY-MM-DD.")
     data_prevista_inicio: date | None = Field(default=None, description="Inicio do periodo previsto, em YYYY-MM-DD.")
     data_prevista_fim: date | None = Field(default=None, description="Fim do periodo previsto, em YYYY-MM-DD.")
-
-    @model_validator(mode="before")
-    @classmethod
-    def separar_runtime_injetado(cls, dados):
-        if isinstance(dados, dict) and isinstance(dados.get("runtime"), ToolRuntime):
-            return {chave: valor for chave, valor in dados.items() if chave != "runtime"}
-        return dados
 
 
 @tool(args_schema=_ArgumentosBuscarOrdensServico)
@@ -48,6 +39,7 @@ async def buscar_ordem_servico(
 ) -> dict:
     """Busca ate tres ordens recentes com filtros citados, no escopo autenticado."""
     contexto = runtime.context
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if not isinstance(contexto, dict) or not isinstance(
         contexto.get("usuario"), UsuarioContexto
     ):

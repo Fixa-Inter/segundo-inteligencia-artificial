@@ -1,38 +1,29 @@
 """Rascunho, confirmação e preparação do envio de eventos."""
 
-
 import logging
+from app.tools import ArgumentosComRuntime, obter_contexto_cadastro as _contexto
 from datetime import datetime
-
 from langchain.tools import ToolRuntime, tool
 from pydantic import model_validator
-
-from app.core.clients.qdrant import abrir_cliente_qdrant
-from app.core.configuracao import QDRANT_COLECAO_LOCAL
-from app.core.propostas import avaliar_confirmacao, metadados_proposta
-from app.core.tempo import FUSO_HORARIO
+from app.core.clients import abrir_cliente_qdrant
+from app.core import QDRANT_COLECAO_LOCAL, avaliar_confirmacao, metadados_proposta, FUSO_HORARIO, MENSAGENS
 from app.memory.persistencia import (
-    atualizar_rascunho_solicitacao, obter_rascunho_solicitacao, salvar_rascunho_solicitacao,
+    atualizar_rascunho_solicitacao,
+    obter_rascunho_solicitacao,
+    salvar_rascunho_solicitacao,
 )
 from app.memory.vectorSearch import validar_selecao
 from app.services.eventos import adicionar_evento
 from app.services.gerais import obter_unidade_id
 from app.services.operacoes import dados_cadastro, preparar_operacao
-from app.tools.solicitacoes.criarSolicitacao import _contexto
-from app.tools.toolsRequest.CriarEventoEntrada import CriarEventoEntrada
+from app.schemas.cadastros import CriarEventoEntrada
 
-from app.core.respostas import MENSAGENS
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 
-class _ArgumentosCriarEvento(CriarEventoEntrada):
-    @model_validator(mode="before")
-    @classmethod
-    def separar_runtime_injetado(cls, dados):
-        if isinstance(dados, dict) and isinstance(dados.get("runtime"), ToolRuntime):
-            return {k: v for k, v in dados.items() if k != "runtime"}
-        return dados
+class _ArgumentosCriarEvento(CriarEventoEntrada, ArgumentosComRuntime):
+    """Argumentos do domínio com runtime confiável separado pela classe base."""
 
 
 @tool(args_schema=_ArgumentosCriarEvento)
@@ -84,6 +75,7 @@ async def criar_evento(runtime: ToolRuntime) -> dict:
 
 
 async def processar_evento(runtime: ToolRuntime, *, operacao_aprovada: dict | None = None) -> dict:
+    """Confere proposta/aceite e prepara operação, ou faz envio quando recebe operação aprovada do executor. Usado por criar_evento."""
     contexto, usuario, sessao_id = _contexto(runtime)
     if usuario.tipo_acesso not in {"gestor", "administrador"}:
         return {"status": "ACESSO_NEGADO", "mensagem": MENSAGENS['somente_gestores_e_administradores_podem_criar_eventos']}
@@ -128,6 +120,7 @@ async def processar_evento(runtime: ToolRuntime, *, operacao_aprovada: dict | No
             dados_cadastro(rascunho),
         )
     unidade_id = await obter_unidade_id(usuario)
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with abrir_cliente_qdrant() as cliente:
         try:
             await validar_selecao(QDRANT_COLECAO_LOCAL, dados.local_unidade_id, unidade_id, cliente)

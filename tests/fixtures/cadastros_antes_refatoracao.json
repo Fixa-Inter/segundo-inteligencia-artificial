@@ -1,0 +1,6598 @@
+[
+  {
+    "dominio": "solicitacao",
+    "http_status": 200,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 200,
+      "titulo": "Registro confirmado",
+      "problema_id": 17,
+      "status_backend": "PENDENTE",
+      "mensagem": "Solicitação cadastrada com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 200,
+    "corpo": {},
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 200
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 200,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 200
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 200,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 200
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 201,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 201,
+      "titulo": "Registro confirmado",
+      "problema_id": 17,
+      "status_backend": "PENDENTE",
+      "mensagem": "Solicitação cadastrada com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 201,
+    "corpo": {},
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 201
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 201,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 201
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 201,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 201
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 202,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 202,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 202,
+    "corpo": {},
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 202,
+      "detalhes_api": "{}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 202,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 202,
+      "detalhes_api": "{\"titulo\":\"   \"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 202,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 202,
+      "detalhes_api": "INVALID_JSON [TOKEN]"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 204,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 204,
+      "titulo": "Vazamento",
+      "mensagem": "Solicitação cadastrada com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 204,
+    "corpo": {},
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 204,
+      "titulo": "Vazamento",
+      "mensagem": "Solicitação cadastrada com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 204,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 204,
+      "titulo": "Vazamento",
+      "mensagem": "Solicitação cadastrada com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 204,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 204,
+      "titulo": "Vazamento",
+      "mensagem": "Solicitação cadastrada com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 302,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 302,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 302,
+    "corpo": {},
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 302,
+      "detalhes_api": "{}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 302,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 302,
+      "detalhes_api": "{\"titulo\":\"   \"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 302,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 302,
+      "detalhes_api": "INVALID_JSON [TOKEN]"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 400,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 400,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 400,
+    "corpo": {},
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 400,
+      "detalhes_api": "{}",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 400,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 400,
+      "detalhes_api": "{\"titulo\":\"   \"}",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 400,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 400,
+      "detalhes_api": "INVALID_JSON [TOKEN]",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 401,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 401,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 401,
+    "corpo": {},
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 401,
+      "detalhes_api": "{}",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 401,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 401,
+      "detalhes_api": "{\"titulo\":\"   \"}",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 401,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 401,
+      "detalhes_api": "INVALID_JSON [TOKEN]",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 422,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 422,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 422,
+    "corpo": {},
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 422,
+      "detalhes_api": "{}",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 422,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 422,
+      "detalhes_api": "{\"titulo\":\"   \"}",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 422,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 422,
+      "detalhes_api": "INVALID_JSON [TOKEN]",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 429,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 429,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 429,
+    "corpo": {},
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 429,
+      "detalhes_api": "{}",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 429,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 429,
+      "detalhes_api": "{\"titulo\":\"   \"}",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 429,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 429,
+      "detalhes_api": "INVALID_JSON [TOKEN]",
+      "mensagem": "A API recusou o cadastro. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 500,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 500,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 500,
+    "corpo": {},
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 500,
+      "detalhes_api": "{}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 500,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 500,
+      "detalhes_api": "{\"titulo\":\"   \"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 500,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 500,
+      "detalhes_api": "INVALID_JSON [TOKEN]"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 503,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 503,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 503,
+    "corpo": {},
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 503,
+      "detalhes_api": "{}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 503,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 503,
+      "detalhes_api": "{\"titulo\":\"   \"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "solicitacao",
+    "http_status": 503,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "categoria_equipamento_id": 1,
+      "local_endereco_id": 2,
+      "titulo": "Vazamento",
+      "descricao_problema": "Torneira pingando",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ]
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte a API antes de repetir o envio.",
+      "http_status": 503,
+      "detalhes_api": "INVALID_JSON [TOKEN]"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/solicitacoes",
+        "json": {
+          "titulo": "Vazamento",
+          "descricaoProblema": "Torneira pingando",
+          "localUnidadeID": 2,
+          "descricaoLocal": "Sala 2",
+          "categoriaEquipamentoId": 1,
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 200,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 200,
+      "titulo": "Registro confirmado",
+      "ocorrencia_id": 17,
+      "mensagem": "Ocorrência cadastrada com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 200,
+    "corpo": {},
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 200
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 200,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 200
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 200,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 200
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 201,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 201,
+      "titulo": "Registro confirmado",
+      "ocorrencia_id": 17,
+      "mensagem": "Ocorrência cadastrada com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 201,
+    "corpo": {},
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 201
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 201,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 201
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 201,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 201
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 202,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 202,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 202,
+    "corpo": {},
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 202,
+      "detalhes_api": "{}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 202,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 202,
+      "detalhes_api": "{\"titulo\":\"   \"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 202,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 202,
+      "detalhes_api": "INVALID_JSON [TOKEN]"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 204,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 204,
+      "titulo": "Vazamento",
+      "mensagem": "Ocorrência cadastrada com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 204,
+    "corpo": {},
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 204,
+      "titulo": "Vazamento",
+      "mensagem": "Ocorrência cadastrada com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 204,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 204,
+      "titulo": "Vazamento",
+      "mensagem": "Ocorrência cadastrada com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 204,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 204,
+      "titulo": "Vazamento",
+      "mensagem": "Ocorrência cadastrada com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 302,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 302,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 302,
+    "corpo": {},
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 302,
+      "detalhes_api": "{}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 302,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 302,
+      "detalhes_api": "{\"titulo\":\"   \"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 302,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 302,
+      "detalhes_api": "INVALID_JSON [TOKEN]"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 400,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 400,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 400,
+    "corpo": {},
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 400,
+      "detalhes_api": "{}",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 400,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 400,
+      "detalhes_api": "{\"titulo\":\"   \"}",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 400,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 400,
+      "detalhes_api": "INVALID_JSON [TOKEN]",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 401,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 401,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 401,
+    "corpo": {},
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 401,
+      "detalhes_api": "{}",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 401,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 401,
+      "detalhes_api": "{\"titulo\":\"   \"}",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 401,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 401,
+      "detalhes_api": "INVALID_JSON [TOKEN]",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 422,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 422,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 422,
+    "corpo": {},
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 422,
+      "detalhes_api": "{}",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 422,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 422,
+      "detalhes_api": "{\"titulo\":\"   \"}",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 422,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 422,
+      "detalhes_api": "INVALID_JSON [TOKEN]",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 429,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 429,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 429,
+    "corpo": {},
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 429,
+      "detalhes_api": "{}",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 429,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 429,
+      "detalhes_api": "{\"titulo\":\"   \"}",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 429,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 429,
+      "detalhes_api": "INVALID_JSON [TOKEN]",
+      "mensagem": "A API recusou o cadastro da ocorrência. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 500,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 500,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 500,
+    "corpo": {},
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 500,
+      "detalhes_api": "{}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 500,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 500,
+      "detalhes_api": "{\"titulo\":\"   \"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 500,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 500,
+      "detalhes_api": "INVALID_JSON [TOKEN]"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 503,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 503,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 503,
+    "corpo": {},
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 503,
+      "detalhes_api": "{}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 503,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 503,
+      "detalhes_api": "{\"titulo\":\"   \"}"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "ocorrencia",
+    "http_status": 503,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_endereco_id": 2,
+      "categoria_equipamento_id": 1,
+      "categoria_problema_id": "HIDRAULICA",
+      "prioridade": "ALTA",
+      "titulo": "Vazamento",
+      "descricao_ocorrencia": "Torneira reparada",
+      "descricao_local": "Sala 2"
+    },
+    "kwargs": {
+      "imagens": [
+        "https://example.com/foto.jpg"
+      ],
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro. Consulte os registros antes de repetir o envio.",
+      "http_status": 503,
+      "detalhes_api": "INVALID_JSON [TOKEN]"
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/ocorrencias",
+        "json": {
+          "localUnidadeId": 2,
+          "categoriaEquipamentoId": 1,
+          "categoriaProblemaId": "HIDRAULICA",
+          "titulo": "Vazamento",
+          "descricaoOcorrencia": "Torneira reparada",
+          "descricaoLocal": "Sala 2",
+          "prioridade": "ALTA",
+          "urlsFoto": [
+            "https://example.com/foto.jpg"
+          ]
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 200,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 200,
+      "titulo": "Registro confirmado",
+      "evento_id": 17,
+      "mensagem": "Evento cadastrado com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 200,
+    "corpo": {},
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 200
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 200,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 200
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 200,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 200
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 201,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 201,
+      "titulo": "Registro confirmado",
+      "evento_id": 17,
+      "mensagem": "Evento cadastrado com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 201,
+    "corpo": {},
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 201
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 201,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 201
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 201,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 201
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 202,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 202
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 202,
+    "corpo": {},
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 202
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 202,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 202
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 202,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 202
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 204,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 204,
+      "titulo": "Vistoria",
+      "mensagem": "Evento cadastrado com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 204,
+    "corpo": {},
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 204,
+      "titulo": "Vistoria",
+      "mensagem": "Evento cadastrado com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 204,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 204,
+      "titulo": "Vistoria",
+      "mensagem": "Evento cadastrado com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 204,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "SUCESSO",
+      "http_status": 204,
+      "titulo": "Vistoria",
+      "mensagem": "Evento cadastrado com sucesso."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 302,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 302
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 302,
+    "corpo": {},
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 302
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 302,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 302
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 302,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 302
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 400,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 400,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 400,
+    "corpo": {},
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 400,
+      "detalhes_api": "{}",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 400,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 400,
+      "detalhes_api": "{\"titulo\":\"   \"}",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 400,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 400,
+      "detalhes_api": "INVALID_JSON [TOKEN]",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 401,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 401,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 401,
+    "corpo": {},
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 401,
+      "detalhes_api": "{}",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 401,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 401,
+      "detalhes_api": "{\"titulo\":\"   \"}",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 401,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 401,
+      "detalhes_api": "INVALID_JSON [TOKEN]",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 422,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 422,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 422,
+    "corpo": {},
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 422,
+      "detalhes_api": "{}",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 422,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 422,
+      "detalhes_api": "{\"titulo\":\"   \"}",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 422,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 422,
+      "detalhes_api": "INVALID_JSON [TOKEN]",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 429,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 429,
+      "detalhes_api": "{\"titulo\":\"Registro confirmado\",\"id\":17,\"status\":\"PENDENTE\"}",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 429,
+    "corpo": {},
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 429,
+      "detalhes_api": "{}",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 429,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 429,
+      "detalhes_api": "{\"titulo\":\"   \"}",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 429,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "ERRO_API",
+      "http_status": 429,
+      "detalhes_api": "INVALID_JSON [TOKEN]",
+      "mensagem": "A API recusou o cadastro do evento. Confira os dados e as permissões."
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 500,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 500
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 500,
+    "corpo": {},
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 500
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 500,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 500
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 500,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 500
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 503,
+    "corpo": {
+      "titulo": "Registro confirmado",
+      "id": 17,
+      "status": "PENDENTE"
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 503
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 503,
+    "corpo": {},
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 503
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 503,
+    "corpo": {
+      "titulo": "   "
+    },
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 503
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  },
+  {
+    "dominio": "evento",
+    "http_status": 503,
+    "corpo": "INVALID_JSON token-local",
+    "dados": {
+      "local_unidade_id": 2,
+      "titulo": "Vistoria",
+      "descricao": "Inspecionar sala",
+      "data_hora_inicio": "2026-10-02T17:00:00Z",
+      "data_hora_fim": "2026-10-02T18:00:00Z",
+      "descricao_local": "Não foi especificado",
+      "observacao": "Não foi especificado"
+    },
+    "kwargs": {
+      "usuario_id": 7
+    },
+    "resultado": {
+      "status": "RESULTADO_INDETERMINADO",
+      "mensagem": "Não foi possível confirmar o cadastro do evento. Consulte os registros antes de repetir o envio.",
+      "http_status": 503
+    },
+    "requests": [
+      {
+        "url": "https://fixa.example/api/v1/eventos",
+        "json": {
+          "usuarioId": 7,
+          "localUnidadeId": 2,
+          "titulo": "Vistoria",
+          "descricao": "Inspecionar sala",
+          "descricaoLocal": "Não foi especificado",
+          "observacao": "Não foi especificado",
+          "dataHoraInicio": "2026-10-02T17:00:00Z",
+          "dataHoraFim": "2026-10-02T18:00:00Z"
+        },
+        "headers": {
+          "Authorization": "Bearer token-local"
+        }
+      }
+    ],
+    "client_options": [
+      {
+        "timeout": 15,
+        "follow_redirects": false
+      }
+    ]
+  }
+]

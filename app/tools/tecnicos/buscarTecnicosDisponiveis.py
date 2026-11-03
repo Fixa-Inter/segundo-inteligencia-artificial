@@ -1,12 +1,7 @@
 from langchain.tools import ToolRuntime, tool
-
 from app.schemas import UsuarioContexto
-from app.services.tecnicos import (
-    buscar_tecnicos_disponiveis as consultar_tecnicos_disponiveis,
-)
-
-from app.core.respostas import MENSAGENS
-
+from app.services.tecnicos import buscar_tecnicos_disponiveis as consultar_tecnicos_disponiveis
+from app.core import MENSAGENS
 
 @tool
 async def buscar_tecnicos_disponiveis(runtime: ToolRuntime) -> dict:

@@ -1,12 +1,11 @@
 """Garante os índices usados pelos filtros do Qdrant."""
 
 from qdrant_client import models
-
 from app.core import configuracao
-from app.core.clients.qdrant import abrir_cliente_qdrant
-
+from app.core.clients import abrir_cliente_qdrant
 
 async def garantir_indice_historico() -> None:
+    """Garante índices de filtro usados na coleção de histórico Qdrant. Usado pelo fluxo de vectorSearch."""
     async with abrir_cliente_qdrant() as cliente:
         await cliente.create_payload_index(
             collection_name=configuracao.QDRANT_COLECAO_HISTORICO,
@@ -40,6 +39,7 @@ async def garantir_indices_operacionais() -> None:
         min_token_len=1,
         phrase_matching=True,
     )
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with abrir_cliente_qdrant() as cliente:
         for colecao in sorted(configuracao.QDRANT_COLECOES_OPERACIONAIS):
             informacoes = await cliente.get_collection(collection_name=colecao)

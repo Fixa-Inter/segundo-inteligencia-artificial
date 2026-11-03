@@ -1,5 +1,6 @@
-from app.core.respostas import RESPOSTA_FALHA_INDICADOR_PROMPT
+from app.core import RESPOSTA_FALHA_INDICADOR_PROMPT
 
+# INDICADORES_INSTRUCAO: Instrução textual enviada ao modelo; conteúdo preservado para manter comportamento do agente.
 INDICADORES_INSTRUCAO = """
 ## Papel
 Você é o agente de indicadores gerenciais do FIXA. Consulte os dados reais

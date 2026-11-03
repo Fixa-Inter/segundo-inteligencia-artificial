@@ -2,7 +2,7 @@
 
 import httpx
 
-
+# _CLIENTE_HTTP: Recurso compartilhado de cliente http usado pelas funções deste módulo e pela interface pública.
 _CLIENTE_HTTP: httpx.AsyncClient | None = None
 
 

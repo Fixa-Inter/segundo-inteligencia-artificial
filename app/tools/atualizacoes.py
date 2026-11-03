@@ -1,12 +1,10 @@
 """Regras compartilhadas de versionamento e identificação de registros."""
 
 import re
-
-from app.core.confirmacoes import aceite_explicito, normalizar_mensagem
-from app.core.respostas import MENSAGENS
-
+from app.core import aceite_explicito, normalizar_mensagem, MENSAGENS
 
 async def salvar_proposta(contexto: dict, rascunho: dict, atualizar, **campos) -> dict:
+    """Salva versão de proposta e invalida conferência anterior quando os dados mudam. Usado pelo fluxo de tools."""
     campos = {**campos, "versao": rascunho["versao"] + 1, "turno_id": contexto["turno_id"]}
     alterou = await atualizar(
         contexto["session_id"], contexto["usuario"].usuario_id, campos,

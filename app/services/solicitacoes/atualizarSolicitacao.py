@@ -2,23 +2,21 @@
 
 from sqlalchemy import text
 from qdrant_client import models
-
-from app.core import configuracao
-from app.core.clients.postgres import executar_consulta, obter_motor
-from app.core.clients.qdrant import abrir_cliente_qdrant
-from app.core.respostas import MENSAGENS
+from app.core import configuracao, MENSAGENS
+from app.core.clients import executar_consulta, obter_motor, abrir_cliente_qdrant
 from app.memory.embedding import gerar_vetor_operacional
 from app.memory.vectorSearch.busca import _filtro, _registro
 from app.services.ajuda_geral.edicoes import _sql_alvo, localizar_opcao
 from app.services.gerais import obter_unidade_id
-from app.schemas.imagem import validar_url_imagem
+from app.schemas import validar_url_imagem
 
-
+# CAMPOS: Recurso compartilhado de campos usado pelas funções deste módulo e pela interface pública.
 CAMPOS = {"titulo": 100, "descricao_problema": 255, "descricao_local": 255,
           "local_unidade_id": None, "categoria_equipamento_id": None}
 
 
 def validar_alteracoes(alteracoes: dict) -> dict:
+    """Valida campos permitidos da atualização do domínio. Usado por atualizar_propria_pendente."""
     if set(alteracoes) - CAMPOS.keys():
         raise ValueError(MENSAGENS["campo_nao_permitido_para_edicao"])
     for campo, valor in alteracoes.items():
@@ -32,6 +30,7 @@ def validar_alteracoes(alteracoes: dict) -> dict:
 
 
 async def buscar_proprias_pendentes(usuario, descricao: str) -> list[dict]:
+    """Cruza busca vetorial com IDs de solicitações próprias pendentes na unidade. Usado pelo fluxo de solicitacoes."""
     if not descricao.strip() or len(descricao) > 500:
         raise ValueError(MENSAGENS["atualizacao_descricao_busca"])
     unidade = await obter_unidade_id(usuario)
@@ -65,6 +64,7 @@ async def buscar_proprias_pendentes(usuario, descricao: str) -> list[dict]:
 
 
 async def _ler(conexao, usuario, parametros, *, travar=False):
+    """Lê registro e fotos no escopo autenticado, com trava quando solicitado. Usado por atualizar_propria_pendente, consultar_propria_pendente."""
     sql = _sql_alvo("solicitacao", usuario)
     if travar:
         sql += " FOR UPDATE OF p"
@@ -82,6 +82,7 @@ async def _ler(conexao, usuario, parametros, *, travar=False):
 
 
 async def consultar_propria_pendente(usuario, registro_id: int) -> dict | None:
+    """Lê solicitação/fotos atuais conferindo autoria, unidade e status pendente. Usado pelo fluxo de solicitacoes."""
     unidade = await obter_unidade_id(usuario)
     async with obter_motor(usuario.tipo_acesso).connect() as conexao:
         return await _ler(conexao, usuario, {"registro_id": registro_id,
@@ -89,13 +90,16 @@ async def consultar_propria_pendente(usuario, registro_id: int) -> dict | None:
 
 
 def snapshot(registro: dict) -> dict:
+    """Extrai dados originais para detectar mudança antes da escrita. Usado por atualizar_propria_pendente."""
     return {**{campo: registro[campo] for campo in CAMPOS}, "fotos": registro.get("fotos", [])}
 
 
 async def atualizar_propria_pendente(usuario, dados: dict) -> dict | None:
+    """Trava e revalida solicitação/snapshot e grava campos/fotos em transação única. Usado pelo fluxo de solicitacoes."""
     alteracoes = validar_alteracoes(dados["alteracoes"])
     imagens = list(dict.fromkeys(validar_url_imagem(url) for url in dados["imagens"]))
     acao = dados["acao_fotos"]
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if acao not in {"manter", "adicionar", "substituir"} or (imagens and acao == "manter") or (not imagens and acao != "manter"):
         raise ValueError(MENSAGENS["atualizacao_escolher_fotos"])
     unidade = await obter_unidade_id(usuario)

@@ -1,28 +1,19 @@
-from app.core import data_atual
 import logging
-from datetime import date, datetime, timedelta
-
-from app.core.clients.postgres import executar_consulta
-from app.schemas import UsuarioContexto
-from app.services.ordensServico.buscarOrdensServico import (
+from app.core import (
+    data_atual,
     CATEGORIA_PROBLEMA_POR_ID,
     PRIORIDADE_POR_ID,
-    inicio_periodo,
+    MENSAGENS,
+    data_iso_banco as _data_iso,
+    inicio_periodo_listagem as inicio_periodo,
 )
+from datetime import date, datetime, timedelta
+from app.core.clients import executar_consulta
+from app.schemas import UsuarioContexto
+from app.core.apresentacao import escolher_resposta
 
-from app.core.respostas import MENSAGENS
-from app.graph.respostas_padrao import escolher_resposta
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
-
-
-def _data_iso(valor) -> str:
-    if isinstance(valor, datetime):
-        return valor.date().isoformat()
-    if isinstance(valor, date):
-        return valor.isoformat()
-    raise ValueError(MENSAGENS['data_retornada_pelo_banco_em_formato_invalido'])
 
 
 async def buscar_equipamento_por_codigo(codigo: str, usuario: UsuarioContexto) -> dict:
@@ -56,6 +47,7 @@ async def buscar_equipamento_por_codigo(codigo: str, usuario: UsuarioContexto) -
         ORDER BY equipamento.id
         LIMIT 2
     """
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         encontrados = await executar_consulta(
             usuario.tipo_acesso,
@@ -116,6 +108,7 @@ async def consultar_minhas_ocorrencias(usuario: UsuarioContexto) -> dict:
         ORDER BY ocorrencia.data_criacao DESC, ocorrencia.id DESC
         LIMIT 3
     """
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         linhas = await executar_consulta(
             usuario.tipo_acesso,

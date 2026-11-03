@@ -1,6 +1,6 @@
-from app.agents.prompts.reutilizaveis.usuarios.gestor import GESTOR_INSTRUCAO
+from app.agents.prompts.reutilizaveis.usuarios import GESTOR_INSTRUCAO
 
-
+# ADMINISTRADOR_INSTRUCAO: Instrução textual enviada ao modelo; conteúdo preservado para manter comportamento do agente.
 ADMINISTRADOR_INSTRUCAO = (
     GESTOR_INSTRUCAO
     + "\nO usuário autenticado tem o perfil administrador. No chat, suas "

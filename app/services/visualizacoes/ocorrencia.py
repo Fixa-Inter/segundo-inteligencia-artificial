@@ -1,14 +1,16 @@
 """Regras e consultas disponíveis de visualização para ocorrencia."""
 
 from types import MappingProxyType
-
-from app.schemas.visualizacao import (
-    Analise, ConsultaVisualizacaoPeriodo, ConsultaVisualizacaoSnapshot,
-    Fonte, ResultadoConsultaVisualizacao,
+from app.schemas import (
+    Analise,
+    ConsultaVisualizacaoPeriodo,
+    ConsultaVisualizacaoSnapshot,
+    Fonte,
+    ResultadoConsultaVisualizacao,
 )
 from .consultas import consultar_agregado
 
-
+# FONTE: Definição canônica das análises/filtros desta fonte; não é fornecida pelo modelo.
 FONTE = Fonte(
     id="ocorrencia",
     tabela="workspace.fixa_pipeline.gold_dashboard_ocorrencia",
@@ -17,6 +19,7 @@ FONTE = Fonte(
     campo_snapshot=None,
 )
 
+# FILTROS: Definição canônica das análises/filtros desta fonte; não é fornecida pelo modelo.
 FILTROS = MappingProxyType({
     "local_id": "BIGINT",
     "nome_local": "STRING",
@@ -32,6 +35,7 @@ FILTROS = MappingProxyType({
     "esta_ativo": "BOOLEAN",
 })
 
+# ANALISES: Definição canônica das análises/filtros desta fonte; não é fornecida pelo modelo.
 ANALISES: tuple[Analise, ...] = (
     Analise(
         "VIS-26", "Ocorrências por período e prioridade", FONTE, "serie_temporal",
@@ -45,6 +49,7 @@ ANALISES: tuple[Analise, ...] = (
 )
 
 
+# ANALISES_IMPLEMENTADAS: Definição canônica das análises/filtros desta fonte; não é fornecida pelo modelo.
 ANALISES_IMPLEMENTADAS = frozenset({"VIS-26", "VIS-27"})
 
 

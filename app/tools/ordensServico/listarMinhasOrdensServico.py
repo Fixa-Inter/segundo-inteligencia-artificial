@@ -1,13 +1,8 @@
 from langchain.tools import ToolRuntime, tool
-
 from app.schemas import UsuarioContexto
-from app.services.ordensServico import (
-    consultar_minhas_ordens_servico,
-)
-from app.tools.ordensServico.utilitarios import montar_tabelas
-
-from app.core.respostas import MENSAGENS
-
+from app.services.ordensServico import consultar_minhas_ordens_servico
+from app.tools.ordensServico import montar_tabelas
+from app.core import MENSAGENS
 
 @tool
 async def listar_minhas_ordens_servico(runtime: ToolRuntime) -> dict:
@@ -19,7 +14,7 @@ Apresente a tabela Markdown e o periodo retornado sem inventar ordens."""
 
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
         raise ValueError(MENSAGENS['forneca_uma_instancia_de_usuariocontexto_em_context_usuario'])
-    
+
     usuario = contexto["usuario"]
 
     if usuario.tipo_acesso.lower() not in ("tecnico", "gestor", "administrador"):
@@ -27,10 +22,10 @@ Apresente a tabela Markdown e o periodo retornado sem inventar ordens."""
             "status": "ACESSO_NEGADO",
             "mensagem": MENSAGENS['somente_tecnicos_e_gestores_podem_consultar_suas_ordens_de_servico'],
         }
-    
+
     resultado = await consultar_minhas_ordens_servico(usuario)
 
     if resultado["status"] == "SUCESSO":
         resultado["tabelas_markdown"] = montar_tabelas(resultado["ordens_servico"])
-        
+
     return resultado

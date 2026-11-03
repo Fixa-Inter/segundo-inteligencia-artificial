@@ -1,120 +1,145 @@
 """Métricas Prometheus da API e do fluxo multiagente."""
 
 from __future__ import annotations
-
 from contextvars import ContextVar
-
 from prometheus_client import Counter, Gauge, Histogram, generate_latest
-
 from app.core import configuracao
 
-
+# REQUISICOES_CONVERSA: Métrica agregada: Requisições de chat.
 REQUISICOES_CONVERSA = Counter(
     "fixa_chat_requests_total", "Requisições de chat", ["outcome"]
 )
+# DURACAO_RESPOSTA_CONVERSA: Métrica agregada: Tempo total de processamento do chat, em segundos.
 DURACAO_RESPOSTA_CONVERSA = Histogram(
     "fixa_chat_response_seconds",
     "Tempo total de processamento do chat, em segundos",
     buckets=(0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 30, 60, 120),
 )
+# DURACAO_NO_GRAFO: Métrica agregada: Duração de cada nó do LangGraph, em segundos.
 DURACAO_NO_GRAFO = Histogram(
     "fixa_graph_node_seconds",
     "Duração de cada nó do LangGraph, em segundos",
     ["node"],
     buckets=(0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 60),
 )
+# EXECUCOES_NO_GRAFO: Métrica agregada: Execuções de nós do LangGraph.
 EXECUCOES_NO_GRAFO = Counter(
     "fixa_graph_node_runs_total", "Execuções de nós do LangGraph", ["node", "outcome"]
 )
+# DURACAO_JEV: Métrica agregada: Duração das chamadas ao JEV.
 DURACAO_JEV = Histogram(
     "fixa_jev_request_seconds", "Duração das chamadas ao JEV", ["operation"],
     buckets=(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30, 60),
 )
+# REQUISICOES_JEV: Métrica agregada: Chamadas ao JEV.
 REQUISICOES_JEV = Counter(
     "fixa_jev_requests_total", "Chamadas ao JEV", ["operation", "outcome"]
 )
+# REQUISICOES_PECHINCHA: Métrica agregada: Chamadas ao MCP Pechincha.ai.
 REQUISICOES_PECHINCHA = Counter(
     "fixa_pechincha_requests_total", "Chamadas ao MCP Pechincha.ai", ["operation", "outcome"]
 )
+# TOKENS_MODELO: Métrica agregada: Tokens reportados pelos provedores de LLM.
 TOKENS_MODELO = Counter(
     "fixa_llm_tokens_total", "Tokens reportados pelos provedores de LLM", ["provider", "model", "kind"]
 )
+# CUSTO_MODELO_USD: Métrica agregada: Custo estimado das chamadas de LLM em USD.
 CUSTO_MODELO_USD = Counter(
     "fixa_llm_estimated_cost_usd_total", "Custo estimado das chamadas de LLM em USD", ["provider", "model"]
 )
+# EXECUCOES_OPERACAO: Métrica agregada: Resultado de operações de negócio.
 EXECUCOES_OPERACAO = Counter(
     "fixa_business_operations_total", "Resultado de operações de negócio", ["operation", "outcome"]
 )
+# CONSULTAS_VISUALIZACAO: Métrica agregada: Invocações dos serviços analíticos de visualização.
 CONSULTAS_VISUALIZACAO = Counter(
     "fixa_visualization_service_calls_total", "Invocações dos serviços analíticos de visualização",
     ["analysis", "outcome"],
 )
+# DURACAO_CONSULTAS_VISUALIZACAO: Métrica agregada: Duração do serviço, incluindo validação, consulta e normalização.
 DURACAO_CONSULTAS_VISUALIZACAO = Histogram(
     "fixa_visualization_service_seconds", "Duração do serviço, incluindo validação, consulta e normalização",
     ["analysis", "outcome"], buckets=(0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10, 30, 60, 120),
 )
+# BYTES_VISUALIZACAO: Métrica agregada: Tamanho do JSON compacto dos dados de visualização por etapa.
 BYTES_VISUALIZACAO = Histogram(
     "fixa_visualization_json_bytes", "Tamanho do JSON compacto dos dados de visualização por etapa",
     ["stage"], buckets=(1024, 4096, 16384, 65536, 131072, 262144, 524288, 1048576, 2097152),
 )
+# RESOLUCOES: Métrica agregada: Ocorrências de manutenção registradas com sucesso.
 RESOLUCOES = Counter(
     "fixa_resolutions_total", "Ocorrências de manutenção registradas com sucesso"
 )
+# CUSTO_RESOLUCAO_USD: Métrica agregada: Custo de LLM da requisição que registrou uma ocorrência.
 CUSTO_RESOLUCAO_USD = Histogram(
     "fixa_resolution_request_cost_usd",
     "Custo de LLM da requisição que registrou uma ocorrência",
     buckets=(0.0001, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.5, 1),
 )
+# CUSTO_SEMANAL_ESTIMADO_USD: Métrica agregada: Custo semanal projetado em USD para o cenário configurado.
 CUSTO_SEMANAL_ESTIMADO_USD = Gauge(
     "fixa_weekly_estimated_cost_usd",
     "Custo semanal projetado em USD para o cenário configurado",
     ["weekly_active_users"],
 )
+# ROI_CONFIGURADO: Métrica agregada: 1 quando o valor financeiro por resolução está configurado; caso contrário 0.
 ROI_CONFIGURADO = Gauge(
     "fixa_roi_value_configured",
     "1 quando o valor financeiro por resolução está configurado; caso contrário 0",
 )
+# VALOR_ROI_BRL: Métrica agregada: Valor estimado em BRL atribuído a cada resolução.
 VALOR_ROI_BRL = Gauge(
     "fixa_roi_value_per_resolution_brl",
     "Valor estimado em BRL atribuído a cada resolução",
 )
+# REAIS_POR_DOLAR: Métrica agregada: Cotação BRL por USD usada no ROI.
 REAIS_POR_DOLAR = Gauge("fixa_brl_per_usd", "Cotação BRL por USD usada no ROI")
 
 # Cada chamada de chat mantém seu próprio custo, inclusive as chamadas do grafo.
 _CUSTO_REQUISICAO_USD: ContextVar[float] = ContextVar("fixa_request_cost_usd", default=0.0)
+# _REQUISICAO_FALHOU: Recurso compartilhado de requisicao falhou usado pelas funções deste módulo e pela interface pública.
 _REQUISICAO_FALHOU: ContextVar[bool] = ContextVar("fixa_request_failed", default=False)
+# _RESOLUCOES_PENDENTES: Recurso compartilhado de resolucoes pendentes usado pelas funções deste módulo e pela interface pública.
 _RESOLUCOES_PENDENTES: ContextVar[int] = ContextVar("fixa_pending_resolutions", default=0)
 
 
 def reiniciar_custo_requisicao() -> object:
+    """Inicializa ContextVar de custo e retorna token de restauração. Usado pelo fluxo de observability."""
     return _CUSTO_REQUISICAO_USD.set(0.0)
 
 
 def restaurar_custo_requisicao(token: object) -> None:
+    """Restaura ContextVar de custo pelo token. Usado pelo fluxo de observability."""
     _CUSTO_REQUISICAO_USD.reset(token)  # type: ignore[arg-type]
 
 
 def obter_custo_requisicao_usd() -> float:
+    """Lê custo estimado acumulado no contexto da requisição. Usado por registrar_resolucao."""
     return _CUSTO_REQUISICAO_USD.get()
 
 
 def reiniciar_resultado_requisicao() -> object:
+    """Inicializa indicador contextual de falha e retorna token. Usado pelo fluxo de observability."""
     return _REQUISICAO_FALHOU.set(False)
 
 
 def marcar_falha_requisicao() -> None:
+    """Marca falha no contexto da requisição atual. Usado pelo fluxo de observability."""
     _REQUISICAO_FALHOU.set(True)
 
 
 def requisicao_falhou() -> bool:
+    """Consulta indicador contextual de falha. Usado pelo fluxo de observability."""
     return _REQUISICAO_FALHOU.get()
 
 
 def restaurar_resultado_requisicao(token: object) -> None:
+    """Restaura indicador de falha pelo token. Usado pelo fluxo de observability."""
     _REQUISICAO_FALHOU.reset(token)  # type: ignore[arg-type]
 
 
 def _preco_modelo(provedor: str, modelo: str) -> tuple[float, float]:
+    """Executa a etapa preco modelo no escopo de metricas. Usado por configurar_indicadores_cenarios, registrar_uso_modelo."""
     if provedor == "openai" and modelo.startswith("gpt-6-luna"):
         return (
             configuracao.OBSERVABILIDADE_OPENAI_ENTRADA_USD_MILHAO,
@@ -131,6 +156,7 @@ def _preco_modelo(provedor: str, modelo: str) -> tuple[float, float]:
 
 
 def registrar_uso_modelo(provedor: str, modelo: str, tokens_entrada: int, tokens_saida: int) -> None:
+    """Registra tokens/custo e acumula custo da requisição. Usado por on_llm_end."""
     provedor = (provedor or "unknown").lower()
     modelo = modelo or "unknown"
     tokens_entrada = max(0, int(tokens_entrada or 0))
@@ -149,23 +175,28 @@ def registrar_uso_modelo(provedor: str, modelo: str, tokens_entrada: int, tokens
 
 
 def registrar_resolucao() -> None:
+    """Contabiliza ocorrência registrada e custo da requisição. Usado por finalizar_resolucoes."""
     RESOLUCOES.inc()
     CUSTO_RESOLUCAO_USD.observe(obter_custo_requisicao_usd())
 
 
 def reiniciar_resolucoes_pendentes() -> object:
+    """Inicializa contagem contextual de resoluções pendentes. Usado pelo fluxo de observability."""
     return _RESOLUCOES_PENDENTES.set(0)
 
 
 def restaurar_resolucoes_pendentes(token: object) -> None:
+    """Restaura contagem contextual de resoluções pelo token. Usado pelo fluxo de observability."""
     _RESOLUCOES_PENDENTES.reset(token)  # type: ignore[arg-type]
 
 
 def adicionar_resolucao_pendente() -> None:
+    """Acumula resolução para contabilizar ao final do fluxo. Usado pelo fluxo de observability."""
     _RESOLUCOES_PENDENTES.set(_RESOLUCOES_PENDENTES.get() + 1)
 
 
 def finalizar_resolucoes() -> None:
+    """Consolida resoluções pendentes no final do fluxo. Usado pelo fluxo de observability."""
     quantidade = _RESOLUCOES_PENDENTES.get()
     for _ in range(quantidade):
         registrar_resolucao()
@@ -173,10 +204,12 @@ def finalizar_resolucoes() -> None:
 
 
 def registrar_operacao(operacao: str, resultado_operacao: str) -> None:
+    """Incrementa métrica agregada por operação/resultado. Usado pelo fluxo de observability."""
     EXECUCOES_OPERACAO.labels(operacao, resultado_operacao).inc()
 
 
 def configurar_indicadores_cenarios() -> None:
+    """Atualiza projeções de custo semanal e parâmetros de ROI. Usado pelo fluxo de observability."""
     tarifa_entrada, tarifa_saida = _preco_modelo("openai", "gpt-6-luna")
     custo_mensagem = (
         configuracao.OBSERVABILIDADE_TOKENS_ESTIMADOS_ENTRADA_MENSAGEM * tarifa_entrada
@@ -198,6 +231,7 @@ def configurar_indicadores_cenarios() -> None:
 
 
 def gerar_conteudo_prometheus() -> bytes:
+    """Serializa métricas do registro Prometheus em bytes. Usado pelo fluxo de observability."""
     return generate_latest()
 
 
@@ -212,6 +246,7 @@ try:
         run_inline = True
 
         def on_llm_end(self, response, **kwargs) -> None:
+            """Adapta o callback on_llm_end às regras e ao contexto desta classe. Usado pelo fluxo de observability."""
             resposta = response
             uso = {}
             provedor = "unknown"
@@ -252,6 +287,7 @@ try:
 
         def on_llm_error(self, error, **kwargs) -> None:
             # A chamada que falhou não tem token/custo reportado pelo provedor.
+            """Adapta o callback on_llm_error às regras e ao contexto desta classe. Usado pelo fluxo de observability."""
             return None
 
 except ImportError:  # pragma: no cover - dependências da aplicação incluem LangChain.

@@ -1,86 +1,30 @@
-from app.core import data_atual
 import logging
+import unicodedata
+from app.core import data_atual, MENSAGENS, data_iso_banco, inicio_periodo_listagem as inicio_periodo
 from calendar import monthrange
 from datetime import date, datetime, timedelta
-import unicodedata
-
-from app.core.clients.postgres import executar_consulta
+from app.core.clients import executar_consulta
 from app.schemas import UsuarioContexto
+from app.core.apresentacao import escolher_resposta
+from app.core.manutencao import (
+    CATEGORIA_PROBLEMA_POR_ID,
+    ORDEM_PRIORIDADE,
+    PRIORIDADE_POR_ID,
+    STATUS_ORDEM_SERVICO_POR_ID,
+    _ID_POR_CATEGORIA_PROBLEMA,
+    _ID_POR_PRIORIDADE,
+    _ID_POR_STATUS,
+    _normalizar_filtro,
+    chave_ordenacao_status,
+)
 
-from app.core.respostas import MENSAGENS
-from app.graph.respostas_padrao import escolher_resposta
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
-
-ORDEM_PRIORIDADE = ("ALTA", "MEDIA", "BAIXA")
-PRIORIDADE_POR_ID = {0: "ALTA", 1: "MEDIA", 2: "BAIXA"}
-STATUS_ORDEM_SERVICO_POR_ID = {
-    0: "Não Iniciada",
-    1: "Atrasada",
-    2: "Pausada",
-    3: "Em andamento",
-    4: "Concluída",
-}
-
-CATEGORIA_PROBLEMA_POR_ID = {
-    1: "Elétrica",
-    2: "Hidráulica",
-    3: "Mecânica",
-    4: "Informática",
-    5: "Mobiliário",
-    6: "Climatização",
-    7: "Rede e Conectividade",
-    8: "Segurança",
-    9: "Iluminação",
-    10: "Limpeza e Conservação",
-}
-
-
-def inicio_periodo(hoje: date) -> date:
-    """Subtrai tres meses de calendario, ajustando dias inexistentes."""
-    indice_mes = hoje.year * 12 + hoje.month - 1 - 3
-    ano, mes_zero = divmod(indice_mes, 12)
-    mes = mes_zero + 1
-    return date(ano, mes, min(hoje.day, monthrange(ano, mes)[1]))
 
 
 def _data_iso(valor) -> str | None:
-    if valor is None:
-        return None
-    if isinstance(valor, datetime):
-        return valor.date().isoformat()
-    if isinstance(valor, date):
-        return valor.isoformat()
-    raise ValueError(MENSAGENS['data_retornada_pelo_banco_em_formato_invalido'])
-
-
-def _normalizar_filtro(valor: str) -> str:
-    texto = unicodedata.normalize("NFD", valor.strip().upper())
-    return "".join(caractere for caractere in texto if unicodedata.category(caractere) != "Mn")
-
-
-_ID_POR_CATEGORIA_PROBLEMA = {
-    _normalizar_filtro(nome): identificador
-    for identificador, nome in CATEGORIA_PROBLEMA_POR_ID.items()
-}
-_ID_POR_PRIORIDADE = {
-    _normalizar_filtro(nome): identificador
-    for identificador, nome in PRIORIDADE_POR_ID.items()
-}
-
-
-_ID_POR_STATUS = {_normalizar_filtro(nome): codigo for codigo, nome in STATUS_ORDEM_SERVICO_POR_ID.items()}
-_ID_POR_STATUS.update({
-    "NAO INICIADAS": 0,
-    "FINALIZADAS": 4,
-})
-
-
-def chave_ordenacao_status(status: str) -> tuple[int, str]:
-    """Ordena pelos status definidos no enum da ordem de serviço."""
-    nome = _normalizar_filtro(status)
-    return (_ID_POR_STATUS.get(nome, 5), nome)
+    """Adapta data opcional das OS sem alterar a política dos demais domínios."""
+    return data_iso_banco(valor, permitir_nulo=True)
 
 
 async def buscar_ordens_servico(
@@ -267,6 +211,7 @@ async def buscar_ordens_servico(
         LIMIT 3
     """
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         linhas = await executar_consulta(perfil, sql, parametros)
         ordens = []
@@ -331,6 +276,7 @@ async def _consultar_ordens_servico(
     *,
     somente_usuario: bool,
 ) -> dict:
+    """Executa a etapa consultar ordens servico no escopo de buscarOrdensServico. Usado por consultar_minhas_ordens_servico, consultar_todas_ordens_servico."""
     hoje = data_atual()
     inicio = inicio_periodo(hoje)
     filtro_usuario = " AND os.usuario_id = :usuario_id" if somente_usuario else ""
@@ -374,6 +320,7 @@ async def _consultar_ordens_servico(
         "fim_exclusivo": hoje + timedelta(days=1),
     }
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         linhas = await executar_consulta(usuario.tipo_acesso, sql, parametros)
         ordens = []
@@ -417,3 +364,6 @@ async def _consultar_ordens_servico(
             escolher_resposta(ordens, 'ordens_de_servico_consultadas_com_sucesso', 'nenhuma_ordem_de_servico_encontrada_nos_ultimos_tres_meses')
         ),
     }
+
+
+# Compatibilidade das consultas; enums não pertencem ao SQL de OS.

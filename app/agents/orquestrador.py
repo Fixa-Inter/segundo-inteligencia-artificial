@@ -4,14 +4,12 @@ import json
 import re
 import unicodedata
 from typing import Literal
-
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
+from app.agents import llm_rapido
+from app.core import propostas_pendentes
 
-from app.agents.modelos import llm_rapido
-from app.graph.continuacoes import propostas_pendentes
-
-
+# DecisaoRoteamento: contrato/estrutura de orquestrador; usado pelos consumidores desta interface.
 class DecisaoRoteamento(BaseModel):
     operacao_ocorrencia: Literal["criar", "atualizar"] = Field(
         default="criar", description="Atualizar uma ocorrência própria existente é diferente de registrar outro serviço."
@@ -36,10 +34,12 @@ class DecisaoRoteamento(BaseModel):
     justificativa: str = Field(description="Motivo curto para o encaminhamento escolhido.")
 
 
+# roteador_estruturado: Recurso compartilhado de roteador estruturado usado pelas funções deste módulo e pela interface pública.
 roteador_estruturado = llm_rapido.with_structured_output(DecisaoRoteamento)
 
 
 def pedido_compra_explicito(pergunta: str) -> bool:
+    """Detecta menção explícita a busca de compra/lojas para apoiar roteamento. Usado por rotear_orquestrador."""
     texto = "".join(
         caractere for caractere in unicodedata.normalize("NFKD", pergunta.lower())
         if not unicodedata.combining(caractere)
@@ -55,6 +55,7 @@ def pedido_compra_explicito(pergunta: str) -> bool:
 
 
 def _resumir_propostas(estado: dict, *, pausadas: bool = False) -> dict:
+    """Executa a etapa resumir propostas no escopo de orquestrador. Usado por rotear_orquestrador."""
     return {
         tipo: {
             "status": proposta.get("status" if tipo == "ajuda_geral" else "status_fluxo"),
@@ -72,6 +73,7 @@ def _resumir_propostas(estado: dict, *, pausadas: bool = False) -> dict:
 
 
 async def rotear_orquestrador(estado: dict, pergunta: str) -> DecisaoRoteamento:
+    """Produz decisão estruturada de intenção, continuidade e operação, usando conversa/propostas. Usado pelo fluxo de agents."""
     if pedido_compra_explicito(pergunta) and "analista_compras" not in propostas_pendentes(estado):
         return DecisaoRoteamento(
             intencao="analista_compras", continua_pendente=False,

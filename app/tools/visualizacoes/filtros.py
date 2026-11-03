@@ -1,23 +1,15 @@
 """Validação dos argumentos das tools, compartilhada com os serviços."""
 
-
 from collections.abc import Iterable
 from types import MappingProxyType
-
-from app.schemas.visualizacao import (
-    Analise, ConsultaVisualizacaoPeriodo, ConsultaVisualizacaoSnapshot,
-)
+from app.schemas import Analise, ConsultaVisualizacaoPeriodo, ConsultaVisualizacaoSnapshot
 from app.services.visualizacoes import (
     FILTROS_POR_FONTE as _DEFINICOES_FILTROS,
     obter_analise,
-)
-from app.services.visualizacoes.validacao import (
     MAXIMO_VALORES_POR_FILTRO,
     validar_argumentos_analise,
 )
-
-from app.core.respostas import MENSAGENS
-
+from app.core import MENSAGENS
 
 # As definições e os tipos dos campos pertencem ao serviço de cada fonte.
 FILTROS_POR_FONTE = MappingProxyType({

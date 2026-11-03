@@ -1,42 +1,28 @@
 import logging
 from typing import Literal, cast
 from uuid import uuid4
-from app.observability.tracing import somente_metricas
-
+from app.observability import somente_metricas, MonitorMetricas, finalizar_resolucoes, marcar_falha_requisicao
 from langchain_core.messages import HumanMessage, AIMessage
 from fastapi import HTTPException, status
-
-from app.graph.contexto import ContextoGrafo
-from app.graph.estado import EstadoGrafo, limpar_visualizacao
-from app.graph.fluxo import grafo
-from app.graph.operacoes import resposta_resultados
+from app.graph import ContextoGrafo, EstadoGrafo, limpar_visualizacao, grafo, resposta_resultados
 from app.schemas import UsuarioContexto
-from app.core import Emocao
-from app.memory.persistencia import salvar_mensagem
-from app.memory.persistencia.salvar_mensagem import marcar_confirmacao_mensagem
-from app.memory.persistencia import recuperar_mensagens
-from app.memory.persistencia import obter_documento_sessao_id
+from app.core import Emocao, campos_pendentes, resumo_confirmacao, MENSAGENS
 from app.memory.persistencia import (
+    salvar_mensagem,
+    marcar_confirmacao_mensagem,
+    recuperar_mensagens,
+    obter_documento_sessao_id,
     obter_rascunho_solicitacao,
     obter_quantidade_anexos_pendentes,
+    obter_acao,
+    obter_analise_compra,
+    atualizar_rascunho_solicitacao,
 )
-from app.memory.persistencia import obter_acao
-from app.memory.persistencia.analise_compra import obter_analise_compra
-from app.memory.persistencia import atualizar_rascunho_solicitacao
-
 from app.guardrails import anonimizar_entrada
-from app.core.propostas import campos_pendentes, resumo_confirmacao
 from app.agents.prompts.reutilizaveis import construir_contexto_temporal
-from app.services.visualizacoes.publicacao import publicar_visualizacao, LimiteVisualizacaoExcedido
-from app.observability.metricas import (
-    MonitorMetricas,
-    finalizar_resolucoes,
-    marcar_falha_requisicao,
-)
+from app.services.visualizacoes import publicar_visualizacao, LimiteVisualizacaoExcedido
 
-from app.core.respostas import MENSAGENS
-
-
+# Perfil: Recurso compartilhado de perfil usado pelas funções deste módulo e pela interface pública.
 Perfil = Literal[
     "solicitante",
     "tecnico",
@@ -44,6 +30,7 @@ Perfil = Literal[
     "administrador"
 ]
 
+# PERFIS_VALIDOS: Recurso compartilhado de perfis validos usado pelas funções deste módulo e pela interface pública.
 PERFIS_VALIDOS = {
     "solicitante",
     "tecnico",
@@ -57,6 +44,8 @@ def criar_estado_inicial(
     usuario: UsuarioContexto,
 ) -> EstadoGrafo:
 
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
+    """Inicializa estado do turno e valida perfil. Usado por executar_grafo."""
     if not mensagens:
         raise ValueError(MENSAGENS['a_mensagem_nao_pode_estar_vazia'])
 
@@ -111,15 +100,17 @@ async def executar_grafo(
     imagens: list[str] | None = None,
     plataforma: Literal["web", "mobile"] = "web",
 ) -> EstadoGrafo:
+    """Prepara memória/contexto, invoca grafo e persiste resposta antes de disponibilizá-la. Usado pelo fluxo de graph."""
     usuario_id = usuario.usuario_id
 
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if not thread_id:
         raise ValueError(MENSAGENS['o_thread_id_nao_pode_estar_vazio'])
 
     sessao_id_interno = (
         f"{usuario_id}:{thread_id}"
     )
-    
+
     # ANONIMIZAR A ENTRADA E SALVAR A MENSAGEM COM O MÉTODO SALVAR MENSAGEM
     mensagem_anonimizada, mapa_pii = anonimizar_entrada(
         mensagem
@@ -159,7 +150,7 @@ async def executar_grafo(
         sessao_id=thread_id,
         usuario_id=usuario_id,
     )
-    
+
     estado_inicial = criar_estado_inicial(
         mensagens=mensagens,
         usuario=usuario,
@@ -192,6 +183,7 @@ async def executar_grafo(
         "resultados_operacoes": [],
     }
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         resultado = await grafo.ainvoke(
             estado_inicial,

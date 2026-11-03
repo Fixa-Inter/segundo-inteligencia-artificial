@@ -1,8 +1,7 @@
 """Seleção e renderização centralizadas das respostas padrão da aplicação."""
 
 import json
-
-from app.core.respostas import (
+from app.core import (
     FERRAMENTA_INDISPONIVEL,
     FAQ_SEM_INFORMACAO,
     TRECHO_FAQ_AUSENTE,
@@ -15,28 +14,32 @@ from app.core.respostas import (
     TEXTOS_COMPRAS,
     COMPLEMENTOS_BASE_CALCULO,
 )
+from app.core.apresentacao import (
+    formatar_resposta,
+    escolher_resposta,
+    resposta_bloqueio_seguranca,
+    resultado_indeterminado,
+    texto_resultados,
+    resumo_confirmacao,
+    resumo_atualizacao,
+    resposta_ofertas,
+    resposta_cobertura_lojas,
+    pergunta_opcionais_compra,
+    resposta_busca_compra,
+    resposta_erro_compra,
+    resposta_consulta_visualizacao,
+    _avisos_base,
+)
+
+# Compatibilidade: seleção do fluxo permanece aqui; renderização pertence ao core.
 
 
+# TEXTOS: Recurso compartilhado de textos usado pelas funções deste módulo e pela interface pública.
 TEXTOS = {"ferramenta_indisponivel": FERRAMENTA_INDISPONIVEL, "faq_sem_informacao": FAQ_SEM_INFORMACAO}
 
 
-def formatar_resposta(chave: str, **valores) -> str:
-    """Interpola somente um template conhecido do catálogo de mensagens."""
-    return MENSAGENS[chave].format(**valores)
-
-
-def escolher_resposta(condicao, quando_sim: str, quando_nao: str) -> str:
-    """Seleciona um texto do catálogo a partir de um resultado já apurado."""
-    return MENSAGENS[quando_sim if condicao else quando_nao]
-
-
-def resposta_bloqueio_seguranca(categoria: str) -> dict | None:
-    if categoria in RESPOSTAS_BLOQUEIO:
-        return {"bloqueado": True, **RESPOSTAS_BLOQUEIO[categoria]}
-    return None
-
-
 def selecionar_resposta_saida(estado: dict, resposta: str) -> tuple[str, str | None] | None:
+    """Aplica texto padronizado compatível com o estado final do fluxo. Usado pelo fluxo de graph."""
     if estado.get("veredito") != "aprovado":
         return MENSAGENS['a_resposta_nao_foi_aprovada_para_envio'], estado.get("erro")
     if not resposta:
@@ -45,6 +48,7 @@ def selecionar_resposta_saida(estado: dict, resposta: str) -> tuple[str, str | N
 
 
 def resposta_interrupcao_proposta(tipo: str, manifestacao: str) -> str:
+    """Renderiza mensagem de pausa/cancelamento da proposta. Usado pelo fluxo de graph."""
     if manifestacao == "cancelamento":
         return escolher_resposta(tipo == "analista_compras", 'analise_de_compra_cancelada',
                                  'proposta_cancelada_nao_vou_enviar_esse_cadastro_nem_executar_essa_alteracao')
@@ -58,6 +62,7 @@ def resposta_interrupcao_proposta(tipo: str, manifestacao: str) -> str:
 
 
 def _registros(evidencias: list[str]) -> list[dict]:
+    """Executa a etapa registros no escopo de respostas_padrao. Usado por preparar_resposta_padrao, resposta_padrao_validada."""
     registros = []
     for evidencia in evidencias:
         try:
@@ -70,6 +75,7 @@ def _registros(evidencias: list[str]) -> list[dict]:
 
 
 def _pode_padronizar(registros: list[dict], contexto: dict) -> bool:
+    """Executa a etapa pode padronizar no escopo de respostas_padrao. Usado por preparar_resposta_padrao, resposta_padrao_validada."""
     if contexto.get("operacoes_pendentes") or contexto.get("resultados_operacoes"):
         return False
     for registro in registros:
@@ -85,6 +91,7 @@ def _pode_padronizar(registros: list[dict], contexto: dict) -> bool:
 
 
 def preparar_resposta_padrao(status: str, intencao: str, evidencias: list[str], contexto: dict) -> dict:
+    """Confere status/intenção/evidências antes de padronizar limitação ou FAQ sem informação. Usado por resposta_padrao_validada."""
     registros = _registros(evidencias)
     if not _pode_padronizar(registros, contexto):
         return {}
@@ -102,6 +109,7 @@ def preparar_resposta_padrao(status: str, intencao: str, evidencias: list[str], 
 
 
 def resposta_padrao_validada(estado: dict) -> str | None:
+    """Revalida a resposta padronizada antes do julgamento. Usado pelo fluxo de graph."""
     motivo = estado.get("motivo_resposta_padrao")
     texto = TEXTOS.get(motivo)
     if (not texto or estado.get("erro") or estado.get("resposta_especialista") != texto
@@ -114,32 +122,8 @@ def resposta_padrao_validada(estado: dict) -> str | None:
     return texto if preparada.get("motivo_resposta_padrao") == motivo else None
 
 
-def resultado_indeterminado() -> dict:
-    return {"status": "RESULTADO_INDETERMINADO",
-            "mensagem": MENSAGENS['o_processamento_pode_ter_ocorrido_confira_seus_registros_antes_de_repetir_o']}
-
-
-def texto_resultados(resultados: list[dict]) -> str:
-    mensagens = []
-    for item in resultados:
-        resultado = item["resultado"]
-        status = resultado.get("status")
-        if item["tipo"] in {"atualizacao_solicitacao", "atualizacao_ocorrencia"}:
-            prefixo = "ocorrencia_atualizacao" if item["tipo"] == "atualizacao_ocorrencia" else "atualizacao"
-            mensagens.append(resultado_indeterminado()["mensagem"] if status == "RESULTADO_INDETERMINADO" else
-                             MENSAGENS[f"{prefixo}_sucesso" if status == "SUCESSO" else f"{prefixo}_falha"])
-            continue
-        if status == "SUCESSO":
-            mensagem = RESPOSTAS_OPERACAO_SUCESSO[item["tipo"]]
-        elif status == "RESULTADO_INDETERMINADO":
-            mensagem = resultado_indeterminado()["mensagem"]
-        else:
-            mensagem = RESPOSTAS_OPERACAO_FALHA[item["tipo"]]
-        mensagens.append(mensagem)
-    return "\n\n".join(mensagens)
-
-
 def _anexar_orientacao_consulta(resposta: str, evidencias_novas: list[str]) -> str:
+    """Executa a etapa anexar orientacao consulta no escopo de respostas_padrao. Usado pelo fluxo de graph."""
     for evidencia in reversed(evidencias_novas):
         try:
             registro = json.loads(evidencia)
@@ -157,107 +141,7 @@ def _anexar_orientacao_consulta(resposta: str, evidencias_novas: list[str]) -> s
     return resposta
 
 
-def resumo_confirmacao(rascunho: dict) -> str:
-    if rascunho.get("operacao") == "atualizar":
-        return resumo_atualizacao(rascunho)
-    from app.core.propostas import campos_pendentes
-    pendentes = campos_pendentes(rascunho)
-    if not pendentes:
-        return MENSAGENS['os_dados_ja_estao_confirmados_nao_e_necessario_confirma_los_novamente']
-    titulo = TEXTOS_CONFIRMACAO["titulo" if not rascunho.get("dados_confirmados") else "alteracoes"]
-    linhas = [titulo]
-    for campo in pendentes:
-        valor = rascunho.get("rotulos", {}).get(campo, rascunho["dados"][campo])
-        # IDs são internos; as ferramentas devem fornecer descrições verificadas.
-        if campo in {"local_endereco_id", "local_unidade_id", "categoria_equipamento_id"} and campo not in rascunho.get("rotulos", {}):
-            valor = TEXTOS_CONFIRMACAO["rotulo_ausente"]
-        linhas.append(TEXTOS_CONFIRMACAO["campo"].format(nome=NOMES_CAMPOS.get(campo, campo), valor=str(valor).replace(chr(10), ' ')))
-    linhas.append(TEXTOS_CONFIRMACAO["pergunta"])
-    return "\n".join(linhas)
-
-
-def resumo_atualizacao(rascunho: dict) -> str:
-    import re
-    ocorrencia = rascunho["tipo"] == "ocorrencia"
-    prefixo = "ocorrencia_atualizacao" if ocorrencia else "atualizacao"
-    descricao = "descricao_ocorrencia" if ocorrencia else "descricao_problema"
-
-    def texto(valor):
-        # Conteúdo persistido é texto, não formatação ou instrução do sistema.
-        return re.sub(r"([\\`*_{}\[\]<>])", r"\\\1", " ".join(str(valor).split()))
-
-    if rascunho.get("etapa") == "selecao":
-        original = rascunho["original"]
-        return MENSAGENS[f"{prefixo}_confirmar_selecao"].format(
-            titulo=texto(original["titulo"]), descricao=texto(original[descricao]),
-        )
-    linhas = [MENSAGENS[f"{prefixo}_titulo_final"]]
-    campos = ("titulo", descricao, "descricao_local", "local_unidade_id", "categoria_equipamento_id")
-    if ocorrencia:
-        campos += ("categoria_problema", "prioridade")
-    for campo in campos:
-        valor = rascunho.get("rotulos", {}).get(campo, rascunho["dados"][campo])
-        linhas.append(TEXTOS_CONFIRMACAO["campo"].format(nome=NOMES_CAMPOS[campo], valor=texto(valor)))
-    acao = rascunho["acao_fotos"]
-    linhas.append(MENSAGENS[f"atualizacao_fotos_{acao}"].format(
-        quantidade=len(rascunho["original"].get("fotos", [])),
-        existentes=len(rascunho["original"].get("fotos", [])), novas=len(rascunho.get("imagens", [])),
-    ))
-    linhas.append(MENSAGENS["atualizacao_pergunta_final"])
-    return "\n".join(linhas)
-
-
-def resposta_ofertas(ofertas: list[dict], diferencas: str) -> str:
-    if not ofertas:
-        return MENSAGENS['a_busca_trouxe_promocoes_mas_nenhuma_tem_link_valido_ou_dados_suficientes']
-    linhas = [TEXTOS_COMPRAS["cabecalho_ofertas"]]
-    for oferta in ofertas:
-        preco = oferta["preco"]
-        preco_texto = TEXTOS_COMPRAS["preco"].format(preco=preco).replace(".", ",") if isinstance(preco, (int, float)) else TEXTOS_COMPRAS["preco_ausente"]
-        linhas.append(
-            TEXTOS_COMPRAS["oferta"].format(
-                descricao=oferta['descricao'] or TEXTOS_COMPRAS["descricao_ausente"],
-                loja=oferta['loja'] or TEXTOS_COMPRAS["loja_ausente"], preco=preco_texto, url=oferta['url'],
-                confirmados=', '.join(oferta['confirmados']) or TEXTOS_COMPRAS["confirmados_ausentes"],
-                ausentes=', '.join(oferta['ausentes']) or TEXTOS_COMPRAS["requisitos_ausentes"], motivo=oferta['motivo'],
-            )
-        )
-    if diferencas:
-        linhas.append(diferencas)
-    linhas.append(TEXTOS_COMPRAS["ressalva_ofertas"])
-    return "\n".join(linhas)
-
-
-def resposta_cobertura_lojas(nomes: list[str]) -> str:
-    texto = TEXTOS_COMPRAS["lojas"].format(nomes=", ".join(nomes)) if nomes else TEXTOS_COMPRAS["lojas_vazias"]
-    return texto + TEXTOS_COMPRAS["ressalva_lojas"]
-
-
-def pergunta_opcionais_compra(campos: list[str], questao_compatibilidade: str | None) -> str:
-    pergunta = TEXTOS_COMPRAS["opcionais"].format(campos=", ".join(campos)) if campos else TEXTOS_COMPRAS["dados_completos"]
-    if questao_compatibilidade:
-        pergunta += " " + questao_compatibilidade.strip()
-    return pergunta + TEXTOS_COMPRAS["dispensar_opcionais"]
-
-
-def resposta_busca_compra(produtos: list[dict], ofertas: list[dict], diferencas: str) -> str:
-    if produtos:
-        return resposta_ofertas(ofertas, diferencas)
-    return MENSAGENS['nao_encontrei_promocoes_ativas_cadastradas_no_pechincha_ai_para_esses_criterios_se']
-
-
-def resposta_erro_compra(codigo: str, erro) -> str:
-    if codigo == "filtro_invalido":
-        return formatar_resposta('exc_informe_outro_filtro_ou_peca_para_buscar_apenas_pelo_nome_do', exc=erro)
-    if codigo == "limite_http":
-        return MENSAGENS['o_pechincha_ai_limitou_temporariamente_as_consultas_seus_criterios_foram_salvos']
-    return MENSAGENS['a_pesquisa_de_promocoes_esta_indisponivel_no_momento_seus_criterios_foram_salvos']
-
-
-def resposta_consulta_visualizacao(periodos_parciais: bool) -> str:
-    return escolher_resposta(periodos_parciais, 'consulta_concluida_periodos_parciais_identificados_nos_pontos', 'consulta_concluida')
-
-
+# CONSULTAS_COM_ORIENTACAO: Recurso compartilhado de consultas com orientacao usado pelas funções deste módulo e pela interface pública.
 CONSULTAS_COM_ORIENTACAO = {
     "listar_minhas_solicitacoes", "listar_todas_solicitacoes_pendentes",
     "listar_minhas_ocorrencias", "listar_minhas_ordens_servico",
@@ -266,6 +150,7 @@ CONSULTAS_COM_ORIENTACAO = {
 
 
 def selecionar_resposta_fallback(estado: dict) -> str:
+    """Escolhe resposta segura compatível com falha ou pedido fora do escopo. Usado pelo fluxo de graph."""
     resposta_existente = estado.get(
         "resposta_final"
     )
@@ -300,17 +185,3 @@ def selecionar_resposta_fallback(estado: dict) -> str:
         resposta = FERRAMENTA_INDISPONIVEL
 
     return resposta
-
-
-def _avisos_base(base, analise):
-    avisos = []
-    if base.qtd_registros_elegiveis < base.qtd_registros_total:
-        complemento = COMPLEMENTOS_BASE_CALCULO.get(analise.formato_dados, COMPLEMENTOS_BASE_CALCULO["media"])
-        avisos.append(
-            formatar_resposta('base_elegivel_valor_1_de_valor_2_registros_valor_3', valor_1=base.qtd_registros_elegiveis, valor_2=base.qtd_registros_total, valor_3=complemento)
-        )
-    if base.qtd_tempos_negativos_excluidos:
-        avisos.append(
-            formatar_resposta('tempos_negativos_excluidos_valor_1', valor_1=base.qtd_tempos_negativos_excluidos)
-        )
-    return avisos

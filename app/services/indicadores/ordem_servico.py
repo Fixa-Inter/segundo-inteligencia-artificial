@@ -1,39 +1,25 @@
 """Consultas de métricas e KPIs de ordens de serviço na camada gold."""
 
-
 import logging
 from datetime import date, datetime, time
 from typing import Any
-
-from app.services.indicadores.gerais.databricks import (
+from app.services.indicadores.gerais import (
     ConfiguracaoDatabricksAusente,
     ErroDatabricks,
     TimeoutConsultaDatabricks,
     executar_consulta,
+    validar_unidade_id,
+    consultar_linhas_indicador,
+    validar_periodo_indicadores as _validar_periodo,
 )
-from app.services.indicadores.gerais.unidade import validar_unidade_id
+from app.core import MENSAGENS, formatar_periodo as _periodo_legivel
 
-from app.core.respostas import MENSAGENS
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 
-def _validar_periodo(inicio: date, fim: date) -> dict | None:
-    if type(inicio) is not date or type(fim) is not date:
-        return {
-            "status": "ERRO_VALIDACAO",
-            "mensagem": MENSAGENS['informe_inicio_e_fim_do_periodo_como_datas_validas'],
-        }
-    if inicio >= fim:
-        return {
-            "status": "ERRO_VALIDACAO",
-            "mensagem": MENSAGENS['o_inicio_deve_ser_anterior_ao_fim_exclusivo_do_periodo'],
-        }
-    return None
-
-
 def _parametros_periodo(inicio: date, fim: date) -> dict[str, date]:
+    """Executa a etapa parametros periodo no escopo de ordem_servico. Usado por _obter_taxa_coorte, obter_os_finalizadas, obter_produtividade_tecnicos."""
     return {"inicio": inicio, "fim": fim}
 
 
@@ -44,6 +30,7 @@ def _resposta(
     periodo: dict[str, str] | None = None,
     campo_sem_base: str | None = None,
 ) -> dict:
+    """Projeta rascunho e metadados para a resposta da ferramenta. Usado por _obter_taxa_coorte, obter_carga_ativa_tecnicos, obter_os_abertas."""
     resposta = {"status": "SUCESSO", "indicador": indicador}
     chave_resultado = "resultados" if isinstance(resultado, list) else "resultado"
     resposta[chave_resultado] = resultado
@@ -58,55 +45,12 @@ def _resposta(
     return resposta
 
 
-def _periodo_legivel(inicio: date, fim: date) -> dict[str, str]:
-    return {
-        "inicio": inicio.isoformat(),
-        "fim_exclusivo": fim.isoformat(),
-    }
-
-
-async def _consultar_linhas(
-    sql: str,
-    parametros: dict[str, Any] | None = None,
-    *,
-    tipos_parametros: dict[str, str] | None = None,
-) -> list[dict[str, Any]] | dict[str, str]:
-    try:
-        linhas = await executar_consulta(
-            sql,
-            parametros or {},
-            tipos_parametros=tipos_parametros,
-        )
-    except TimeoutConsultaDatabricks:
-        return {
-            "status": "TIMEOUT",
-            "mensagem": MENSAGENS['a_consulta_de_indicadores_excedeu_o_tempo_limite'],
-        }
-    except ConfiguracaoDatabricksAusente as erro:
-        registrador.error("Configuração Databricks ausente: %s", erro)
-        return {
-            "status": "ERRO_FERRAMENTA",
-            "mensagem": MENSAGENS['a_consulta_de_indicadores_nao_esta_configurada'],
-        }
-    except ErroDatabricks:
-        registrador.exception("Falha ao consultar indicador no Databricks")
-        return {
-            "status": "ERRO_FERRAMENTA",
-            "mensagem": MENSAGENS['nao_foi_possivel_consultar_o_indicador_no_databricks'],
-        }
-    except Exception:
-        registrador.exception("Falha inesperada ao consultar indicador no Databricks")
-        return {
-            "status": "ERRO_FERRAMENTA",
-            "mensagem": MENSAGENS['nao_foi_possivel_consultar_o_indicador_no_databricks'],
-        }
-
-    if not linhas:
-        return {
-            "status": "SEM_RESULTADO",
-            "mensagem": MENSAGENS['a_consulta_nao_retornou_resultados'],
-        }
-    return linhas
+async def _consultar_linhas(sql: str, parametros=None, *, tipos_parametros=None):
+    """Adapta snapshots/períodos de OS ao executor compartilhado de indicadores."""
+    return await consultar_linhas_indicador(
+        sql, parametros or {}, executor=executar_consulta,
+        registrador=registrador, tipos_parametros=tipos_parametros,
+    )
 
 
 async def _consultar(
@@ -115,6 +59,7 @@ async def _consultar(
     *,
     tipos_parametros: dict[str, str] | None = None,
 ) -> dict[str, Any]:
+    """Executa a etapa consultar no escopo de ordem_servico. Usado por _obter_taxa_coorte, obter_os_abertas, obter_os_atrasadas."""
     linhas = await _consultar_linhas(
         sql, parametros, tipos_parametros=tipos_parametros,
     )
@@ -371,6 +316,7 @@ async def obter_tempo_medio_pausado_os(inicio: date, fim: date, *, unidade_id: i
 async def _obter_taxa_coorte(
     inicio: date, fim: date, campo: str, indicador: str, *, unidade_id: int,
 ) -> dict:
+    """Executa a etapa obter taxa coorte no escopo de ordem_servico. Usado por obter_taxa_reabertura_os, obter_taxa_reatribuicao_os."""
     erro_unidade = validar_unidade_id(unidade_id)
     if erro_unidade:
         return erro_unidade
@@ -397,6 +343,7 @@ async def _obter_taxa_coorte(
 
 
 async def obter_taxa_reabertura_os(inicio: date, fim: date, *, unidade_id: int) -> dict:
+    """Calcula parcela da coorte de OS criadas que foi reaberta ao menos uma vez. Usado pelo fluxo de indicadores."""
     return await _obter_taxa_coorte(
         inicio, fim, "qtd_os_reabertas", "Taxa de reabertura de OS",
         unidade_id=unidade_id,
@@ -404,6 +351,7 @@ async def obter_taxa_reabertura_os(inicio: date, fim: date, *, unidade_id: int) 
 
 
 async def obter_taxa_reatribuicao_os(inicio: date, fim: date, *, unidade_id: int) -> dict:
+    """Calcula parcela da coorte de OS criadas com troca de técnico. Usado pelo fluxo de indicadores."""
     return await _obter_taxa_coorte(
         inicio, fim, "qtd_os_reatribuidas", "Taxa de reatribuicao de OS",
         unidade_id=unidade_id,
@@ -411,6 +359,7 @@ async def obter_taxa_reatribuicao_os(inicio: date, fim: date, *, unidade_id: int
 
 
 async def obter_carga_ativa_tecnicos(*, unidade_id: int) -> dict:
+    """Consulta carga atual de OS abertas por técnico, sem período de criação. Usado pelo fluxo de indicadores."""
     erro_unidade = validar_unidade_id(unidade_id)
     if erro_unidade:
         return erro_unidade
@@ -432,6 +381,7 @@ async def obter_carga_ativa_tecnicos(*, unidade_id: int) -> dict:
 
 
 async def obter_produtividade_tecnicos(inicio: date, fim: date, *, unidade_id: int) -> dict:
+    """Consulta conclusões no período por técnico atual. Usado pelo fluxo de indicadores."""
     erro_unidade = validar_unidade_id(unidade_id)
     if erro_unidade:
         return erro_unidade
@@ -459,6 +409,7 @@ async def obter_produtividade_tecnicos(inicio: date, fim: date, *, unidade_id: i
 
 
 async def obter_media_tarefas_por_os(inicio: date, fim: date, *, unidade_id: int) -> dict:
+    """Retorna INDICADOR_INDISPONIVEL enquanto faltam contagens necessárias no BI. Usado pelo fluxo de indicadores."""
     erro_unidade = validar_unidade_id(unidade_id)
     if erro_unidade:
         return erro_unidade

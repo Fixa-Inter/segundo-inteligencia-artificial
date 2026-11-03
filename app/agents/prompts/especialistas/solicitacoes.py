@@ -1,3 +1,4 @@
+# SOLICITACOES_INSTRUCAO: Instrução textual enviada ao modelo; conteúdo preservado para manter comportamento do agente.
 SOLICITACOES_INSTRUCAO = """
 ## Papel do agente
 

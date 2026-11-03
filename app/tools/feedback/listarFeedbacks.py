@@ -1,12 +1,10 @@
 """Ferramenta de leitura sem argumentos de identidade fornecidos pelo modelo."""
 
 import logging
-
 from langchain.tools import ToolRuntime, tool
 from app.schemas import UsuarioContexto
-from app.core.respostas import MENSAGENS
-from app.services.feedback.listarFeedbacks import listar_feedbacks
-
+from app.core import MENSAGENS
+from app.services.feedback import listar_feedbacks
 
 @tool
 async def listar_meus_feedbacks(runtime: ToolRuntime) -> dict:

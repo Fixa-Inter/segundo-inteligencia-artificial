@@ -1,14 +1,10 @@
 from datetime import date
 from html import escape
-
+from app.core import escapar_celula, montar_tabela_markdown
 
 def _celula(valor) -> str:
-    if valor is None:
-        return "Não informado"
-    texto = escape(str(valor), quote=False)
-    for caractere in ("\\", "`", "*", "_", "[", "]", "|", "~"):
-        texto = texto.replace(caractere, f"&#{ord(caractere)};")
-    return texto.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "<br>")
+    """Compatibilidade da célula com o texto de ausência deste domínio."""
+    return escapar_celula(valor, ausente='Não informado')
 
 
 def montar_tabela(ocorrencias: list[dict]) -> str:
@@ -23,16 +19,6 @@ def montar_tabela(ocorrencias: list[dict]) -> str:
         ("Data de criação", "dataCriacao"),
         ("Código do equipamento", "equipamentoCodigo"),
     )
-    linhas = [
-        "| " + " | ".join(titulo for titulo, _ in colunas) + " |",
-        "| " + " | ".join("---" for _ in colunas) + " |",
-    ]
-    for ocorrencia in ocorrencias:
-        valores = []
-        for _, campo in colunas:
-            valor = ocorrencia[campo]
-            if campo == "dataCriacao":
-                valor = date.fromisoformat(valor).strftime("%d-%m-%Y")
-            valores.append(_celula(valor))
-        linhas.append("| " + " | ".join(valores) + " |")
-    return "\n".join(linhas)
+    return montar_tabela_markdown(
+        ocorrencias, colunas, campos_data=("dataCriacao",), ausente="Não informado",
+    )

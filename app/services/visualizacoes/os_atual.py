@@ -1,14 +1,17 @@
 """Regras e consultas disponíveis de visualização para os_atual."""
 
 from types import MappingProxyType
-
-from app.schemas.visualizacao import (
-    Analise, ConsultaVisualizacaoPeriodo, ConsultaVisualizacaoSnapshot,
-    FiltroObrigatorio, Fonte, ResultadoConsultaVisualizacao,
+from app.schemas import (
+    Analise,
+    ConsultaVisualizacaoPeriodo,
+    ConsultaVisualizacaoSnapshot,
+    FiltroObrigatorio,
+    Fonte,
+    ResultadoConsultaVisualizacao,
 )
 from .consultas import consultar_agregado
 
-
+# FONTE: Definição canônica das análises/filtros desta fonte; não é fornecida pelo modelo.
 FONTE = Fonte(
     id="os_atual",
     tabela="workspace.fixa_pipeline.gold_dashboard_os_atual",
@@ -17,6 +20,7 @@ FONTE = Fonte(
     campo_snapshot="data_referencia_snapshot",
 )
 
+# FILTROS: Definição canônica das análises/filtros desta fonte; não é fornecida pelo modelo.
 FILTROS = MappingProxyType({
     "local_id": "BIGINT",
     "nome_local": "STRING",
@@ -32,6 +36,7 @@ FILTROS = MappingProxyType({
     "os_prazo_vencido": "INT",
 })
 
+# ANALISES: Definição canônica das análises/filtros desta fonte; não é fornecida pelo modelo.
 ANALISES: tuple[Analise, ...] = (
     Analise(
         "VIS-03", "Distribuição das OS por status", FONTE, "categorias",
@@ -50,6 +55,7 @@ ANALISES: tuple[Analise, ...] = (
 )
 
 
+# ANALISES_IMPLEMENTADAS: Definição canônica das análises/filtros desta fonte; não é fornecida pelo modelo.
 ANALISES_IMPLEMENTADAS = frozenset({"VIS-03", "VIS-04", "VIS-22"})
 
 

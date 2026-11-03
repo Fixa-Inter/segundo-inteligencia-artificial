@@ -1,84 +1,31 @@
 """Consultas de métricas e KPIs de solicitações (problemas) na camada gold."""
 
-
 import logging
 from datetime import date, datetime, time
 from typing import Any
-
-from app.services.indicadores.gerais.databricks import (
+from app.services.indicadores.gerais import (
     ConfiguracaoDatabricksAusente,
     ErroDatabricks,
     TimeoutConsultaDatabricks,
     executar_consulta,
+    validar_unidade_id,
+    consultar_linhas_indicador,
+    validar_periodo_indicadores as _validar_periodo,
 )
-from app.services.indicadores.gerais.unidade import validar_unidade_id
+from app.core import MENSAGENS, formatar_periodo as _periodo
 
-from app.core.respostas import MENSAGENS
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 
-def _validar_periodo(inicio: date, fim: date) -> dict | None:
-    if type(inicio) is not date or type(fim) is not date:
-        return {
-            "status": "ERRO_VALIDACAO",
-            "mensagem": MENSAGENS['informe_inicio_e_fim_do_periodo_como_datas_validas'],
-        }
-    if inicio >= fim:
-        return {
-            "status": "ERRO_VALIDACAO",
-            "mensagem": MENSAGENS['o_inicio_deve_ser_anterior_ao_fim_exclusivo_do_periodo'],
-        }
-    return None
-
-
-def _periodo(inicio: date, fim: date) -> dict[str, str]:
-    return {"inicio": inicio.isoformat(), "fim_exclusivo": fim.isoformat()}
-
-
-async def _consultar(
-    sql: str,
-    parametros: dict[str, Any],
-    *,
-    tipos_parametros: dict[str, str] | None = None,
-    retornar_linhas: bool = False,
-) -> dict | list[dict]:
-    try:
-        linhas = await executar_consulta(
-            sql,
-            parametros,
-            tipos_parametros=tipos_parametros or {"inicio": "DATE", "fim": "DATE", "unidade_id": "BIGINT"},
-        )
-    except TimeoutConsultaDatabricks:
-        return {
-            "status": "TIMEOUT",
-            "mensagem": MENSAGENS['a_consulta_de_indicadores_excedeu_o_tempo_limite'],
-        }
-    except ConfiguracaoDatabricksAusente as erro:
-        registrador.error("Configuração Databricks ausente: %s", erro)
-        return {
-            "status": "ERRO_FERRAMENTA",
-            "mensagem": MENSAGENS['a_consulta_de_indicadores_nao_esta_configurada'],
-        }
-    except ErroDatabricks:
-        registrador.exception("Falha ao consultar indicador no Databricks")
-        return {
-            "status": "ERRO_FERRAMENTA",
-            "mensagem": MENSAGENS['nao_foi_possivel_consultar_o_indicador_no_databricks'],
-        }
-    except Exception:
-        registrador.exception("Falha inesperada ao consultar indicador no Databricks")
-        return {
-            "status": "ERRO_FERRAMENTA",
-            "mensagem": MENSAGENS['nao_foi_possivel_consultar_o_indicador_no_databricks'],
-        }
-
-    if not linhas:
-        return {
-            "status": "SEM_RESULTADO",
-            "mensagem": MENSAGENS['a_consulta_nao_retornou_resultados'],
-        }
+async def _consultar(sql: str, parametros: dict[str, Any], *, tipos_parametros: dict[str, str] | None = None, retornar_linhas: bool = False) -> dict | list[dict]:
+    """Adapta KPIs do domínio ao executor comum sem alterar tipos ou resultados."""
+    linhas = await consultar_linhas_indicador(
+        sql, parametros, executor=executar_consulta, registrador=registrador,
+        tipos_parametros=tipos_parametros or {"inicio": "DATE", "fim": "DATE", "unidade_id": "BIGINT"},
+    )
+    if isinstance(linhas, dict):
+        return linhas
     return linhas if retornar_linhas else linhas[0]
 
 
@@ -90,6 +37,7 @@ def _resposta(
     *,
     campo_sem_base: str | None = None,
 ) -> dict:
+    """Projeta rascunho e metadados para a resposta da ferramenta. Usado por _obter_soma, _obter_taxa."""
     resposta = {
         "status": "SUCESSO",
         "indicador": indicador,
@@ -110,6 +58,7 @@ async def _obter_soma(
     alias: str,
     indicador: str,
 ) -> dict:
+    """Executa a etapa obter soma no escopo de problema. Usado por obter_solicitacoes_aprovadas, obter_solicitacoes_pendentes, obter_solicitacoes_reprovadas."""
     erro_unidade = validar_unidade_id(unidade_id)
     if erro_unidade:
         return erro_unidade
@@ -140,6 +89,7 @@ async def _obter_taxa(
     alias_numerador: str,
     indicador: str,
 ) -> dict:
+    """Executa a etapa obter taxa no escopo de problema. Usado por obter_taxa_aprovacao_solicitacoes, obter_taxa_conversao_solicitacoes_os, obter_taxa_reprovacao_solicitacoes."""
     erro_unidade = validar_unidade_id(unidade_id)
     if erro_unidade:
         return erro_unidade
@@ -244,6 +194,7 @@ async def _obter_por_dimensao(
     dimensao: str,
     indicador: str,
 ) -> dict:
+    """Executa a etapa obter por dimensao no escopo de problema. Usado por obter_solicitacoes_por_categoria_equipamento, obter_solicitacoes_por_local, obter_solicitacoes_por_unidade."""
     erro_unidade = validar_unidade_id(unidade_id)
     if erro_unidade:
         return erro_unidade

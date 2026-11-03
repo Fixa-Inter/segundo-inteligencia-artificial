@@ -1,22 +1,22 @@
 """Conferência da captura e vínculo entre julgamento e liberação da visualização."""
 
-
 import hashlib
 import json
-
 from pydantic import TypeAdapter
-from app.observability.metricas import BYTES_VISUALIZACAO
-
-from app.schemas import UsuarioContexto
-from app.schemas.visualizacao import AprovacaoVisualizacao, ConsultaVisualizacaoCapturada, StatusVisualizacao
+from app.observability import BYTES_VISUALIZACAO
+from app.schemas import (
+    UsuarioContexto,
+    AprovacaoVisualizacao,
+    ConsultaVisualizacaoCapturada,
+    StatusVisualizacao,
+)
 from . import FILTROS_POR_FONTE, obter_analise, PERFIS_VISUALIZACOES
 from .limites import MAXIMO_CONSULTAS_POR_EXECUCAO
 from .validacao import validar_argumentos_analise, validar_resultado_consulta
-
-from app.core.respostas import MENSAGENS
-
+from app.core import MENSAGENS
 
 def possui_visualizacao(estado) -> bool:
+    """Detecta registros/seleção de visualização presentes no estado. Usado por validar_candidata."""
     return estado.get("intencao") == "visualizacao" or any(estado.get(campo) is not None for campo in (
         "visualizacao_candidata", "visualizacao_status", "visualizacao_execucao_id",
         "visualizacao_aprovacao", "visualizacao_aprovada",
@@ -24,6 +24,7 @@ def possui_visualizacao(estado) -> bool:
 
 
 def _json(valor) -> str:
+    """Serializa conteúdo de forma estável para comparar a captura e a aprovação. Usado por contexto_julgamento, criar_aprovacao, validar_candidata."""
     return json.dumps(valor, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
 
@@ -31,6 +32,7 @@ def validar_candidata(estado, contexto) -> ConsultaVisualizacaoCapturada | None:
     """Revalida os registros do servidor e a seleção, sem consultar bancos ou modelos."""
     if not possui_visualizacao(estado):
         return None
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if estado.get("intencao") != "visualizacao":
         raise ValueError(MENSAGENS['visualizacao_fora_da_rota_correspondente'])
     status = TypeAdapter(StatusVisualizacao).validate_python(estado.get("visualizacao_status"), strict=True)
@@ -117,6 +119,7 @@ def contexto_julgamento(estado, candidata, *, etapa="juiz") -> dict:
 
 
 def criar_aprovacao(candidata, status, texto) -> dict:
+    """Calcula vínculo SHA-256 entre captura, status e texto avaliado. Usado por liberar_visualizacao."""
     texto = texto.strip()
     conteudo = {"candidata": candidata.model_dump(mode="json"), "status": status, "texto": texto}
     return AprovacaoVisualizacao(
@@ -125,6 +128,7 @@ def criar_aprovacao(candidata, status, texto) -> dict:
 
 
 def liberar_visualizacao(estado, contexto) -> dict | None:
+    """Revalida candidata/contexto e confere aprovação antes de liberar dados. Usado pelo fluxo de visualizacoes."""
     candidata = validar_candidata(estado, contexto)
     if candidata is None:
         if estado.get("visualizacao_aprovacao") is not None or estado.get("visualizacao_aprovada") is not None:

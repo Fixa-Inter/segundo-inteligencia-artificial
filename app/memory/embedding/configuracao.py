@@ -1,24 +1,23 @@
 from functools import lru_cache
 from uuid import UUID, uuid5
-
 from langchain_openai import OpenAIEmbeddings
-
 from app.core import configuracao
-
 
 @lru_cache(maxsize=1)
 def obter_vetorizador() -> OpenAIEmbeddings:
     """Inicialização sob demanda: importar o projeto não exige credenciais."""
-    from app.agents.modelos import obter_modelo_embedding
+    from app.core.clients import obter_modelo_embedding
 
     return obter_modelo_embedding(configuracao.DIMENSOES_VETORIZACAO_FAQ)
 
 
 async def gerar_vetor_documento(texto: str) -> list[float]:
+    """Gera embedding de texto de FAQ/histórico. Usado pelo fluxo de embedding."""
     vetorizador = obter_vetorizador()
     return await vetorizador.aembed_query(texto)
 
 async def gerar_vetores_documentos(textos: list[str]) -> list[list[float]]:
+    """Gera embeddings de lote de documentos. Usado pelo fluxo de embedding."""
     if not textos:
         return []
 
@@ -29,12 +28,14 @@ async def gerar_vetores_documentos(textos: list[str]) -> list[list[float]]:
 
 @lru_cache(maxsize=1)
 def obter_vetorizador_operacional() -> OpenAIEmbeddings:
-    from app.agents.modelos import obter_modelo_embedding
+    """Reutiliza vetorizador com a dimensão configurada para dados operacionais. Usado por gerar_vetor_operacional."""
+    from app.core.clients import obter_modelo_embedding
 
     return obter_modelo_embedding(configuracao.DIMENSOES_VETORIZACAO_OPERACIONAL)
 
 
 async def gerar_vetor_operacional(texto: str) -> list[float]:
+    """Gera/valida vetor de texto operacional. Usado pelo fluxo de embedding."""
     if not isinstance(texto, str) or not texto.strip():
         raise ValueError("Informe um texto para a busca semântica.")
     vetor = await obter_vetorizador_operacional().aembed_query(texto.strip())

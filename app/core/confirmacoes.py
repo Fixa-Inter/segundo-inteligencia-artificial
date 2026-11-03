@@ -4,18 +4,22 @@ import re
 import unicodedata
 from typing import Literal
 
+# Manifestacao: Recurso compartilhado de manifestacao usado pelas funções deste módulo e pela interface pública.
 Manifestacao = Literal["aceite", "negacao", "cancelamento", "pausa", "retomada", "pergunta", "outro"]
 
+# ACEITES: Recurso compartilhado de aceites usado pelas funções deste módulo e pela interface pública.
 ACEITES = frozenset({
     "sim", "confirmo", "confirmado", "autorizo", "isso", "isso mesmo",
     "tudo certo", "tudo correto", "esta correto", "esta certo", "esta bom",
     "beleza", "fechado", "perfeito", "ok", "okay", "certo", "correto",
     "de acordo", "concordo", "pode ser",
 })
+# ACOES_ACEITE: Recurso compartilhado de acoes aceite usado pelas funções deste módulo e pela interface pública.
 ACOES_ACEITE = (
     "cadastrar", "criar", "registrar", "enviar", "prosseguir", "seguir",
     "continuar", "alterar", "anexar", "salvar", "atualizar",
 )
+# ALVOS: Recurso compartilhado de alvos usado pelas funções deste módulo e pela interface pública.
 ALVOS = (
     "", "os dados", "as informacoes", "a proposta", "a solicitacao", "a ocorrencia",
     "o cadastro", "a alteracao", "a mudanca", "a foto", "as fotos", "a imagem", "as imagens",
@@ -27,6 +31,7 @@ ALVOS = (
 
 
 def _construir_frases_aceite() -> frozenset[str]:
+    """Executa a etapa construir frases aceite no escopo de confirmacoes. Usado pelo fluxo de core."""
     frases = set(ACEITES)
     frases.update(f"pode {acao}" for acao in ACOES_ACEITE)
     frases.update(f"{verbo} {alvo}" for verbo in ("confirmo", "autorizo") for alvo in ALVOS if alvo)
@@ -38,16 +43,19 @@ def _construir_frases_aceite() -> frozenset[str]:
     return frozenset(frases)
 
 
+# FRASES_ACEITE: Recurso compartilhado de frases aceite usado pelas funções deste módulo e pela interface pública.
 FRASES_ACEITE = _construir_frases_aceite()
 
 
 def normalizar_mensagem(texto: str) -> str:
+    """Remove acentos/pontuação e normaliza espaços para comparação. Usado por aceite_explicito, classificar_manifestacao."""
     texto = unicodedata.normalize("NFKD", texto.lower())
     texto = "".join(c for c in texto if not unicodedata.combining(c))
     return " ".join(re.sub(r"[^a-z0-9 ]", " ", texto).split())
 
 
 def classificar_manifestacao(texto: str) -> Manifestacao:
+    """Classifica toda a mensagem; perguntas/correções não autorizam gravação por prefixo. Usado por aceite_explicito."""
     if not isinstance(texto, str) or not texto.strip():
         return "outro"
     normalizada = normalizar_mensagem(texto)
@@ -69,6 +77,7 @@ def classificar_manifestacao(texto: str) -> Manifestacao:
 
 
 def aceite_explicito(texto: str, *, acoes: tuple[str, ...] | None = None) -> bool:
+    """Confere aceite integral e opcionalmente restringe a ação autorizada. Usado pelo fluxo de core."""
     if classificar_manifestacao(texto) != "aceite":
         return False
     acao = re.search(r"\bpode (\w+)\b", normalizar_mensagem(texto))

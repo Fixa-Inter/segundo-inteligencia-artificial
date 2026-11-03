@@ -1,38 +1,36 @@
 """Busca e edição transacional de ocorrências próprias e ativas."""
 
 from typing import get_args
-
 from qdrant_client import models
 from sqlalchemy import text
-
-from app.core import configuracao
-from app.core.clients.postgres import executar_consulta, obter_motor
-from app.core.clients.qdrant import abrir_cliente_qdrant
-from app.core.respostas import MENSAGENS
+from app.core import configuracao, MENSAGENS, CATEGORIA_PROBLEMA_POR_ID, PRIORIDADE_POR_ID
+from app.core.clients import executar_consulta, obter_motor, abrir_cliente_qdrant
 from app.memory.embedding import gerar_vetor_operacional
 from app.memory.vectorSearch.busca import _filtro, _registro
-from app.schemas import UsuarioContexto
-from app.schemas.imagem import validar_url_imagem
+from app.schemas import UsuarioContexto, validar_url_imagem
 from app.services.ajuda_geral.edicoes import _sql_alvo, localizar_opcao
 from app.services.gerais import obter_unidade_id
-from app.services.ordensServico.buscarOrdensServico import CATEGORIA_PROBLEMA_POR_ID, PRIORIDADE_POR_ID
-from app.tools.toolsRequest.CriarOcorrenciaEntrada import CategoriaProblema, Prioridade
+from app.schemas.cadastros import CategoriaProblema, Prioridade
 
-
+# PERFIS: Recurso compartilhado de perfis usado pelas funções deste módulo e pela interface pública.
 PERFIS = {"tecnico", "gestor", "administrador"}
+# CAMPOS: Recurso compartilhado de campos usado pelas funções deste módulo e pela interface pública.
 CAMPOS = {"titulo": 100, "descricao_ocorrencia": 255, "descricao_local": 255,
           "local_unidade_id": None, "categoria_equipamento_id": None,
           "categoria_problema": None, "prioridade": None}
+# ENUMS: Recurso compartilhado de enums usado pelas funções deste módulo e pela interface pública.
 ENUMS = {"categoria_problema": {nome: indice for indice, nome in enumerate(get_args(CategoriaProblema), 1)},
          "prioridade": {nome: indice for indice, nome in enumerate(get_args(Prioridade))}}
 
 
 def validar_usuario(usuario: UsuarioContexto) -> None:
+    """Confere perfil autorizado no fluxo de ocorrência. Usado por atualizar_propria_ativa, buscar_proprias_ativas, consultar_propria_ativa."""
     if usuario.tipo_acesso not in PERFIS:
         raise PermissionError(MENSAGENS["perfil_sem_permissao_para_ocorrencias"])
 
 
 def validar_alteracoes(alteracoes: dict) -> dict:
+    """Valida campos permitidos da atualização do domínio. Usado por atualizar_propria_ativa."""
     if set(alteracoes) - CAMPOS.keys():
         raise ValueError(MENSAGENS["campo_nao_permitido_para_edicao"])
     dados = {}
@@ -53,11 +51,13 @@ def validar_alteracoes(alteracoes: dict) -> dict:
 
 
 def rotulos_enums(dados: dict) -> dict:
+    """Resolve rótulos de categoria de problema/prioridade. Usado pelo fluxo de ocorrencias."""
     return {"categoria_problema": CATEGORIA_PROBLEMA_POR_ID[dados["categoria_problema"]],
             "prioridade": PRIORIDADE_POR_ID[dados["prioridade"]]}
 
 
 async def buscar_proprias_ativas(usuario: UsuarioContexto, descricao: str) -> list[dict]:
+    """Cruza busca vetorial com IDs de ocorrências próprias ativas na unidade. Usado pelo fluxo de ocorrencias."""
     validar_usuario(usuario)
     if not descricao.strip() or len(descricao) > 500:
         raise ValueError(MENSAGENS["ocorrencia_atualizacao_descricao_busca"])
@@ -91,6 +91,7 @@ async def buscar_proprias_ativas(usuario: UsuarioContexto, descricao: str) -> li
 
 
 async def _ler(conexao, usuario, parametros, *, travar=False):
+    """Lê registro e fotos no escopo autenticado, com trava quando solicitado. Usado por atualizar_propria_ativa, consultar_propria_ativa."""
     sql = _sql_alvo("ocorrencia", usuario)
     if travar:
         sql += " FOR UPDATE OF o"
@@ -108,6 +109,7 @@ async def _ler(conexao, usuario, parametros, *, travar=False):
 
 
 async def consultar_propria_ativa(usuario: UsuarioContexto, registro_id: int) -> dict | None:
+    """Lê ocorrência/fotos atuais conferindo autoria, unidade e atividade. Usado pelo fluxo de ocorrencias."""
     validar_usuario(usuario)
     unidade = await obter_unidade_id(usuario)
     async with obter_motor(usuario.tipo_acesso).connect() as conexao:
@@ -116,14 +118,17 @@ async def consultar_propria_ativa(usuario: UsuarioContexto, registro_id: int) ->
 
 
 def snapshot(registro: dict) -> dict:
+    """Extrai dados originais para detectar mudança antes da escrita. Usado por atualizar_propria_ativa."""
     return {**{campo: registro[campo] for campo in CAMPOS}, "fotos": registro.get("fotos", [])}
 
 
 async def atualizar_propria_ativa(usuario: UsuarioContexto, dados: dict) -> dict | None:
+    """Trava e revalida ocorrência/snapshot e grava alterações/enums/fotos na mesma transação. Usado pelo fluxo de ocorrencias."""
     validar_usuario(usuario)
     alteracoes = validar_alteracoes(dados["alteracoes"])
     imagens = list(dict.fromkeys(validar_url_imagem(url) for url in dados["imagens"]))
     acao = dados["acao_fotos"]
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if acao not in {"manter", "adicionar", "substituir"} or (imagens and acao == "manter") or (not imagens and acao != "manter"):
         raise ValueError(MENSAGENS["ocorrencia_atualizacao_escolher_fotos"])
     unidade = await obter_unidade_id(usuario)

@@ -1,8 +1,7 @@
 from typing import Literal, NotRequired, TypedDict
-
 from app.schemas import UsuarioContexto
 
-
+# ContextoGrafo: contrato/estrutura de contexto; usado pelos consumidores desta interface.
 class ContextoGrafo(TypedDict):
     usuario: UsuarioContexto
     imagens: list[str]

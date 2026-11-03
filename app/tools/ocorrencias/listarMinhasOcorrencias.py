@@ -1,11 +1,8 @@
 from langchain.tools import ToolRuntime, tool
-
 from app.schemas import UsuarioContexto
 from app.services.ocorrencias import consultar_minhas_ocorrencias
-from app.tools.ocorrencias.utilitarios import montar_tabela
-
-from app.core.respostas import MENSAGENS
-
+from app.tools.ocorrencias import montar_tabela
+from app.core import MENSAGENS
 
 @tool
 async def listar_minhas_ocorrencias(runtime: ToolRuntime) -> dict:

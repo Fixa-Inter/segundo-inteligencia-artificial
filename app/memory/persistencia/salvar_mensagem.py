@@ -1,21 +1,15 @@
 from bson import BSON
 from fastapi import HTTPException, status
 from pymongo.errors import PyMongoError
-from app.core import Emocao
+from app.core import Emocao, MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES, MENSAGENS
 from app.memory.persistencia.sessoes import iniciar_sessao
-from app.memory.persistencia.utilitarios import obter_documento_sessao_id, agora
-from app.memory.persistencia.rascunho_solicitacao import (
-    adicionar_imagens_sessao,
-)
-from app.core.clients.mongo import abrir_cliente_mongo
-from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
-from app.services.visualizacoes.publicacao import (
-    validar_visualizacao_publica, LimiteVisualizacaoExcedido,
+from app.memory.persistencia import obter_documento_sessao_id, agora, adicionar_imagens_sessao
+from app.core.clients import abrir_cliente_mongo
+from app.services.visualizacoes import (
+    validar_visualizacao_publica,
+    LimiteVisualizacaoExcedido,
     MAXIMO_BYTES_CONVERSA_COM_VISUALIZACAO,
 )
-
-from app.core.respostas import MENSAGENS
-
 
 async def salvar_mensagem(
     sessao_id: str,
@@ -28,6 +22,8 @@ async def salvar_mensagem(
     turno_id: str | None = None,
     visualizacao: dict | None = None,
 ) -> None:
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
+    """Persiste mensagem própria com timestamp e anexos; aplica validação/quota quando há visualização. Usado pelo fluxo de persistencia."""
     if visualizacao is not None:
         if papel != "assistant" or not turno_id:
             raise ValueError("Visualização exige mensagem do assistente e identificação do turno.")
@@ -35,6 +31,7 @@ async def salvar_mensagem(
             visualizacao = validar_visualizacao_publica(visualizacao).model_dump(mode="json")
         except LimiteVisualizacaoExcedido as erro:
             raise HTTPException(status_code=413, detail=str(erro)) from None
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     except (PyMongoError, TimeoutError, OSError, RuntimeError):
@@ -97,6 +94,8 @@ async def salvar_mensagem(
 
 
 async def _salvar_com_visualizacao(colecao, documento_id, sessao_id, usuario_id, mensagem):
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
+    """Executa a etapa salvar com visualizacao no escopo de salvar_mensagem. Usado por salvar_mensagem."""
     if len(BSON.encode(mensagem)) > MAXIMO_BYTES_CONVERSA_COM_VISUALIZACAO:
         raise HTTPException(status_code=413, detail=MENSAGENS['a_resposta_excede_o_limite_de_tamanho_da_conversa'])
     instante = mensagem["timestamp"]
@@ -112,6 +111,7 @@ async def _salvar_com_visualizacao(colecao, documento_id, sessao_id, usuario_id,
             False,
         ],
     }}
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         resultado = await colecao.update_one(filtro, {
             "$push": {"mensagens": mensagem}, "$set": {"atualizada_em": instante},
@@ -146,6 +146,7 @@ async def _salvar_com_visualizacao(colecao, documento_id, sessao_id, usuario_id,
 async def marcar_confirmacao_mensagem(
     sessao_id: str, usuario_id: int, turno_id: str,
 ) -> None:
+    """Marca confirmação na mensagem já persistida da sessão/turno. Usado pelo fluxo de persistencia."""
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if not documento_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=MENSAGENS['conversa_nao_encontrada'])

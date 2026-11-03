@@ -1,15 +1,12 @@
 import inspect
 import time
 from functools import wraps
-
 from langgraph.graph import END, START, StateGraph
 from langgraph.checkpoint.memory import MemorySaver
-
 from .estado import EstadoGrafo
 from .contexto import ContextoGrafo
 from .operacoes import executar_operacoes
-from app.agents.juiz import julgar_resposta, revisar_resposta
-from app.agents import classificar_emocao
+from app.agents import julgar_resposta, revisar_resposta, classificar_emocao
 from .nos import (
     validar_entrada,
     supervisionar,
@@ -23,20 +20,20 @@ from .nos import (
     validar_saida,
     tratar_erro,
 )
-from .transicoes import ( 
-    selecionar_especialista, 
-    decidir_apos_julgamento, 
+from .transicoes import (
+    selecionar_especialista,
+    decidir_apos_julgamento,
     decidir_apos_visualizacao,
-    decidir_apos_entrada
+    decidir_apos_entrada,
 )
-from app.observability.metricas import EXECUCOES_NO_GRAFO, DURACAO_NO_GRAFO
-
+from app.observability import EXECUCOES_NO_GRAFO, DURACAO_NO_GRAFO
 
 def _instrumentar_no(nome, funcao):
     """Mede duração e erros dos nós sem alterar sua lógica de negócio."""
     if inspect.iscoroutinefunction(funcao):
         @wraps(funcao)
         async def executar(*args, **kwargs):
+            """Executa a etapa executar no escopo de fluxo. Usado pelo fluxo de graph."""
             inicio = time.perf_counter()
             resultado = "error"
             try:
@@ -50,6 +47,7 @@ def _instrumentar_no(nome, funcao):
 
     @wraps(funcao)
     def executar(*args, **kwargs):
+        """Executa a etapa executar no escopo de fluxo. Usado pelo fluxo de graph."""
         inicio = time.perf_counter()
         resultado = "error"
         try:
@@ -63,6 +61,7 @@ def _instrumentar_no(nome, funcao):
 
 
 def construir_grafo():
+    """Registra nós/arestas e compila StateGraph com MemorySaver. Usado pelo fluxo de graph."""
     construtor = StateGraph(
         state_schema=EstadoGrafo,
         context_schema=ContextoGrafo,
@@ -147,4 +146,5 @@ def construir_grafo():
     return construtor.compile(checkpointer=memoria)
 
 
+# grafo: Recurso compartilhado de grafo usado pelas funções deste módulo e pela interface pública.
 grafo = construir_grafo()

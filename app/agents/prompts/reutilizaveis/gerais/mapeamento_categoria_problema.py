@@ -1,3 +1,4 @@
+# MAPEAMENTO_CATEGORIA_PROBLEMA_INSTRUCAO: Instrução textual enviada ao modelo; conteúdo preservado para manter comportamento do agente.
 MAPEAMENTO_CATEGORIA_PROBLEMA_INSTRUCAO = """
 ### Categorias de problema para cadastro de ocorrência
 Envie categoria_problema_id como o nome textual do enum, nunca como inteiro:

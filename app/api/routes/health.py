@@ -1,11 +1,11 @@
 from fastapi import APIRouter, status
+from app.schemas import HealthResponse
 
-from app.schemas.health import HealthResponse
-
-
+# router: Roteador HTTP que registra endpoints e contratos deste módulo.
 router = APIRouter(tags=["Health"])
 
 
+# Devolve status ok e nome do serviço, sem verificar dependências externas. Usado pelo fluxo de routes.
 @router.get(
     "/health",
     response_model=HealthResponse,

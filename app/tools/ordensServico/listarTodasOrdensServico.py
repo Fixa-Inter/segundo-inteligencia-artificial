@@ -1,11 +1,8 @@
 from langchain.tools import ToolRuntime, tool
-
 from app.schemas import UsuarioContexto
 from app.services.ordensServico import consultar_todas_ordens_servico
-from app.tools.ordensServico.utilitarios import montar_tabelas
-
-from app.core.respostas import MENSAGENS
-
+from app.tools.ordensServico import montar_tabelas
+from app.core import MENSAGENS
 
 @tool
 async def listar_todas_ordens_servico(runtime: ToolRuntime) -> dict:

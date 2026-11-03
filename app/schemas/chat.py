@@ -1,12 +1,9 @@
 from typing import Literal
-
 from pydantic import BaseModel, Field, field_validator
 from app.core import Emocao
-from app.schemas.id_sessao import LIMITE_ID_SESSAO
-from app.schemas.imagem import LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem
-from app.schemas.visualizacao import VisualizacaoPublica
+from app.schemas import LIMITE_ID_SESSAO, LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem, VisualizacaoPublica
 
-
+# ConversaEntrada: contrato/estrutura de chat; usado pelos consumidores desta interface.
 class ConversaEntrada(BaseModel):
     mensagem: str = Field(
         min_length=1,
@@ -29,6 +26,7 @@ class ConversaEntrada(BaseModel):
     @field_validator("mensagem", "thread_id", mode="before")
     @classmethod
     def normalizar_texto(cls, valor):
+        """Confere texto conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if isinstance(valor, str):
             return valor.strip()
         return valor
@@ -36,9 +34,11 @@ class ConversaEntrada(BaseModel):
     @field_validator("imagens")
     @classmethod
     def validar_imagens(cls, imagens: list[str]) -> list[str]:
+        """Confere imagens conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         return [validar_url_imagem(imagem) for imagem in imagens]
 
 
+# ConversaSaida: contrato/estrutura de chat; usado pelos consumidores desta interface.
 class ConversaSaida(BaseModel):
     thread_id: str
 

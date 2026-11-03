@@ -1,22 +1,16 @@
 """Cliente e validação das decisões estruturadas do JEV."""
 
-
 import asyncio
 import json
 import logging
 import math
 import time
-
 import httpx
-from app.observability.tracing import somente_metricas
+from app.observability import somente_metricas, DURACAO_JEV, REQUISICOES_JEV, registrar_uso_modelo
+from app.core import JEV_MODELO, JEV_URL, TYPESAFE_API_KEY, MENSAGENS
+from app.core.apresentacao import formatar_resposta
 
-from app.core.configuracao import JEV_MODELO, JEV_URL, TYPESAFE_API_KEY
-from app.observability.metricas import DURACAO_JEV, REQUISICOES_JEV, registrar_uso_modelo
-
-from app.core.respostas import MENSAGENS
-from app.graph.respostas_padrao import formatar_resposta
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 
@@ -30,8 +24,10 @@ class DecisaoIncertaJEV(ErroJEV):
 
 @somente_metricas
 async def consultar_jev(estado: dict, perguntas: dict, *, operacao: str = "outra") -> dict:
+    """Consulta decisão estruturada JEV com tratamento de transporte, uso de tokens e métricas. Usado pelo fluxo de gerais."""
     inicio = time.perf_counter()
     resultado = "error"
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         if not TYPESAFE_API_KEY:
             raise ErroJEV(MENSAGENS['chave_do_jev_ausente'])
@@ -82,6 +78,7 @@ async def consultar_jev(estado: dict, perguntas: dict, *, operacao: str = "outra
 
 
 def ler_choice(respostas: dict, nome: str, opcoes: set[str]) -> tuple[str, float]:
+    """Valida opção/confiabilidade de uma decisão fechada do JEV. Usado pelo fluxo de gerais."""
     resposta = respostas.get(nome)
     if not isinstance(resposta, dict) or resposta.get("type") != "choice":
         raise ErroJEV(formatar_resposta('choice_valor_1_invalido', valor_1=nome))
@@ -95,6 +92,7 @@ def ler_choice(respostas: dict, nome: str, opcoes: set[str]) -> tuple[str, float
 
 
 def ler_noul(respostas: dict, nome: str) -> float:
+    """Valida estrutura e pontuação de uma avaliação noul do JEV. Usado pelo fluxo de gerais."""
     resposta = respostas.get(nome)
     if not isinstance(resposta, dict) or resposta.get("type") != "noul":
         raise ErroJEV(formatar_resposta('noul_valor_1_invalido', valor_1=nome))

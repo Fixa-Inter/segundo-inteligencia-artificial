@@ -1,11 +1,9 @@
 import re
 from datetime import date
-
 from pydantic import BaseModel, field_validator
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
+# UsuarioContexto: contrato/estrutura de UsuarioContexto; usado pelos consumidores desta interface.
 class UsuarioContexto(BaseModel):
     access_token: str
     usuario_id: int
@@ -19,6 +17,7 @@ class UsuarioContexto(BaseModel):
     @field_validator("tipo_acesso", mode="before")
     @classmethod
     def normalizar_tipo_acesso(cls, valor: str) -> str:
+        """Confere tipo acesso conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if not isinstance(valor, str):
             raise ValueError(MENSAGENS['o_tipo_de_acesso_deve_ser_um_texto'])
 
@@ -30,6 +29,7 @@ class UsuarioContexto(BaseModel):
     @field_validator("cnpj_endereco")
     @classmethod
     def normalizar_cnpj(cls, valor: str) -> str:
+        """Confere cnpj conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if not isinstance(valor, str):
             raise ValueError(MENSAGENS['o_cnpj_do_endereco_deve_ser_uma_string'])
 

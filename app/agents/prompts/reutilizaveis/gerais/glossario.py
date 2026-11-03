@@ -1,3 +1,4 @@
+# GLOSSARIO_INSTRUCAO: Instrução textual enviada ao modelo; conteúdo preservado para manter comportamento do agente.
 GLOSSARIO_INSTRUCAO = """
 ## Glossário de termos importantes
 
