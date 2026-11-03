@@ -1,34 +1,33 @@
 from typing import Annotated
-
 from fastapi import APIRouter, Depends, HTTPException, status
-
-from app.api.dependencies.auth import obter_usuario_atual
-from app.schemas import UsuarioContexto
-from app.services.visualizacoes import PERFIS_VISUALIZACOES
-from app.schemas.id_sessao import IdSessaoCaminho
-from app.schemas.sessao import (
+from app.api.dependencies import obter_usuario_atual
+from app.schemas import (
+    UsuarioContexto,
+    IdSessaoCaminho,
     ConversaEspecificaEntrada,
     ConversaEspecificaSaida,
     TodasConversasSaida,
     ExcluirConversaSaida,
 )
+from app.services.visualizacoes import PERFIS_VISUALIZACOES
 from app.services.sessoes import (
     ErroConsultaHistorico,
     buscar_conversa,
     buscar_conversas_usuario,
     excluir_conversa,
 )
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
+# router: Roteador HTTP que registra endpoints e contratos deste módulo.
 router = APIRouter(prefix="/sessoes", tags=["Sessões"])
 
 
+# Executa a etapa traduzir erro no escopo de sessoes. Usado por excluir_conversa_historico, pegar_conversa_especifica, pegar_todas_conversas_usuario.
 def _traduzir_erro(erro: ErroConsultaHistorico) -> HTTPException:
     return HTTPException(status_code=erro.status_code, detail=erro.mensagem)
 
 
+# Consulta e formata histórico próprio, com visualizações somente para perfil permitido. Usado pelo fluxo de routes.
 @router.get("", response_model=TodasConversasSaida)
 async def pegar_todas_conversas_usuario(
     usuario: Annotated[UsuarioContexto, Depends(obter_usuario_atual)],
@@ -54,6 +53,7 @@ async def pegar_todas_conversas_usuario(
     )
 
 
+# Consulta conversa própria por ID ou devolve HTTP 404. Usado pelo fluxo de routes.
 @router.post(
     "/conversa",
     response_model=ConversaEspecificaSaida,
@@ -83,6 +83,7 @@ async def pegar_conversa_especifica(
         conversa=conversa,
     )
 
+# Solicita exclusão lógica de conversa própria ou devolve HTTP 404. Usado pelo fluxo de routes.
 @router.delete(
     "/conversa/{session_id}",
     response_model=ExcluirConversaSaida,

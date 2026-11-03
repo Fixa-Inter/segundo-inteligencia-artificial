@@ -1,13 +1,12 @@
 import logging
-
-from app.core.clients.postgres import executar_consulta
+from app.core.clients import executar_consulta
 from app.schemas import UsuarioContexto
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
+# _SQL_TECNICOS_DISPONIVEIS: SQL parametrizado do domínio; mantém filtros, população e limites da consulta.
 _SQL_TECNICOS_DISPONIVEIS = """
     WITH usuario_autenticado AS (
         SELECT unidade.cnpj
@@ -65,6 +64,7 @@ async def buscar_tecnicos_disponiveis(usuario: UsuarioContexto) -> dict:
             "mensagem": MENSAGENS['somente_gestores_e_administradores_podem_consultar_tecnicos_disponiveis'],
         }
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         tecnicos = await executar_consulta(
             usuario.tipo_acesso,

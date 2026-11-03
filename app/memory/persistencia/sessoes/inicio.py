@@ -1,16 +1,13 @@
 import uuid
-from app.memory.persistencia.utilitarios import (
-    obter_documento_sessao_id,
-    agora,
-    sessoes_ativas,
-)
-from app.core.clients.mongo import abrir_cliente_mongo
-from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
+from app.memory.persistencia import obter_documento_sessao_id, agora, sessoes_ativas
+from app.core.clients import abrir_cliente_mongo
+from app.core import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
 
 async def iniciar_sessao(
         sessao_id: str,
         usuario_id: int
 ) -> None:
+    """Cria documento da conversa e registra seu ID no cache local. Usado pelo fluxo de sessoes."""
     if await obter_documento_sessao_id(sessao_id, usuario_id):
         return
 

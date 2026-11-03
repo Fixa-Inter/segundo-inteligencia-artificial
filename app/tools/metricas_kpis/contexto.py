@@ -1,21 +1,18 @@
 """Autorização interna das tools de indicadores, sem argumentos do modelo."""
 
-
 import logging
-
 from langchain.tools import ToolRuntime
-
 from app.schemas import UsuarioContexto
-from app.services.gerais.unidade import obter_unidade_id
-from app.services.indicadores.gerais.unidade import validar_unidade_id
+from app.services.gerais import obter_unidade_id
+from app.services.indicadores.gerais import validar_unidade_id
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 
 def validar_gestor(runtime: ToolRuntime, *, perfis_permitidos=frozenset({"gestor", "administrador"})) -> dict | None:
+    """Confere usuário autenticado e perfil gerencial no runtime. Usado por resolver_unidade_indicadores."""
     contexto = getattr(runtime, "context", None)
     if not isinstance(contexto, dict) or not isinstance(
         contexto.get("usuario"), UsuarioContexto,

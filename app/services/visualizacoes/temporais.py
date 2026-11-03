@@ -1,14 +1,11 @@
 """Calendários e expressões SQL das granularidades temporais aprovadas."""
 
-
 from datetime import date, timedelta
-
-from app.schemas.visualizacao import PeriodoSerieTemporal, PeriodoVisualizacao
-
-from app.core.respostas import MENSAGENS
-
+from app.schemas import PeriodoSerieTemporal, PeriodoVisualizacao
+from app.core import MENSAGENS
 
 def inicio_periodo(referencia: date, granularidade: str) -> date:
+    """Obtém início do dia, semana ou mês da referência. Usado por calendario_consulta."""
     if granularidade == "dia":
         return referencia
     if granularidade == "semana":
@@ -19,6 +16,7 @@ def inicio_periodo(referencia: date, granularidade: str) -> date:
 
 
 def proximo_periodo(referencia: date, granularidade: str) -> date:
+    """Avança uma unidade da granularidade temporal autorizada. Usado por calendario_consulta."""
     try:
         if granularidade == "dia":
             return referencia + timedelta(days=1)

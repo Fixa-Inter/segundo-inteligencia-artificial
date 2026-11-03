@@ -3,23 +3,24 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Literal
+from app.core.clients import abrir_cliente_mongo
+from app.core import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES, MENSAGENS, agora_utc as _agora
+from app.memory.persistencia import obter_documento_sessao_id
 
-from app.core.clients.mongo import abrir_cliente_mongo
-from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
-from app.core.respostas import MENSAGENS
-from app.memory.persistencia.utilitarios import obter_documento_sessao_id
-
-
+# TipoRascunho: Recurso compartilhado de tiporascunho usado pelas funções deste módulo e pela interface pública.
 TipoRascunho = Literal["solicitacao", "ocorrencia", "evento"]
+# ARQUIVOS_RASCUNHOS: Recurso compartilhado de arquivos rascunhos usado pelas funções deste módulo e pela interface pública.
 ARQUIVOS_RASCUNHOS = {"solicitacao": "solicitacoes", "ocorrencia": "ocorrencias", "evento": "eventos"}
 
 
 def _campo_rascunho(tipo: TipoRascunho) -> str:
+    """Seleciona o campo persistido correspondente ao tipo de rascunho. Usado por _anexos_legados, adicionar_imagens_sessao, atualizar_rascunho_solicitacao."""
     if tipo not in ARQUIVOS_RASCUNHOS:
         raise ValueError("Tipo de rascunho inválido.")
     return f"{tipo}_pendente"
 
 
+# STATUS_ATIVOS: Estados reconhecidos no fluxo deste domínio; usados para validar continuidade e execução.
 STATUS_ATIVOS = {
     "coletando_dados",
     "aguardando_confirmacao",
@@ -28,11 +29,8 @@ STATUS_ATIVOS = {
 }
 
 
-def _agora() -> datetime:
-    return datetime.now(timezone.utc)
-
-
 def _urls_validas(imagens: list[str]) -> list[str]:
+    """Normaliza strings de URL e remove anexos repetidos, sem inspecionar imagens. Usado por _anexos_legados, adicionar_imagens_sessao, obter_quantidade_anexos_pendentes."""
     if not isinstance(imagens, list):
         return []
     return list(dict.fromkeys(
@@ -43,6 +41,7 @@ def _urls_validas(imagens: list[str]) -> list[str]:
 
 
 def _anexos_legados(documento: dict, tipo: TipoRascunho) -> list[str]:
+    """Recupera anexos antigos da sessão sem misturar propostas ativas. Usado por registrar_coleta_parcial, salvar_rascunho_solicitacao."""
     if tipo == "evento":
         return []
     outros_ativos = any(
@@ -54,6 +53,7 @@ def _anexos_legados(documento: dict, tipo: TipoRascunho) -> list[str]:
 
 
 async def obter_quantidade_anexos_pendentes(sessao_id: str, usuario_id: int) -> int:
+    """Conta anexos ainda pendentes da sessão. Usado pelo fluxo de persistencia."""
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if not documento_id:
         return 0
@@ -71,6 +71,7 @@ async def registrar_coleta_parcial(
     turno_id: str, relato: str, operacao: Literal["criar", "atualizar"] = "criar",
 ) -> dict[str, Any]:
     """Guarda o relato do usuário sem exigir IDs ou propor um cadastro completo."""
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if not turno_id or not isinstance(relato, str):
         raise ValueError("O turno e o texto da coleta são obrigatórios.")
     campo = _campo_rascunho(tipo)
@@ -78,6 +79,7 @@ async def registrar_coleta_parcial(
     if not documento_id:
         raise ValueError("Sessão não encontrada para salvar a coleta.")
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
@@ -150,6 +152,7 @@ async def adicionar_imagens_sessao(
     imagens: list[str],
     *, tipo: TipoRascunho | None = None,
 ) -> None:
+    """Associa novas URLs aos anexos/rascunhos da sessão. Usado pelo fluxo de persistencia."""
     if tipo == "evento":
         return
     urls = _urls_validas(imagens)
@@ -157,9 +160,11 @@ async def adicionar_imagens_sessao(
         return
 
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if not documento_id:
         raise ValueError("Sessão não encontrada para salvar as imagens.")
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
@@ -218,6 +223,8 @@ async def salvar_rascunho_solicitacao(
     *, tipo: TipoRascunho = "solicitacao", turno_id: str,
     rotulos: dict[str, str] | None = None,
 ) -> dict[str, Any]:
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
+    """Salva/versiona proposta por tipo e preserva anexos, relatos e aceites compatíveis. Usado pelo fluxo de persistencia."""
     if not turno_id:
         raise ValueError("Informe o turno que produziu a proposta.")
     campo = _campo_rascunho(tipo)
@@ -225,6 +232,7 @@ async def salvar_rascunho_solicitacao(
     if not documento_id:
         raise ValueError("Sessão não encontrada para salvar o rascunho.")
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
@@ -309,6 +317,7 @@ async def obter_rascunho_solicitacao(
     usuario_id: int,
     *, tipo: TipoRascunho = "solicitacao",
 ) -> dict[str, Any] | None:
+    """Recupera rascunho do tipo solicitado na sessão. Usado pelo fluxo de persistencia."""
     campo = _campo_rascunho(tipo)
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if not documento_id:
@@ -336,6 +345,7 @@ async def atualizar_rascunho_solicitacao(
     versao: int | None = None,
     exigir_ativo: bool = False,
 ) -> bool:
+    """Atualiza rascunho por usuário, sessão, tipo e identificação esperada. Usado pelo fluxo de persistencia."""
     campo = _campo_rascunho(tipo)
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if not documento_id:
@@ -366,6 +376,7 @@ async def atualizar_rascunho_solicitacao(
     if status_esperados is not None:
         filtro[f"{campo}.status_fluxo"] = {"$in": list(status_esperados)}
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         resultado = await colecao.update_one(filtro, {"$set": atualizacoes})

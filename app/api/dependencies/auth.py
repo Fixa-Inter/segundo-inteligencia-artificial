@@ -1,21 +1,12 @@
 from typing import Annotated
-
 from fastapi import Depends, HTTPException, status
-from fastapi.security import (
-    HTTPAuthorizationCredentials,
-    HTTPBearer,
-)
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import ValidationError
-
 from app.schemas import UsuarioContexto
-from app.services.gerais.perfil import (
-    ErroConsultaPerfil,
-    consultar_perfil,
-)
+from app.services.gerais import ErroConsultaPerfil, consultar_perfil
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
+# bearer_scheme: Recurso compartilhado de bearer scheme usado pelas funções deste módulo e pela interface pública.
 bearer_scheme = HTTPBearer(
     auto_error=False,
 )
@@ -27,6 +18,8 @@ async def obter_usuario_atual(
         Depends(bearer_scheme),
     ],
 ) -> UsuarioContexto:
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
+    """Resolve credenciais Bearer e perfil FIXA em UsuarioContexto ou erro HTTP. Usado pelo fluxo de dependencies."""
     if credenciais is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -47,6 +40,7 @@ async def obter_usuario_atual(
 
     access_token = credenciais.credentials
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         perfil = await consultar_perfil(
             access_token=access_token,
@@ -57,7 +51,7 @@ async def obter_usuario_atual(
             status_code=erro.status_code,
             detail=erro.mensagem,
         ) from erro
-    
+
     try:
         return UsuarioContexto(
             access_token=access_token,

@@ -1,22 +1,31 @@
 import logging
 import json
-
-from langchain_core.messages import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
-from app.services.visualizacoes.captura import CapturaExecucaoVisualizacao
-from app.services.visualizacoes.aprovacao import possui_visualizacao, liberar_visualizacao
-from app.services.visualizacoes import PERFIS_VISUALIZACOES
+from app.services.visualizacoes import (
+    CapturaExecucaoVisualizacao,
+    possui_visualizacao,
+    liberar_visualizacao,
+    PERFIS_VISUALIZACOES,
+)
 from app.tools.visualizacoes.contexto import (
     MENSAGEM_BLOQUEIO_MOBILE,
     validar_acesso as validar_acesso_visualizacao,
 )
-from app.graph.evidencias import ids_chamadas
-from app.graph.estado import limpar_visualizacao
-from app.agents.registro import (
+from app.graph import (
+    ids_chamadas,
+    limpar_visualizacao,
+    ContextoGrafo,
+    executar_com_evidencias,
+    EstadoGrafo,
+    alterar_continuacao,
+    esclarecer_continuacao,
+    pausar_outros_fluxos,
+    propostas_pendentes,
+    tratar_continuacao,
+    propostas_resposta,
+)
+from app.agents import (
     ajuda_geral_administrador,
     selecionar_agente,
     ajuda_geral_gestor,
@@ -35,37 +44,22 @@ from app.agents.registro import (
     solicitacoes_administrador,
     visualizacoes_gestor,
     visualizacoes_administrador,
+    rotear_orquestrador,
+    executar as executar_compra,
 )
-from app.agents.agentsResult import (
+from app.schemas.resultados_agentes import (
     IndicadoresResultado,
     FAQResultado,
     RetornoUsuarioResultado,
     SolicitacaoOcorrenciaResultado,
     VisualizacaoResultado,
 )
-from app.agents.orquestrador import rotear_orquestrador
-from app.agents.analista_compras import executar as executar_compra
-from app.graph.contexto import ContextoGrafo
-from app.graph.evidencias import executar_com_evidencias
-from app.graph.estado import EstadoGrafo
-from app.guardrails import (
-    proteger_entrada,
-    proteger_saida,
-)
-from app.graph.continuacoes import (
-    alterar_continuacao, esclarecer_continuacao, pausar_outros_fluxos,
-    propostas_pendentes, tratar_continuacao,
-)
-from app.graph.propostas import propostas_resposta
-from app.core.propostas import campos_pendentes
+from app.guardrails import proteger_entrada, proteger_saida
+from app.core import campos_pendentes, MENSAGENS, FERRAMENTA_INDISPONIVEL, RESPOSTA_VISUALIZACAO_INVALIDA
 from app.memory.persistencia import (
-    adicionar_imagens_sessao, obter_rascunho_solicitacao, registrar_coleta_parcial,
-)
-
-from app.core.respostas import (
-    MENSAGENS,
-    FERRAMENTA_INDISPONIVEL,
-    RESPOSTA_VISUALIZACAO_INVALIDA,
+    adicionar_imagens_sessao,
+    obter_rascunho_solicitacao,
+    registrar_coleta_parcial,
 )
 from app.graph.respostas_padrao import (
     selecionar_resposta_saida,
@@ -74,13 +68,14 @@ from app.graph.respostas_padrao import (
     preparar_resposta_padrao,
 )
 
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 
 def obter_pergunta(
     estado: EstadoGrafo,
 ) -> str:
+    """Obtém a pergunta atual das mensagens do estado. Usado por _validar_entrada, supervisionar."""
     mensagens = estado.get(
         "messages",
         [],
@@ -97,10 +92,12 @@ def obter_pergunta(
 def validar_entrada(
     estado: EstadoGrafo,
 ) -> dict:
+    """Aplica proteção da entrada e descarta visualização herdada de execução anterior. Usado pelo fluxo de graph."""
     return {**_validar_entrada(estado), **limpar_visualizacao()}
 
 
 def _validar_entrada(estado: EstadoGrafo) -> dict:
+    """Confere entrada conforme o contrato deste domínio. Usado por validar_entrada."""
     pergunta = (
         estado.get("mensagem_anonimizada")
         or obter_pergunta(estado)
@@ -136,6 +133,7 @@ def _validar_entrada(estado: EstadoGrafo) -> dict:
             "erro": None,
         }
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         resultado = proteger_entrada(
             pergunta
@@ -175,8 +173,10 @@ async def supervisionar(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo],
 ) -> dict:
+    """Resolve continuações determinísticas ou roteia intenção, pausando outros fluxos quando necessário. Usado pelo fluxo de graph."""
     pergunta = obter_pergunta(estado)
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         continuacao = await tratar_continuacao(estado, runtime.context, pergunta)
         if continuacao is not None:
@@ -242,6 +242,7 @@ async def executar_analista_compras(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo],
 ) -> dict:
+    """Adapta o coordenador de compras ao estado/contexto do grafo. Usado pelo fluxo de graph."""
     try:
         return await executar_compra(estado, runtime.context)
     except Exception as erro:
@@ -253,6 +254,7 @@ async def executar_ajuda_geral(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo],
 ) -> dict:
+    """Invoca agente de ajuda do perfil, injeta propostas e acumula evidências. Usado pelo fluxo de graph."""
     perfil = estado.get("perfil")
     agente = selecionar_agente("ajuda_geral", perfil, {
         "solicitante": ajuda_geral_solicitante,
@@ -284,6 +286,7 @@ async def executar_ajuda_geral(
               "correspondente sem ID para mostrar a proposta; peça confirmação depois."
         )))
         estado_agente["messages"] = mensagens
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         resultado, evidencias = await executar_com_evidencias(
             agente, estado_agente, runtime.context, FAQResultado,
@@ -312,6 +315,7 @@ async def executar_faq(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo],
 ) -> dict:
+    """Invoca FAQ do perfil e trata ausência de informação com resposta padronizada. Usado pelo fluxo de graph."""
     perfil = estado.get("perfil")
     agente = selecionar_agente("faq", perfil, {
         "solicitante": faq_solicitante,
@@ -330,6 +334,7 @@ async def executar_faq(
         }
 
     evidencias = list(estado.get("evidencias", []))
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         resultado, evidencias = await executar_com_evidencias(
             agente, estado, runtime.context, FAQResultado,
@@ -373,6 +378,7 @@ async def executar_solicitacao(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo],
 ) -> dict:
+    """Coordena especialista de cadastro/atualização, coleta parcial, rascunhos, anexos e evidências. Usado pelo fluxo de graph."""
     perfil = estado.get("perfil")
     agente = selecionar_agente("solicitacao", perfil, {
         "solicitante": solicitacoes_solicitante,
@@ -405,6 +411,7 @@ async def executar_solicitacao(
         estado.get(f"operacao_{tipo_registro}") == "atualizar"
         or (estado.get("continua_pendente") and (estado.get(f"{tipo_registro}_pendente") or {}).get("operacao") == "atualizar")
     )
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         if tipo_registro in {"solicitacao", "ocorrencia", "evento"}:
             rascunho_atual = estado_agente.get(f"{tipo_registro}_pendente")
@@ -563,6 +570,7 @@ async def executar_indicadores(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo],
 ) -> dict:
+    """Invoca especialista gerencial de KPIs com contexto autenticado. Usado pelo fluxo de graph."""
     if estado.get("perfil") not in {"gestor", "administrador"}:
         return {
             "resposta_especialista": (
@@ -572,6 +580,7 @@ async def executar_indicadores(
         }
 
     evidencias = list(estado.get("evidencias", []))
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         agente = selecionar_agente("analytics", estado["perfil"], {
             "gestor": indicadores_gestor,
@@ -618,6 +627,7 @@ async def executar_visualizacao(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo],
 ) -> dict:
+    """Valida acesso/plataforma, captura consultas reais e confere referência escolhida pelo agente. Usado pelo fluxo de graph."""
     limpo = limpar_visualizacao()
     contexto = getattr(runtime, "context", None)
     if isinstance(contexto, dict) and contexto.get("plataforma") == "mobile":
@@ -648,6 +658,7 @@ async def executar_visualizacao(
 
     evidencias = list(estado.get("evidencias", []))
     captura = None
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         usuario_id = runtime.context["usuario"].usuario_id
         sessao_id = runtime.context.get("session_id")
@@ -719,7 +730,9 @@ async def executar_retorno_usuario(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo],
 ) -> dict:
+    """Invoca especialista de feedback e acumula evidências/operações preparadas. Usado pelo fluxo de graph."""
     evidencias = list(estado.get("evidencias", []))
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         resultado, evidencias = await executar_com_evidencias(
             feedback, estado, runtime.context, RetornoUsuarioResultado,
@@ -762,6 +775,7 @@ def validar_saida(
     estado: EstadoGrafo,
     runtime: Runtime[ContextoGrafo] = None,
 ) -> dict:
+    """Protege texto, confere visualização aprovada e monta resposta final do estado. Usado pelo fluxo de graph."""
     visual = possui_visualizacao(estado)
     contexto = runtime.context if runtime else None
     if visual:
@@ -787,6 +801,7 @@ def validar_saida(
 
 
 def _bloquear_saida_visualizacao(erro) -> dict:
+    """Executa a etapa bloquear saida visualizacao no escopo de nos. Usado por validar_saida."""
     registrador.error("Falha na liberação de visualização: %s", type(erro).__name__)
     texto = RESPOSTA_VISUALIZACAO_INVALIDA
     return {**limpar_visualizacao(), "resposta_final": texto, "messages": [AIMessage(content=texto)],
@@ -795,6 +810,7 @@ def _bloquear_saida_visualizacao(erro) -> dict:
 
 
 def _validar_saida(estado: EstadoGrafo) -> dict:
+    """Confere saida conforme o contrato deste domínio. Usado por validar_saida."""
     resposta = (
         estado.get("resposta_candidata") or estado.get("resposta_especialista", "")
     ).strip()
@@ -820,6 +836,7 @@ def _validar_saida(estado: EstadoGrafo) -> dict:
                     links_preservados[marcador] = url
                     resposta = resposta.replace(url, marcador)
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         resultado = proteger_saida(
             resposta=resposta,
@@ -871,11 +888,13 @@ def _validar_saida(estado: EstadoGrafo) -> dict:
 def tratar_erro(
     estado: EstadoGrafo,
 ) -> dict:
+    """Produz fallback seguro e limpa dados de visualização incompatíveis. Usado pelo fluxo de graph."""
     return {**_tratar_erro(estado), **limpar_visualizacao()}
 
 
 def _tratar_erro(estado: EstadoGrafo) -> dict:
 
+    """Executa a etapa tratar erro no escopo de nos. Usado por tratar_erro."""
     registrador.warning(
         "Fallback: intenção=%s veredito=%s erro=%s feedback_juiz=%s",
         estado.get("intencao"),

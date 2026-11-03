@@ -1,13 +1,12 @@
 """Evidencias extraidas dos resultados reais das tools, sem chamadas ao LLM."""
 
 import json
-from app.observability.metricas import registrar_operacao
-
+from app.observability import registrar_operacao
 from langchain_core.messages import AIMessage, ToolMessage, SystemMessage
 from app.agents.prompts.reutilizaveis import construir_contexto_temporal
 
-
 def ids_chamadas(mensagens) -> set[str]:
+    """Coleta identificadores de chamadas de ferramentas presentes nas mensagens. Usado por executar_com_evidencias."""
     ids = set()
     for mensagem in mensagens:
         if isinstance(mensagem, AIMessage):
@@ -18,6 +17,7 @@ def ids_chamadas(mensagens) -> set[str]:
 
 
 def extrair_evidencias(mensagens, ids_anteriores: set[str], formato_saida: str) -> list[str]:
+    """Extrai resultados reais de chamadas novas, excluindo memória e formatação como prova operacional. Usado por executar_com_evidencias."""
     chamadas = {
         chamada["id"]: chamada["name"]
         for mensagem in mensagens
@@ -67,6 +67,7 @@ def extrair_evidencias(mensagens, ids_anteriores: set[str], formato_saida: str) 
 
 
 async def executar_com_evidencias(agente, estado, contexto, formato_saida):
+    """Invoca agente com contexto temporal e retorna resultado junto às novas evidências. Usado pelo fluxo de graph."""
     mensagens = list(estado.get("messages", []))
     # Captura antes do invoke: o agente pode atribuir IDs ou alterar mensagens.
     anteriores = ids_chamadas(mensagens)

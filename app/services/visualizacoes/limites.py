@@ -1,25 +1,35 @@
 """Limites operacionais das análises; não corta resultados silenciosamente."""
 
-
-from app.schemas.visualizacao import (
-    DadosBoxplot, DadosCategorias, DadosHistograma, DadosSerieTemporal,
-    DadosVisualizacao, GrupoBoxplot, PeriodoVisualizacao,
+from app.schemas import (
+    DadosBoxplot,
+    DadosCategorias,
+    DadosHistograma,
+    DadosSerieTemporal,
+    DadosVisualizacao,
+    GrupoBoxplot,
+    PeriodoVisualizacao,
 )
 from .resumos import MINIMO_REGISTROS_BOXPLOT
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
+# MAXIMO_DIAS_PERIODO: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 MAXIMO_DIAS_PERIODO = 366
+# MAXIMO_GRUPOS: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 MAXIMO_GRUPOS = 50
+# MAXIMO_PONTOS_SERIE: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 MAXIMO_PONTOS_SERIE = 500
+# MAXIMO_INTERVALOS_HISTOGRAMA: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 MAXIMO_INTERVALOS_HISTOGRAMA = 10
+# MAXIMO_EXTREMOS_POR_GRUPO: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 MAXIMO_EXTREMOS_POR_GRUPO = 50
+# MAXIMO_EXTREMOS_POR_GRAFICO: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 MAXIMO_EXTREMOS_POR_GRAFICO = 500
+# MAXIMO_CONSULTAS_POR_EXECUCAO: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 MAXIMO_CONSULTAS_POR_EXECUCAO = 3
 
 
 def validar_periodo_consulta(periodo: PeriodoVisualizacao) -> None:
+    """Rejeita período que excede o máximo permitido da consulta. Usado pelo fluxo de visualizacoes."""
     dias = (periodo.fim - periodo.inicio).days
     if not 1 <= dias <= MAXIMO_DIAS_PERIODO:
         raise ValueError(MENSAGENS['o_periodo_deve_ter_entre_1_e_366_dias_reduza_o_intervalo'])
@@ -32,6 +42,7 @@ def validar_limites_resultado(dados: DadosVisualizacao) -> None:
     de liberar seus resultados. Este validador confere os limites dos pontos
     selecionados; a consulta mantém as estatísticas da população completa.
     """
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if isinstance(dados, DadosCategorias):
         if len(dados.pontos) > MAXIMO_GRUPOS:
             raise ValueError(MENSAGENS['o_grafico_excede_50_categorias_refine_os_filtros'])

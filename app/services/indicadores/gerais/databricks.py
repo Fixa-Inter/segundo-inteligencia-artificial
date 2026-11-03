@@ -1,26 +1,26 @@
 """Validação e execução de consultas de indicadores na API Databricks."""
 
-
 import asyncio
 import re
+import httpx
 from datetime import date, datetime
 from typing import Any
 from urllib.parse import urlsplit
-
-import httpx
-
-from app.core import configuracao
+from app.core import configuracao, MENSAGENS
 from app.core.clients import databricks as cliente_databricks
+from app.core.apresentacao import formatar_resposta
 
-from app.core.respostas import MENSAGENS
-from app.graph.respostas_padrao import formatar_resposta
-
-
+# _WAIT_TIMEOUT: Valor de referência de  wait timeout usado neste módulo e por seus consumidores.
 _WAIT_TIMEOUT = "10s"
+# _TEMPO_MAXIMO_EXECUCAO_SEGUNDOS: Recurso compartilhado de tempo maximo execucao segundos usado pelas funções deste módulo e pela interface pública.
 _TEMPO_MAXIMO_EXECUCAO_SEGUNDOS = 60.0
+# _INTERVALO_POLL_SEGUNDOS: Recurso compartilhado de intervalo poll segundos usado pelas funções deste módulo e pela interface pública.
 _INTERVALO_POLL_SEGUNDOS = 0.5
+# _LIMITE_LINHAS_PADRAO: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 _LIMITE_LINHAS_PADRAO = 1000
+# _LIMITE_BYTES_PADRAO: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 _LIMITE_BYTES_PADRAO = 2_000_000
+# _MARCADOR_SQL: Recurso compartilhado de marcador sql usado pelas funções deste módulo e pela interface pública.
 _MARCADOR_SQL = re.compile(r"(?<!:):([A-Za-z][A-Za-z0-9_]*)")
 
 
@@ -49,6 +49,7 @@ class ResultadoDatabricksTruncado(ErroDatabricks):
 
 
 def _configuracoes() -> tuple[str, str, str]:
+    """Executa a etapa configuracoes no escopo de databricks. Usado por executar_consulta."""
     ausentes = [
         nome
         for nome, valor in (
@@ -58,6 +59,7 @@ def _configuracoes() -> tuple[str, str, str]:
         )
         if not isinstance(valor, str) or not valor.strip()
     ]
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if ausentes:
         raise ConfiguracaoDatabricksAusente(
             "Configure as variáveis: " + ", ".join(ausentes) + "."
@@ -88,6 +90,7 @@ def _configuracoes() -> tuple[str, str, str]:
 
 
 def _validar_sql(sql: str, parametros: dict[str, Any]) -> None:
+    """Confere sql conforme o contrato deste domínio. Usado por executar_consulta."""
     consulta = sql.strip()
     if not consulta or not re.match(r"^SELECT\b", consulta, re.IGNORECASE):
         raise ValueError(MENSAGENS['o_cliente_databricks_aceita_somente_consultas_select'])
@@ -108,6 +111,7 @@ def _validar_sql(sql: str, parametros: dict[str, Any]) -> None:
 
 
 def _valor_parametro(valor: Any) -> str | None:
+    """Executa a etapa valor parametro no escopo de databricks. Usado por _parametros_api."""
     if valor is None:
         return None
     if isinstance(valor, (date, datetime)):
@@ -122,6 +126,7 @@ def _valor_parametro(valor: Any) -> str | None:
 def _parametros_api(
     parametros: dict[str, Any], tipos_parametros: dict[str, str] | None,
 ) -> list[dict[str, str]]:
+    """Executa a etapa parametros api no escopo de databricks. Usado por executar_consulta."""
     tipos = tipos_parametros or {}
     desconhecidos = set(tipos) - set(parametros)
     if desconhecidos:
@@ -144,6 +149,7 @@ def _parametros_api(
 
 
 def _dados_erro(payload: dict[str, Any]) -> str:
+    """Executa a etapa dados erro no escopo de databricks. Usado por executar_consulta."""
     status = payload.get("status") or {}
     erro = status.get("error") or {}
     codigo = erro.get("error_code") or status.get("state") or "ERRO_DESCONHECIDO"
@@ -154,6 +160,7 @@ def _dados_erro(payload: dict[str, Any]) -> str:
 
 
 def _linhas_resultado(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Executa a etapa linhas resultado no escopo de databricks. Usado por executar_consulta."""
     manifest = payload.get("manifest") or {}
     colunas = (manifest.get("schema") or {}).get("columns") or []
     dados = (payload.get("result") or {}).get("data_array") or []
@@ -183,6 +190,8 @@ async def _requisicao_json(
     caminho: str,
     **opcoes: Any,
 ) -> dict[str, Any]:
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
+    """Executa a etapa requisicao json no escopo de databricks. Usado por executar_consulta."""
     try:
         resposta = await cliente.request(
             metodo,
@@ -210,6 +219,7 @@ async def _requisicao_json(
         raise ErroHTTPDatabricks(
             MENSAGENS['a_api_databricks_retornou_uma_resposta_invalida']
         ) from erro
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if not isinstance(payload, dict):
         raise ErroHTTPDatabricks(
             MENSAGENS['a_api_databricks_retornou_um_formato_de_resposta_invalido']
@@ -224,6 +234,7 @@ async def _cancelar_statement(
     statement_id: str,
     warehouse_id: str,
 ) -> None:
+    """Executa a etapa cancelar statement no escopo de databricks. Usado por executar_consulta."""
     try:
         resposta = await cliente.post(
             f"{host}/api/2.0/sql/statements/{statement_id}/cancel",
@@ -248,6 +259,7 @@ async def executar_consulta(
     """Executa um SELECT parametrizado no warehouse e devolve linhas como dicionários."""
     valores = parametros or {}
     _validar_sql(sql, valores)
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if not 1 <= limite_linhas <= 10_000:
         raise ValueError(MENSAGENS['limite_linhas_deve_estar_entre_1_e_10000'])
     if limite_bytes <= 0:
@@ -279,6 +291,7 @@ async def executar_consulta(
     status = payload.get("status") or {}
     estado = status.get("state")
     statement_id = payload.get("statement_id")
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         while estado in {"PENDING", "RUNNING"}:
             if not statement_id:

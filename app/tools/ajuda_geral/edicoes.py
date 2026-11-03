@@ -1,31 +1,25 @@
 """Propostas e confirmação de alterações em registros existentes."""
 
-
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Literal
-
 from langchain.tools import ToolRuntime, tool
 from pydantic import Field
-from app.core.confirmacoes import aceite_explicito
-
-from app.memory.persistencia import (
-    atualizar_acao, iniciar_acao, obter_acao, salvar_acao,
-)
-from app.schemas import UsuarioContexto
-from app.schemas.imagem import LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem
+from app.core import aceite_explicito, MENSAGENS
+from app.memory.persistencia import atualizar_acao, iniciar_acao, obter_acao, salvar_acao
+from app.schemas import UsuarioContexto, LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem
 from app.services.ajuda_geral import edicoes as servico
 from app.tools.ajuda_geral.consultas import _Argumentos
 from app.services.operacoes import dados_edicao, preparar_operacao
+from app.core.apresentacao import escolher_resposta
 
-from app.core.respostas import MENSAGENS
-from app.graph.respostas_padrao import escolher_resposta
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
+# Tipo: Recurso compartilhado de tipo usado pelas funções deste módulo e pela interface pública.
 Tipo = Literal["solicitacao", "ocorrencia", "observacao_conclusao"]
 
 
+# _Alteracao: contrato/estrutura de edicoes; usado pelos consumidores desta interface.
 class _Alteracao(_Argumentos):
     problema_id: int | None = Field(default=None, strict=True, gt=0)
     campo: Literal[
@@ -35,19 +29,23 @@ class _Alteracao(_Argumentos):
     novo_valor: int | str | None = None
 
 
+# _AnexoSolicitacao: contrato/estrutura de edicoes; usado pelos consumidores desta interface.
 class _AnexoSolicitacao(_Argumentos):
     problema_id: int | None = Field(default=None, strict=True, gt=0)
 
 
+# _AnexoOcorrencia: contrato/estrutura de edicoes; usado pelos consumidores desta interface.
 class _AnexoOcorrencia(_Argumentos):
     ocorrencia_id: int | None = Field(default=None, strict=True, gt=0)
 
 
+# _AnexoObservacao: contrato/estrutura de edicoes; usado pelos consumidores desta interface.
 class _AnexoObservacao(_Argumentos):
     observacao_conclusao_id: int | None = Field(default=None, strict=True, gt=0)
 
 
 def _contexto(runtime: ToolRuntime) -> tuple[dict, UsuarioContexto, str]:
+    """Confere o contexto autenticado exigido pela ferramenta. Usado por _propor."""
     contexto = runtime.context
     if not isinstance(contexto, dict):
         raise PermissionError(MENSAGENS['contexto_de_autenticacao_ausente'])
@@ -62,6 +60,7 @@ def _contexto(runtime: ToolRuntime) -> tuple[dict, UsuarioContexto, str]:
 
 
 def _imagens(contexto: dict) -> list[str]:
+    """Extrai e valida anexos recebidos no contexto autenticado. Usado por _propor."""
     bruto = contexto.get("imagens", [])
     if not isinstance(bruto, list) or len(bruto) > LIMITE_IMAGENS_POR_MENSAGEM:
         raise ValueError(MENSAGENS['envie_no_maximo_tres_imagens'])
@@ -74,6 +73,7 @@ def _imagens(contexto: dict) -> list[str]:
 
 
 def _erro(erro: Exception) -> dict:
+    """Traduz falha de validação, permissão ou execução para o contrato do domínio. Usado por _propor."""
     if isinstance(erro, PermissionError):
         return {"status": "ACESSO_NEGADO", "mensagem": str(erro)}
     if isinstance(erro, ValueError):
@@ -83,6 +83,7 @@ def _erro(erro: Exception) -> dict:
 
 
 def _confirmacao_edicao(mensagem: str) -> bool:
+    """Confere aceite explícito compatível com edição/anexação. Usado por _executar_pendente, _propor."""
     return aceite_explicito(mensagem, acoes=("alterar", "atualizar", "anexar", "enviar", "salvar", "prosseguir", "seguir", "continuar"))
 
 
@@ -90,6 +91,7 @@ async def _executar_pendente(
     contexto: dict, usuario: UsuarioContexto, sessao: str, acao: dict,
     *, operacao_aprovada: dict | None = None,
 ) -> dict:
+    """Executa a etapa executar pendente no escopo de edicoes. Usado por _propor."""
     if acao.get("pausado"):
         return {"status": "CONFIRMACAO_NECESSARIA", "mensagem": MENSAGENS['retome_explicitamente_a_proposta_pausada_antes_de_confirmar']}
     if acao.get("status") != "aguardando_confirmacao":
@@ -111,6 +113,7 @@ async def _executar_pendente(
         return {"status": "ERRO_VALIDACAO", "mensagem": MENSAGENS['a_alteracao_proposta_mudou_apos_a_aprovacao_confira_os_dados_novamente']}
     if not await iniciar_acao(sessao, usuario.usuario_id, acao["id"]):
         return {"status": "RESULTADO_INDETERMINADO", "mensagem": MENSAGENS['esta_proposta_ja_foi_processada_ou_esta_em_processamento']}
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         if acao["tipo"] == "alteracao":
             resultado = await servico.alterar_solicitacao(
@@ -144,6 +147,8 @@ async def _propor(
     runtime: ToolRuntime, tipo: Tipo | Literal["alteracao"], registro_id: int | None,
     campo: str | None = None, novo_valor: int | str | None = None,
 ) -> dict:
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
+    """Executa a etapa propor no escopo de edicoes. Usado por anexar_foto_observacao_conclusao."""
     try:
         contexto, usuario, sessao = _contexto(runtime)
         if tipo in {"ocorrencia", "observacao_conclusao"} and usuario.tipo_acesso == "solicitante":
@@ -213,7 +218,7 @@ async def alterar_informacao_solicitacao(
     campo: str | None = None, novo_valor: int | str | None = None,
 ) -> dict:
     """Propõe ou confirma edição de cinco campos de solicitação própria pendente."""
-    from app.tools.solicitacoes.atualizarSolicitacao import atualizar_solicitacao
+    from app.tools.solicitacoes import atualizar_solicitacao
     argumentos = {campo: novo_valor} if campo is not None else {}
     return await atualizar_solicitacao.coroutine(runtime=runtime, problema_id=problema_id, **argumentos)
 
@@ -221,14 +226,14 @@ async def alterar_informacao_solicitacao(
 @tool(args_schema=_AnexoSolicitacao)
 async def anexar_foto_solicitacao(runtime: ToolRuntime, problema_id: int | None = None) -> dict:
     """Propõe ou confirma anexar imagens da mensagem a solicitação própria pendente."""
-    from app.tools.solicitacoes.atualizarSolicitacao import atualizar_solicitacao
+    from app.tools.solicitacoes import atualizar_solicitacao
     return await atualizar_solicitacao.coroutine(runtime=runtime, problema_id=problema_id)
 
 
 @tool(args_schema=_AnexoOcorrencia)
 async def anexar_foto_ocorrencia(runtime: ToolRuntime, ocorrencia_id: int | None = None) -> dict:
     """Atualiza fotos de ocorrência própria e ativa, após seleção e proposta final."""
-    from app.tools.ocorrencias.atualizarOcorrencia import atualizar_ocorrencia
+    from app.tools.ocorrencias import atualizar_ocorrencia
     return await atualizar_ocorrencia.coroutine(runtime=runtime, ocorrencia_id=ocorrencia_id)
 
 

@@ -1,15 +1,12 @@
 """Resumo dos grupos pequenos das análises de boxplot, sem acesso a bancos."""
 
-
 from collections.abc import Mapping, Sequence
 from math import isfinite
 from statistics import fmean, median
+from app.schemas import Analise, ResumoGrupoPequeno
+from app.core import MENSAGENS
 
-from app.schemas.visualizacao import Analise, ResumoGrupoPequeno
-
-from app.core.respostas import MENSAGENS
-
-
+# MINIMO_REGISTROS_BOXPLOT: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 MINIMO_REGISTROS_BOXPLOT = 5
 
 
@@ -26,6 +23,7 @@ def resumir_grupo_pequeno(
     A normalização dos tipos retornados pelo Databricks precede esta função.
     A elegibilidade além dos nulos, inclusive de tempos negativos, cabe ao chamador.
     """
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if analise.formato_dados != "boxplot" or analise.unidade_medida != "minutos":
         raise ValueError(MENSAGENS['o_resumo_se_aplica_as_analises_de_boxplot_de_tempos'])
     if set(grupo) != set(analise.dimensoes):

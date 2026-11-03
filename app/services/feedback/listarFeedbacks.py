@@ -1,11 +1,11 @@
 """Consulta de feedbacks exclusivamente do usuário autenticado."""
 
-from app.core.clients.postgres import executar_consulta
-from app.core.respostas import MENSAGENS
+from app.core.clients import executar_consulta
+from app.core import MENSAGENS
 from app.schemas import UsuarioContexto
 
-
 async def listar_feedbacks(usuario: UsuarioContexto) -> dict:
+    """Consulta todos os feedbacks do usuário autenticado em ordem decrescente de data/ID. Usado pelo fluxo de feedback."""
     if usuario.tipo_acesso not in {"solicitante", "tecnico", "gestor", "administrador"}:
         raise PermissionError(MENSAGENS["contexto_de_autenticacao_invalido"])
     registros = await executar_consulta(usuario.tipo_acesso, """

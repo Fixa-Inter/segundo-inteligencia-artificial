@@ -1,18 +1,18 @@
 import logging
-
-from app.core.clients.postgres import executar_insercao
+from app.core.clients import executar_insercao
 from app.schemas import UsuarioContexto
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
+# _SQL_CRIAR_FEEDBACK: SQL parametrizado do domínio; mantém filtros, população e limites da consulta.
 _SQL_CRIAR_FEEDBACK = """
     INSERT INTO feedback (usuario_id, comentario, ideia_central)
     VALUES (:usuario_id, :comentario, :ideia_central)
     RETURNING id, data_criacao
 """
+# _PERFIS_COM_ACESSO: Recurso compartilhado de perfis com acesso usado pelas funções deste módulo e pela interface pública.
 _PERFIS_COM_ACESSO = {"solicitante", "tecnico", "gestor", "administrador"}
 
 
@@ -43,6 +43,7 @@ async def criar_feedback(
             "mensagem": MENSAGENS['este_perfil_nao_possui_uma_conexao_de_banco_autorizada_para_feedback'],
         }
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         linhas = await executar_insercao(
             perfil,

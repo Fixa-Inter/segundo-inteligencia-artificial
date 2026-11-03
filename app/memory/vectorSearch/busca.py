@@ -1,9 +1,8 @@
 from qdrant_client import AsyncQdrantClient, models
-
 from app.core import configuracao
 from app.memory.embedding import gerar_vetor_operacional
 
-
+# _COLECOES_CADASTRO: Recurso compartilhado de colecoes cadastro usado pelas funções deste módulo e pela interface pública.
 _COLECOES_CADASTRO = {
     configuracao.QDRANT_COLECAO_CATEGORIA,
     configuracao.QDRANT_COLECAO_LOCAL,
@@ -11,6 +10,7 @@ _COLECOES_CADASTRO = {
 
 
 def _filtro(unidade_id: int, registro_id: int | None = None) -> models.Filter:
+    """Compõe filtro de unidade/atividade e condições autorizadas da consulta. Usado por _buscar, validar_selecao."""
     if type(unidade_id) is not int or unidade_id <= 0:
         raise ValueError("Unidade autenticada inválida.")
     condicoes = [
@@ -34,6 +34,7 @@ def _filtro(unidade_id: int, registro_id: int | None = None) -> models.Filter:
 
 
 def _registro(ponto, unidade_id: int) -> tuple[int, str]:
+    """Valida e projeta registro recuperado preservando escopo e campos esperados. Usado por _buscar, validar_selecao."""
     conteudo = ponto.payload or {}
     valor_unidade = conteudo.get(configuracao.QDRANT_CAMPO_UNIDADE)
     if type(valor_unidade) is not int or valor_unidade != unidade_id:
@@ -52,6 +53,7 @@ def _registro(ponto, unidade_id: int) -> tuple[int, str]:
 async def _buscar(
     colecao: str, texto: str, unidade_id: int, cliente: AsyncQdrantClient,
 ) -> dict[int, str]:
+    """Executa a etapa buscar no escopo de busca. Usado por buscar_categoria_equipamento, buscar_local_endereco."""
     if colecao not in _COLECOES_CADASTRO:
         raise ValueError("Collection não permitida.")
     if not isinstance(texto, str) or not texto.strip() or not 1 <= configuracao.LIMITE_BUSCA_VETORIAL <= 20:
@@ -80,18 +82,21 @@ async def _buscar(
 async def buscar_categoria_equipamento(
     descricao: str, unidade_id: int, cliente: AsyncQdrantClient,
 ) -> dict[int, str]:
+    """Pesquisa categorias ativas por significado dentro da unidade. Usado pelo fluxo de vectorSearch."""
     return await _buscar(configuracao.QDRANT_COLECAO_CATEGORIA, descricao, unidade_id, cliente)
 
 
 async def buscar_local_endereco(
     descricao: str, unidade_id: int, cliente: AsyncQdrantClient,
 ) -> dict[int, str]:
+    """Pesquisa locais ativos por significado dentro da unidade. Usado pelo fluxo de vectorSearch."""
     return await _buscar(configuracao.QDRANT_COLECAO_LOCAL, descricao, unidade_id, cliente)
 
 
 async def validar_selecao(
     colecao: str, registro_id: int, unidade_id: int, cliente: AsyncQdrantClient,
 ) -> str:
+    """Confere ID selecionado, unidade, atividade e descrição na coleção de cadastro. Usado pelo fluxo de vectorSearch."""
     if colecao not in _COLECOES_CADASTRO:
         raise ValueError("Collection não permitida.")
     pontos, _ = await cliente.scroll(

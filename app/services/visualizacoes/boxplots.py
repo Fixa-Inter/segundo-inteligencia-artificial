@@ -1,24 +1,19 @@
 """SQL dos boxplots: população completa, resumos e extremos limitados."""
 
-
 import math
 import sys
-
-from app.schemas.visualizacao import (
-    Analise, BaseCalculoVisualizacao, DadosBoxplot, GrupoBoxplot, GrupoSemBaseBoxplot,
-)
+from app.schemas import Analise, BaseCalculoVisualizacao, DadosBoxplot, GrupoBoxplot, GrupoSemBaseBoxplot
 from .normalizacao import ErroRespostaDatabricks, campo, grupo as normalizar_grupo, inteiro, numero
 from .limites import MAXIMO_EXTREMOS_POR_GRAFICO, MAXIMO_EXTREMOS_POR_GRUPO, MAXIMO_GRUPOS
 from .resumos import MINIMO_REGISTROS_BOXPLOT, resumir_grupo_pequeno
-
-from app.core.respostas import MENSAGENS
-
+from app.core import MENSAGENS
 
 class LimiteBoxplotExcedido(ValueError):
     """O conjunto completo de grupos não cabe no gráfico autorizado."""
 
 
 def montar_sql_boxplot(analise: Analise, condicoes: list[str]):
+    """Compõe SQL de estatísticas da população e seleção limitada dos extremos. Usado pelo fluxo de visualizacoes."""
     campo = analise.campo_valor
     dimensoes = ", ".join(analise.dimensoes)
     ordem = ", ".join(f"{d} ASC NULLS FIRST" for d in analise.dimensoes)
@@ -39,6 +34,7 @@ def montar_sql_boxplot(analise: Analise, condicoes: list[str]):
     ]
 
     def projetar(valores):
+        """Executa a etapa projetar no escopo de boxplots. Usado por montar_sql_boxplot."""
         return ", ".join(f"{valores.get(c, 'NULL')} AS {c}" for c in campos)
 
     cabecalho = {c: f"g.{c}" for c in [
@@ -120,6 +116,7 @@ SELECT {projetar(resumo)} FROM resumos r
 
 
 def normalizar_boxplot(analise, linhas, filtros_permitidos, unidade_id):
+    """Valida estatísticas, cobertura e extremos e compõe boxplot/resumo/grupo sem base. Usado pelo fluxo de visualizacoes."""
     cabecalhos, pontos = {}, []
     for linha in linhas:
         tipo, indice = inteiro(campo(linha, "tipo_linha")), inteiro(campo(linha, "grupo_indice"))
@@ -134,6 +131,7 @@ def normalizar_boxplot(analise, linhas, filtros_permitidos, unidade_id):
             pontos.append((tipo, indice, linha))
         else:
             raise ErroRespostaDatabricks(MENSAGENS['tipo_de_linha_incompativel_com_o_boxplot'])
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if not cabecalhos or set(cabecalhos) != set(range(1, len(cabecalhos) + 1)):
         raise ErroRespostaDatabricks(MENSAGENS['grupos_incompletos_na_resposta'])
     grupos, bases, estatisticas, amostras, vistos = {}, {}, {}, {}, set()

@@ -1,14 +1,10 @@
 """Decisão de intenção do chat pelo JEV."""
 
-
 import json
+from app.core import propostas_pendentes, MENSAGENS
+from app.services.gerais import DecisaoIncertaJEV, consultar_jev, ler_choice, ler_noul
 
-from app.graph.continuacoes import propostas_pendentes
-from app.services.gerais.jev import DecisaoIncertaJEV, consultar_jev, ler_choice, ler_noul
-
-from app.core.respostas import MENSAGENS
-
-
+# CRITERIOS_INTENCAO: Recurso compartilhado de criterios intencao usado pelas funções deste módulo e pela interface pública.
 CRITERIOS_INTENCAO = {
     "faq": "Dúvida sobre o aplicativo ou políticas de uso.",
     "ajuda_geral": (
@@ -25,6 +21,7 @@ CRITERIOS_INTENCAO = {
     "fora_de_escopo": "Assunto sem relação com a plataforma ou manutenção.",
 }
 
+# INSTRUCAO_INTENCAO: Valor de referência de instrucao intencao usado neste módulo e por seus consumidores.
 INSTRUCAO_INTENCAO = (
     "Qual é a intenção da mensagem atual? Use o histórico apenas para resolver "
     "referências e respostas curtas. Uma proposta pendente não obriga o usuário a "
@@ -37,6 +34,7 @@ INSTRUCAO_INTENCAO = (
 
 
 def _resumir_propostas(estado: dict, *, pausadas: bool = False) -> dict:
+    """Executa a etapa resumir propostas no escopo de rotear. Usado por rotear_jev."""
     return {
         tipo: {
             "status": proposta.get("status" if tipo == "ajuda_geral" else "status_fluxo"),
@@ -48,6 +46,7 @@ def _resumir_propostas(estado: dict, *, pausadas: bool = False) -> dict:
 
 
 async def rotear_jev(estado: dict, pergunta: str) -> dict:
+    """Alternativa de roteamento estruturado via JEV; não é o roteador chamado pelo supervisor atual. Usado pelo fluxo de gerais."""
     historico = [
         {"papel": mensagem.type, "conteudo": str(mensagem.content)}
         for mensagem in estado.get("messages", [])[-8:]
@@ -82,6 +81,7 @@ async def rotear_jev(estado: dict, pergunta: str) -> dict:
     respostas = dados["answers"]
     intencao, confianca = ler_choice(respostas, "intencao", set(CRITERIOS_INTENCAO))
     continuacao = ler_noul(respostas, "continua_pendente")
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if confianca < 0.35 or ativo and 0.35 < continuacao < 0.65:
         raise DecisaoIncertaJEV(MENSAGENS['roteamento_incerto'])
     return {

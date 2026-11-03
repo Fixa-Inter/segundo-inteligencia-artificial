@@ -2,21 +2,18 @@
 
 from datetime import datetime, timezone
 from uuid import uuid4
+from app.core.clients import abrir_cliente_mongo
+from app.core import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES, agora_utc as _agora
+from app.memory.persistencia import obter_documento_sessao_id
 
-from app.core.clients.mongo import abrir_cliente_mongo
-from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
-from app.memory.persistencia.utilitarios import obter_documento_sessao_id
-
-
+# CAMPO: Valor de referência de campo usado neste módulo e por seus consumidores.
 CAMPO = "analise_compra_pendente"
+# STATUS_ATIVOS: Estados reconhecidos no fluxo deste domínio; usados para validar continuidade e execução.
 STATUS_ATIVOS = {"coletando_dados", "aguardando_opcionais", "pronto_para_busca", "erro_busca"}
 
 
-def _agora() -> datetime:
-    return datetime.now(timezone.utc)
-
-
 async def obter_analise_compra(sessao_id: str, usuario_id: int) -> dict | None:
+    """Lê pesquisa de compras da sessão. Usado por atualizar_analise_compra."""
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if not documento_id:
         return None
@@ -32,10 +29,13 @@ async def salvar_analise_compra(
     status_fluxo: str, opcionais_oferecidos: bool, turno_id: str,
     ultima_busca: dict | None = None, pergunta_pendente: str | None = None,
 ) -> dict:
+    """Persiste dados de pesquisa de compras. Usado pelo fluxo de persistencia."""
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if not documento_id:
         raise ValueError("Sessão não encontrada para salvar a análise de compra.")
     agora = _agora()
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
         documento = await colecao.find_one(
@@ -75,6 +75,7 @@ async def atualizar_analise_compra(
     sessao_id: str, usuario_id: int, *, id_analise: str,
     versao: int, status_esperado: str, campos: dict, exigir_ativo: bool = False,
 ) -> dict:
+    """Atualiza campos/estado da pesquisa própria. Usado pelo fluxo de persistencia."""
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if not documento_id:
         raise ValueError("Sessão de compras não encontrada.")

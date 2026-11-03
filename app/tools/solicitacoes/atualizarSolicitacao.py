@@ -3,29 +3,30 @@
 import logging
 import re
 from typing import Literal
-
 from langchain.tools import ToolRuntime, tool
-from app.core.confirmacoes import aceite_explicito, normalizar_mensagem
-from app.core.respostas import MENSAGENS
-from app.core.propostas import metadados_proposta
+from app.core import aceite_explicito, normalizar_mensagem, MENSAGENS, metadados_proposta
 from app.memory.persistencia import (
-    registrar_coleta_parcial, obter_rascunho_solicitacao, atualizar_rascunho_solicitacao,
+    registrar_coleta_parcial,
+    obter_rascunho_solicitacao,
+    atualizar_rascunho_solicitacao,
 )
 from app.services.solicitacoes import atualizarSolicitacao as servico
 from app.services.operacoes import dados_atualizacao, preparar_operacao
 from app.tools.ajuda_geral.edicoes import _contexto, _imagens
-from app.tools.atualizacoes import salvar_proposta, confirmou_selecao as _confirmou_selecao
-
+from app.tools import salvar_proposta, confirmou_selecao as _confirmou_selecao
 
 async def _salvar(contexto: dict, rascunho: dict, **campos) -> dict:
+    """Atualiza a proposta versionada usando o armazenamento do domínio. Usado por atualizar_solicitacao, buscar_solicitacoes_para_atualizar."""
     return await salvar_proposta(contexto, rascunho, atualizar_rascunho_solicitacao, **campos)
 
 
 def _resposta(rascunho: dict) -> dict:
+    """Projeta rascunho e metadados para a resposta da ferramenta. Usado por atualizar_solicitacao, processar_atualizacao."""
     return {"status": "AGUARDANDO_CONFIRMACAO", "proposta": metadados_proposta(rascunho)}
 
 
 def _erro(erro: Exception) -> dict:
+    """Traduz falha de validação, permissão ou execução para o contrato do domínio. Usado por atualizar_solicitacao, buscar_solicitacoes_para_atualizar."""
     if isinstance(erro, (ValueError, PermissionError)):
         return {"status": "ACESSO_NEGADO" if isinstance(erro, PermissionError) else "ERRO_VALIDACAO", "mensagem": str(erro)}
     logging.getLogger(__name__).exception("Falha no fluxo de atualização de solicitação")
@@ -66,6 +67,7 @@ async def atualizar_solicitacao(
     O primeiro aceite confirma a seleção do registro; o segundo confirma a proposta final.
     Fotos vêm do contexto. Sem novas alterações, chame novamente após o aceite do usuário.
     """
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         contexto, usuario, sessao = _contexto(runtime)
         rascunho = await obter_rascunho_solicitacao(sessao, usuario.usuario_id)
@@ -151,6 +153,7 @@ async def atualizar_solicitacao(
 
 
 async def processar_atualizacao(runtime, *, operacao_aprovada: dict | None = None) -> dict:
+    """Confere proposta final de atualização; prepara operação ou efetiva pelo serviço quando já aprovada. Usado por atualizar_solicitacao."""
     contexto, usuario, sessao = _contexto(runtime)
     rascunho = await obter_rascunho_solicitacao(sessao, usuario.usuario_id)
     if (not rascunho or rascunho.get("operacao") != "atualizar" or not rascunho.get("selecao_confirmada")

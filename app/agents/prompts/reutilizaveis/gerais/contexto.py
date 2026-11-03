@@ -1,3 +1,4 @@
+# CONTEXTO_INSTRUCAO: contexto e regras comuns enviados aos agentes; texto original preservado.
 CONTEXTO_INSTRUCAO = """
 ## Contexto da aplicação
 

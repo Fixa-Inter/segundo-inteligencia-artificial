@@ -4,24 +4,30 @@ Os serviços preenchem estes contratos com as regras de cada domínio. O contrat
 público transporta dados analíticos, sem opções de renderização Recharts.
 """
 
-
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Annotated, Literal
-
 from pydantic import (
-    BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr,
-    field_validator, model_validator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    StrictStr,
+    field_validator,
+    model_validator,
 )
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
+# FormatoDados: Recurso compartilhado de formatodados usado pelas funções deste módulo e pela interface pública.
 FormatoDados = Literal["serie_temporal", "categorias", "histograma", "boxplot"]
+# Agregacao: Recurso compartilhado de agregacao usado pelas funções deste módulo e pela interface pública.
 Agregacao = Literal["SUM", "COUNT", "AVG"]
 
 
 @dataclass(frozen=True)
+# Fonte: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class Fonte:
     id: str
     tabela: str
@@ -32,12 +38,14 @@ class Fonte:
 
 
 @dataclass(frozen=True)
+# FiltroObrigatorio: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class FiltroObrigatorio:
     campo: str
     valor: int | bool
 
 
 @dataclass(frozen=True)
+# Analise: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class Analise:
     id: str
     titulo: str
@@ -72,6 +80,7 @@ class ResumoGrupoPequeno(BaseModel):
 
     @model_validator(mode="after")
     def validar_estatisticas(self):
+        """Confere estatisticas conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if self.base_calculo is not None and self.qtd_registros != self.base_calculo.qtd_registros_elegiveis:
             raise ValueError(MENSAGENS['a_quantidade_do_resumo_deve_corresponder_a_base_elegivel'])
         if not (
@@ -82,17 +91,24 @@ class ResumoGrupoPequeno(BaseModel):
         return self
 
 
+# ValorFiltro: Recurso compartilhado de valorfiltro usado pelas funções deste módulo e pela interface pública.
 ValorFiltro = StrictInt | StrictStr | StrictBool
+# SelecaoFiltro: Recurso compartilhado de selecaofiltro usado pelas funções deste módulo e pela interface pública.
 SelecaoFiltro = ValorFiltro | Annotated[list[ValorFiltro], Field(min_length=1)]
+# DimensoesGrupo: Recurso compartilhado de dimensoesgrupo usado pelas funções deste módulo e pela interface pública.
 DimensoesGrupo = dict[str, StrictInt | StrictStr | None]
+# ValorMedida: Recurso compartilhado de valormedida usado pelas funções deste módulo e pela interface pública.
 ValorMedida = StrictInt | StrictFloat | None
+# GranularidadeTemporal: Recurso compartilhado de granularidadetemporal usado pelas funções deste módulo e pela interface pública.
 GranularidadeTemporal = Literal["dia", "semana", "mes"]
 
 
+# _ContratoVisualizacao: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class _ContratoVisualizacao(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
 
+# PeriodoVisualizacao: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class PeriodoVisualizacao(_ContratoVisualizacao):
     inicio: date = Field(description="Data inicial inclusiva (YYYY-MM-DD).")
     fim: date = Field(description="Data final exclusiva (YYYY-MM-DD).")
@@ -100,6 +116,7 @@ class PeriodoVisualizacao(_ContratoVisualizacao):
     @field_validator("inicio", "fim", mode="before")
     @classmethod
     def validar_formato_data(cls, valor):
+        """Confere formato data conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if type(valor) is date:
             return valor
         if isinstance(valor, str) and len(valor) == 10 and valor[4] == valor[7] == "-":
@@ -108,16 +125,19 @@ class PeriodoVisualizacao(_ContratoVisualizacao):
 
     @model_validator(mode="after")
     def validar_intervalo(self):
+        """Confere intervalo conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if self.inicio >= self.fim:
             raise ValueError(MENSAGENS['o_inicio_deve_ser_anterior_ao_fim_exclusivo_do_periodo'])
         return self
 
 
+# _ConsultaVisualizacao: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class _ConsultaVisualizacao(_ContratoVisualizacao):
     analise_id: str = Field(pattern=r"^VIS-\d{2}$")
     filtros: dict[str, SelecaoFiltro] = Field(default_factory=dict)
 
 
+# ConsultaVisualizacaoPeriodo: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class ConsultaVisualizacaoPeriodo(_ConsultaVisualizacao):
     periodo: PeriodoVisualizacao
     granularidade: GranularidadeTemporal | None = None
@@ -136,6 +156,7 @@ class ReferenciaVisualizacao(_ContratoVisualizacao):
     @field_validator("consulta_id")
     @classmethod
     def validar_identificador(cls, valor):
+        """Confere identificador conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if not valor.strip() or valor != valor.strip():
             raise ValueError(MENSAGENS['a_referencia_deve_preservar_o_identificador_retornado_pela_tool'])
         return valor
@@ -154,11 +175,13 @@ class BaseCalculoVisualizacao(_ContratoVisualizacao):
 
     @model_validator(mode="after")
     def validar_quantidades(self):
+        """Confere quantidades conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if self.qtd_registros_elegiveis + self.qtd_tempos_negativos_excluidos > self.qtd_registros_total:
             raise ValueError(MENSAGENS['elegiveis_e_negativos_excluidos_nao_podem_exceder_o_total'])
         return self
 
 
+# PontoCategoria: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class PontoCategoria(_ContratoVisualizacao):
     grupo: DimensoesGrupo
     valor: ValorMedida
@@ -167,6 +190,7 @@ class PontoCategoria(_ContratoVisualizacao):
 
     @model_validator(mode="after")
     def validar_base_calculo(self):
+        """Confere base calculo conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if self.base_calculo is not None:
             if self.qtd_registros != self.base_calculo.qtd_registros_elegiveis:
                 raise ValueError(MENSAGENS['a_quantidade_do_ponto_deve_corresponder_a_base_elegivel'])
@@ -184,6 +208,7 @@ class PeriodoSerieTemporal(_ContratoVisualizacao):
 
     @model_validator(mode="after")
     def validar_recorte(self):
+        """Confere recorte conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if not (
             self.calendario.inicio <= self.consultado.inicio
             and self.consultado.fim <= self.calendario.fim
@@ -194,27 +219,32 @@ class PeriodoSerieTemporal(_ContratoVisualizacao):
         return self
 
 
+# PontoSerieTemporal: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class PontoSerieTemporal(PontoCategoria):
     data_referencia: date
     periodo: PeriodoSerieTemporal | None = None
 
     @model_validator(mode="after")
     def validar_referencia_periodo(self):
+        """Confere referencia periodo conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if self.periodo is not None and self.data_referencia != self.periodo.calendario.inicio:
             raise ValueError(MENSAGENS['a_data_de_referencia_deve_identificar_o_inicio_do_periodo_do_calendario'])
         return self
 
 
+# DadosCategorias: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class DadosCategorias(_ContratoVisualizacao):
     tipo: Literal["categorias"] = "categorias"
     pontos: list[PontoCategoria] = Field(min_length=1)
 
 
+# DadosSerieTemporal: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class DadosSerieTemporal(_ContratoVisualizacao):
     tipo: Literal["serie_temporal"] = "serie_temporal"
     pontos: list[PontoSerieTemporal] = Field(min_length=1)
 
 
+# IntervaloHistograma: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class IntervaloHistograma(_ContratoVisualizacao):
     inferior: float
     superior: float
@@ -223,11 +253,13 @@ class IntervaloHistograma(_ContratoVisualizacao):
 
     @model_validator(mode="after")
     def validar_limites(self):
+        """Confere limites conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if self.inferior > self.superior:
             raise ValueError(MENSAGENS['o_limite_inferior_nao_pode_exceder_o_superior'])
         return self
 
 
+# DadosHistograma: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class DadosHistograma(_ContratoVisualizacao):
     tipo: Literal["histograma"] = "histograma"
     intervalos: list[IntervaloHistograma] = Field(min_length=1)
@@ -235,11 +267,13 @@ class DadosHistograma(_ContratoVisualizacao):
 
     @model_validator(mode="after")
     def validar_frequencias(self):
+        """Confere frequencias conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if sum(intervalo.frequencia for intervalo in self.intervalos) != self.qtd_registros:
             raise ValueError(MENSAGENS['as_frequencias_devem_cobrir_a_populacao_do_histograma'])
         return self
 
 
+# GrupoBoxplot: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class GrupoBoxplot(_ContratoVisualizacao):
     tipo: Literal["boxplot"] = "boxplot"
     analise_id: str
@@ -262,6 +296,7 @@ class GrupoBoxplot(_ContratoVisualizacao):
 
     @model_validator(mode="after")
     def validar_estatisticas(self):
+        """Confere estatisticas conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if self.base_calculo is not None and self.qtd_registros != self.base_calculo.qtd_registros_elegiveis:
             raise ValueError(MENSAGENS['a_quantidade_do_boxplot_deve_corresponder_a_base_elegivel'])
         if not self.minimo <= self.q1 <= self.mediana <= self.q3 <= self.maximo:
@@ -299,27 +334,32 @@ class GrupoSemBaseBoxplot(_ContratoVisualizacao):
 
     @model_validator(mode="after")
     def validar_base(self):
+        """Confere base conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if self.base_calculo.qtd_registros_elegiveis or not self.base_calculo.qtd_registros_total:
             raise ValueError(MENSAGENS['um_grupo_sem_base_exige_registros_observados_e_nenhum_elegivel'])
         return self
 
 
+# ResultadoGrupoBoxplot: Recurso compartilhado de resultadogrupoboxplot usado pelas funções deste módulo e pela interface pública.
 ResultadoGrupoBoxplot = Annotated[
     GrupoBoxplot | ResumoGrupoPequeno | GrupoSemBaseBoxplot, Field(discriminator="tipo"),
 ]
 
 
+# DadosBoxplot: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class DadosBoxplot(_ContratoVisualizacao):
     tipo: Literal["boxplot"] = "boxplot"
     grupos: list[ResultadoGrupoBoxplot] = Field(min_length=1)
 
 
+# DadosVisualizacao: Recurso compartilhado de dadosvisualizacao usado pelas funções deste módulo e pela interface pública.
 DadosVisualizacao = Annotated[
     DadosCategorias | DadosSerieTemporal | DadosHistograma | DadosBoxplot,
     Field(discriminator="tipo"),
 ]
 
 
+# MetadadosConsultaVisualizacao: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class MetadadosConsultaVisualizacao(_ContratoVisualizacao):
     analise_id: str
     fonte: str
@@ -342,12 +382,14 @@ class MetadadosConsultaVisualizacao(_ContratoVisualizacao):
     @field_validator("consultado_em")
     @classmethod
     def validar_fuso_consulta(cls, valor):
+        """Confere fuso consulta conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if valor.tzinfo is None or valor.utcoffset() is None:
             raise ValueError(MENSAGENS['o_instante_da_consulta_deve_informar_o_fuso_horario'])
         return valor
 
     @model_validator(mode="after")
     def validar_referencia_temporal(self):
+        """Confere referencia temporal conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if self.base_calculo is not None and (
             self.qtd_registros_considerados != self.base_calculo.qtd_registros_elegiveis
         ):
@@ -359,12 +401,14 @@ class MetadadosConsultaVisualizacao(_ContratoVisualizacao):
         return self
 
 
+# StatusConsultaVisualizacao: Recurso compartilhado de statusconsultavisualizacao usado pelas funções deste módulo e pela interface pública.
 StatusConsultaVisualizacao = Literal[
     "SUCESSO", "SUCESSO_PARCIAL", "SEM_RESULTADO", "SEM_BASE_CALCULO",
     "ERRO_VALIDACAO", "ACESSO_NEGADO", "ERRO_FERRAMENTA", "TIMEOUT",
     "RESULTADO_TRUNCADO",
 ]
 
+# StatusVisualizacao: Recurso compartilhado de statusvisualizacao usado pelas funções deste módulo e pela interface pública.
 StatusVisualizacao = Literal[StatusConsultaVisualizacao, "AGUARDANDO_INFORMACAO", "ERRO_MODELO"]
 
 
@@ -380,6 +424,7 @@ class ResultadoConsultaVisualizacao(_ContratoVisualizacao):
 
     @model_validator(mode="after")
     def validar_conteudo(self):
+        """Confere conteudo conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         sucesso = self.status in {"SUCESSO", "SUCESSO_PARCIAL"}
         if sucesso and (self.dados is None or self.metadados is None):
             raise ValueError(MENSAGENS['sucesso_exige_dados_e_metadados_da_consulta'])
@@ -427,6 +472,7 @@ class AprovacaoVisualizacao(_ContratoVisualizacao):
     conteudo_sha256: StrictStr = Field(pattern=r"^[a-f0-9]{64}$")
 
 
+# MetadadosVisualizacaoPublica: contrato/estrutura de visualizacao; usado pelos consumidores desta interface.
 class MetadadosVisualizacaoPublica(_ContratoVisualizacao):
     analise_id: StrictStr = Field(pattern=r"^VIS-\d{2}$")
     unidade_id: int = Field(gt=0, strict=True)
@@ -443,12 +489,14 @@ class MetadadosVisualizacaoPublica(_ContratoVisualizacao):
     @field_validator("consultado_em")
     @classmethod
     def validar_fuso(cls, valor):
+        """Confere fuso conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if valor.tzinfo is None or valor.utcoffset() is None:
             raise ValueError(MENSAGENS['o_instante_da_consulta_exige_fuso_horario'])
         return valor
 
     @model_validator(mode="after")
     def validar_metadados(self):
+        """Confere metadados conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if self.periodo is not None and self.instante_snapshot is not None:
             raise ValueError(MENSAGENS['periodo_e_snapshot_nao_podem_coexistir'])
         if self.granularidade is not None and self.periodo is None:
@@ -471,6 +519,7 @@ class VisualizacaoPublica(_ContratoVisualizacao):
 
     @model_validator(mode="after")
     def validar_dados(self):
+        """Confere dados conforme o contrato deste domínio. Usado pelo fluxo de schemas."""
         if isinstance(self.dados, DadosBoxplot) and any(
             g.analise_id != self.metadados.analise_id for g in self.dados.grupos
         ):

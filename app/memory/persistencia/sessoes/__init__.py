@@ -1,16 +1,22 @@
-"""Interface pública do domínio, carregada sob demanda."""
+"""Interface pública de app/memory/persistencia/sessoes; recursos carregados sob demanda."""
 
-from importlib import import_module
+from app.core.interfaces import resolver_exportacao as _resolver_exportacao
 
-_EXPORTACOES = {'iniciar_sessao': 'inicio', 'encerrar_sessao': 'encerramento'}
+# Cada nome aponta para seu proprietário; importar o pacote não inicializa clientes/agentes.
+_EXPORTACOES = {
+    'encerrar_sessao': ('.encerramento', 'encerrar_sessao'),
+    'iniciar_sessao': ('.inicio', 'iniciar_sessao'),
+}
 
+# Lista explícita para descoberta por IDEs, agentes e importações públicas.
 __all__ = list(_EXPORTACOES)
 
 
 def __getattr__(nome):
-    modulo = _EXPORTACOES.get(nome)
-    if modulo is None:
-        raise AttributeError(f"{__name__} não exporta {nome!r}.")
-    valor = getattr(import_module(f".{modulo}", __name__), nome)
-    globals()[nome] = valor
-    return valor
+    """Resolve somente recursos da interface, preservando sua identidade original."""
+    return _resolver_exportacao(nome, __name__, _EXPORTACOES, globals())
+
+
+def __dir__():
+    """Expõe os recursos disponíveis sem executar importações de domínios."""
+    return sorted(set(globals()) | set(__all__))

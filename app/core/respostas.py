@@ -1,17 +1,20 @@
 """Catálogo de textos padrão da aplicação, compartilhado pelo código e pelos prompts."""
 
+# FERRAMENTA_INDISPONIVEL: Valor de referência de ferramenta indisponivel usado neste módulo e por seus consumidores.
 FERRAMENTA_INDISPONIVEL = (
     "Lamento, **ainda** não consigo realizar essa ação. "
     "Para sugerir essa melhoria, envie outra mensagem descrevendo o que você gostaria de fazer. "
     "Vou registrar seu comentário como feedback de melhoria."
 )
 
+# FAQ_SEM_INFORMACAO: Valor de referência de faq sem informacao usado neste módulo e por seus consumidores.
 FAQ_SEM_INFORMACAO = (
     "**Ainda** não encontrei essa informação na base de ajuda do sistema. "
     "Para sugerir sua inclusão, envie outra mensagem descrevendo a informação que faltou. "
     "Vou registrar seu comentário como feedback de melhoria."
 )
 
+# TRECHO_FAQ_AUSENTE: Valor de referência de trecho faq ausente usado neste módulo e por seus consumidores.
 TRECHO_FAQ_AUSENTE = "Nenhum trecho relevante encontrado no FAQ."
 
 
@@ -548,6 +551,7 @@ MENSAGENS = {
     'voce_quer_continuar_a_solicitacao_ocorrencia_ou_evento_pendente': 'Você quer continuar a solicitação, ocorrência ou evento pendente?',
 }
 
+# RESPOSTAS_OPERACAO_SUCESSO: Recurso compartilhado de respostas operacao sucesso usado pelas funções deste módulo e pela interface pública.
 RESPOSTAS_OPERACAO_SUCESSO = {
     "solicitacao": MENSAGENS['solicitacao_cadastrada_com_sucesso'],
     "ocorrencia": MENSAGENS['ocorrencia_cadastrada_com_sucesso'],
@@ -556,6 +560,7 @@ RESPOSTAS_OPERACAO_SUCESSO = {
     "edicao": "Alteração realizada com sucesso.",
 }
 
+# RESPOSTAS_OPERACAO_FALHA: Recurso compartilhado de respostas operacao falha usado pelas funções deste módulo e pela interface pública.
 RESPOSTAS_OPERACAO_FALHA = {
     "solicitacao": "A solicitação não foi enviada. Confira os dados e sua permissão antes de tentar novamente.",
     "ocorrencia": "A ocorrência não foi enviada. Confira os dados e sua permissão antes de tentar novamente.",
@@ -564,18 +569,24 @@ RESPOSTAS_OPERACAO_FALHA = {
     "edicao": "A alteração não foi realizada. Confira a proposta e sua permissão antes de tentar novamente.",
 }
 
+# RESPOSTA_APROVACAO_INVALIDA: Valor de referência de resposta aprovacao invalida usado neste módulo e por seus consumidores.
 RESPOSTA_APROVACAO_INVALIDA = "Não foi possível validar a aprovação. Nenhuma nova operação foi enviada."
 
+# RESPOSTA_VISUALIZACAO_INVALIDA: Valor de referência de resposta visualizacao invalida usado neste módulo e por seus consumidores.
 RESPOSTA_VISUALIZACAO_INVALIDA = "Não foi possível validar esta visualização para envio. Ajuste o pedido e tente novamente."
 
+# FRASE_SEGURA: Recurso compartilhado de frase segura usado pelas funções deste módulo e pela interface pública.
 FRASE_SEGURA = MENSAGENS['nao_tenho_evidencia_para_afirmar_isso']
 
+# MENSAGEM_BLOQUEIO_MOBILE: Recurso compartilhado de mensagem bloqueio mobile usado pelas funções deste módulo e pela interface pública.
 MENSAGEM_BLOQUEIO_MOBILE = (
     MENSAGENS['a_criacao_de_graficos_nao_esta_disponivel_no_aplicativo_para_celular_acesse']
 )
 
+# RESPOSTA_FALHA_INDICADOR_PROMPT: Valor de referência de resposta falha indicador prompt usado neste módulo e por seus consumidores.
 RESPOSTA_FALHA_INDICADOR_PROMPT = "Não consegui consultar esse indicador agora. Tente novamente mais tarde."
 
+# TEXTOS_CONFIRMACAO: Recurso compartilhado de textos confirmacao usado pelas funções deste módulo e pela interface pública.
 TEXTOS_CONFIRMACAO = {
     "titulo": "Confira os dados:",
     "alteracoes": "Confira somente o que mudou:",
@@ -584,12 +595,14 @@ TEXTOS_CONFIRMACAO = {
     "pergunta": "Essas informações estão corretas? Se precisar, indique somente o que devo corrigir.",
 }
 
+# COMPLEMENTOS_BASE_CALCULO: Recurso compartilhado de complementos base calculo usado pelas funções deste módulo e pela interface pública.
 COMPLEMENTOS_BASE_CALCULO = {
     "histograma": "os demais não integram o histograma.",
     "boxplot": "os demais não integram as estatísticas dos grupos.",
     "media": "os demais não integram a média. Consulte também a base de cada ponto.",
 }
 
+# TEXTOS_COMPRAS: Recurso compartilhado de textos compras usado pelas funções deste módulo e pela interface pública.
 TEXTOS_COMPRAS = {
     "lojas": "Algumas lojas cadastradas no Pechincha.ai: {nomes}. ",
     "lojas_vazias": MENSAGENS['nao_encontrei_lojas_cadastradas_nesta_consulta'],
@@ -614,6 +627,7 @@ TEXTOS_COMPRAS = {
     ),
 }
 
+# NOMES_CAMPOS: Recurso compartilhado de nomes campos usado pelas funções deste módulo e pela interface pública.
 NOMES_CAMPOS = {
     "categoria_problema": "Categoria do problema",
     "titulo": "Título", "descricao_problema": "Problema",
@@ -625,6 +639,7 @@ NOMES_CAMPOS = {
 }
 
 
+# RESPOSTAS_BLOQUEIO: Recurso compartilhado de respostas bloqueio usado pelas funções deste módulo e pela interface pública.
 RESPOSTAS_BLOQUEIO = {
     "PERIGOSO": {
         "motivo": "pedido_perigoso",

@@ -1,8 +1,7 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
+from app.core.clients import llm_rapido
 
-from app.agents.modelos import llm_rapido
-
-
+# ResumoGerado: contrato/estrutura de gerar_resumo; usado pelos consumidores desta interface.
 class ResumoGerado(BaseModel):
     titulo: str = Field(min_length=1)
     resumo: str = Field(min_length=1)
@@ -10,6 +9,7 @@ class ResumoGerado(BaseModel):
     @field_validator("titulo", "resumo", mode="before")
     @classmethod
     def limpar_texto(cls, valor):
+        """Executa a etapa limpar texto no escopo de gerar_resumo. Usado pelo fluxo de persistencia."""
         if not isinstance(valor, str):
             raise ValueError("Título e resumo devem ser textos.")
         return valor.strip()
@@ -17,16 +17,19 @@ class ResumoGerado(BaseModel):
     @field_validator("titulo")
     @classmethod
     def validar_titulo(cls, titulo: str) -> str:
+        """Confere o limite de dez palavras do título da proposta de solicitação. Usado pelo fluxo de persistencia."""
         if len(titulo.split()) > 10 or len(titulo.splitlines()) != 1:
             raise ValueError("O título deve ter uma linha e até dez palavras.")
         return titulo
 
     @model_validator(mode="after")
     def campos_independentes(self):
+        """Executa a etapa campos independentes no escopo de gerar_resumo. Usado pelo fluxo de persistencia."""
         if self.titulo.casefold() == self.resumo.casefold():
             raise ValueError("O título deve ser distinto do resumo.")
         return self
 
+# _PROMPT_RESUMO: Instrução textual enviada ao modelo; conteúdo preservado para manter comportamento do agente.
 _PROMPT_RESUMO = """\
 Você resume conversas de usuários do FIXA, um sistema de gestão de manutenção.
 

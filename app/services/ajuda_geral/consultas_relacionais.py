@@ -1,13 +1,9 @@
 """Consultas exatas no FIXA, com descrições obtidas do Qdrant."""
 
-
 from datetime import date, datetime, timedelta
-
 from qdrant_client import models
-
-from app.core import configuracao
-from app.core.clients.postgres import executar_consulta
-from app.core.clients.qdrant import abrir_cliente_qdrant
+from app.core import configuracao, MENSAGENS
+from app.core.clients import executar_consulta, abrir_cliente_qdrant
 from app.schemas import UsuarioContexto
 from app.services.gerais import obter_unidade_id
 from app.services.ajuda_geral.consultas import (
@@ -22,19 +18,19 @@ from app.services.ajuda_geral.consultas import (
     _validar_usuario,
 )
 
-from app.core.respostas import MENSAGENS
-
-
 def _somente_tecnico_gestor(usuario: UsuarioContexto) -> None:
+    """Executa a etapa somente tecnico gestor no escopo de consultas_relacionais. Usado por consultar_equipamento_por_codigo, encontrar_codigo_equipamento, listar_equipamentos_por_local."""
     if usuario.tipo_acesso not in {"tecnico", "gestor", "administrador"}:
         raise PermissionError(MENSAGENS['consulta_disponivel_apenas_para_tecnicos_e_gestores'])
 
 
 def _texto_busca(valor: str | None) -> str | None:
+    """Executa a etapa texto busca no escopo de consultas_relacionais. Usado por buscar_problemas_por_local, consultar_modelos_por_marca_categoria, encontrar_codigo_equipamento."""
     return f"%{_validar_texto(valor, 100)}%" if valor is not None else None
 
 
 def _valor_json(valor):
+    """Executa a etapa valor json no escopo de consultas_relacionais. Usado por _consultar."""
     return valor.isoformat() if isinstance(valor, (date, datetime)) else valor
 
 
@@ -56,6 +52,7 @@ async def _consultar(
         return _resultado([])
 
     ids = [linha["entidade_id"] for linha in linhas]
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if any(type(identificador) is not int or identificador <= 0 for identificador in ids):
         raise RuntimeError(MENSAGENS['o_banco_retornou_um_id_invalido'])
     condicao = models.FieldCondition(
@@ -63,6 +60,7 @@ async def _consultar(
         match=models.MatchAny(any=list(set(ids))),
     )
     registros = {}
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with abrir_cliente_qdrant() as cliente:
         deslocamento = None
         while True:
@@ -97,6 +95,7 @@ async def _consultar(
 async def buscar_problemas_por_local(
     usuario: UsuarioContexto, nome_local: str, limite: int = 10,
 ) -> dict:
+    """Consulta problemas relacionados a local com escopo e autoria quando aplicável. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         nome_local = _texto_busca(nome_local)
@@ -120,6 +119,7 @@ async def buscar_problemas_por_local(
 async def consultar_situacao_problema(
     usuario: UsuarioContexto, problema_id: int,
 ) -> dict:
+    """Obtém status e motivo de recusa de problema autorizado. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         if type(problema_id) is not int or problema_id <= 0:
@@ -146,6 +146,7 @@ async def consultar_modelos_por_marca_categoria(
     usuario: UsuarioContexto, marca: str | None, categoria: str | None,
     limite: int = 10,
 ) -> dict:
+    """Consulta relação exata entre modelo, marca e categoria. Usado pelo fluxo de ajuda_geral."""
     try:
         if marca is None and categoria is None:
             raise ValueError(MENSAGENS['informe_marca_ou_categoria'])
@@ -174,6 +175,7 @@ async def consultar_modelos_por_marca_categoria(
         return _erro(erro)
 
 
+# _EQUIPAMENTO_BASE: SQL parametrizado do domínio; mantém filtros, população e limites da consulta.
 _EQUIPAMENTO_BASE = """
     SELECT equipamento.id AS entidade_id, equipamento.codigo,
            modelo.nome AS modelo, marca.nome AS marca,
@@ -193,6 +195,7 @@ _EQUIPAMENTO_BASE = """
 async def consultar_equipamento_por_codigo(
     usuario: UsuarioContexto, codigo: str,
 ) -> dict:
+    """Obtém equipamento pelo código exato dentro das permissões/unidade. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         _somente_tecnico_gestor(usuario)
@@ -210,6 +213,7 @@ async def encontrar_codigo_equipamento(
     usuario: UsuarioContexto, modelo: str | None, local: str | None,
     marca: str | None, categoria: str | None, limite: int = 10,
 ) -> dict:
+    """Localiza códigos por modelo, local, marca e/ou categoria. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         _somente_tecnico_gestor(usuario)
@@ -235,6 +239,7 @@ async def encontrar_codigo_equipamento(
 async def listar_equipamentos_por_local(
     usuario: UsuarioContexto, nome_local: str, limite: int = 10,
 ) -> dict:
+    """Lista equipamentos vinculados a local autorizado. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         _somente_tecnico_gestor(usuario)
@@ -251,6 +256,7 @@ async def listar_equipamentos_por_local(
 async def listar_ocorrencias_por_local(
     usuario: UsuarioContexto, nome_local: str, limite: int = 10,
 ) -> dict:
+    """Lista ocorrências vinculadas a local autorizado. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         _somente_tecnico_gestor(usuario)
@@ -273,6 +279,7 @@ async def listar_ocorrencias_por_local(
 async def listar_tarefas_da_ordem(
     usuario: UsuarioContexto, ordem_servico_id: int, limite: int = 20,
 ) -> dict:
+    """Consulta tarefas relacionadas a OS autorizada. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         _somente_tecnico_gestor(usuario)
@@ -300,6 +307,7 @@ async def listar_tarefas_da_ordem(
 async def listar_observacoes_da_ordem(
     usuario: UsuarioContexto, ordem_servico_id: int, limite: int = 20,
 ) -> dict:
+    """Consulta observações de conclusão relacionadas a OS autorizada. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         _somente_tecnico_gestor(usuario)
@@ -327,6 +335,7 @@ async def listar_eventos_por_local_e_periodo(
     usuario: UsuarioContexto, nome_local: str, data_inicio: date,
     data_fim: date, limite: int = 20,
 ) -> dict:
+    """Consulta eventos por vínculo de local e intervalo de datas autorizado. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         _somente_tecnico_gestor(usuario)

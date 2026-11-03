@@ -1,3 +1,4 @@
+# GESTOR_INSTRUCAO: Instrução textual enviada ao modelo; conteúdo preservado para manter comportamento do agente.
 GESTOR_INSTRUCAO = """
 ## Usuário: Gestor
 

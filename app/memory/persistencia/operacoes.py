@@ -1,14 +1,15 @@
 """Controle durável das gravações aprovadas no chat, sem dados de autenticação."""
 
 from datetime import datetime, timezone
+from app.core.clients import abrir_cliente_mongo
+from app.core import MONGO_BANCO_DADOS
 
-from app.core.clients.mongo import abrir_cliente_mongo
-from app.core.configuracao import MONGO_BANCO_DADOS
-
+# COLECAO: Valor de referência de colecao usado neste módulo e por seus consumidores.
 COLECAO = "operacoes_chat"
 
 
 async def preparar(documento: dict) -> dict:
+    """Persiste operação preparada ou verifica consistência de preparação repetida. Usado pelo fluxo de persistencia."""
     async with abrir_cliente_mongo() as cliente:
         colecao = cliente[MONGO_BANCO_DADOS][COLECAO]
         await colecao.update_one(
@@ -21,6 +22,7 @@ async def preparar(documento: dict) -> dict:
 
 
 async def obter(operacao_id: str, usuario_id: int, sessao_id: str) -> dict | None:
+    """Obtém registro durável da operação pelo identificador. Usado pelo fluxo de persistencia."""
     async with abrir_cliente_mongo() as cliente:
         return await cliente[MONGO_BANCO_DADOS][COLECAO].find_one({
             "_id": operacao_id, "usuario_id": usuario_id, "sessao_id": sessao_id,
@@ -41,6 +43,7 @@ async def iniciar(documento: dict, aprovacao: dict) -> bool:
 
 
 async def finalizar(documento: dict, resultado: dict) -> None:
+    """Registra resultado da operação iniciada, preservando transição durável. Usado pelo fluxo de persistencia."""
     estado = "indeterminada" if resultado.get("status") == "RESULTADO_INDETERMINADO" else "concluida"
     async with abrir_cliente_mongo() as cliente:
         atualizado = await cliente[MONGO_BANCO_DADOS][COLECAO].update_one(

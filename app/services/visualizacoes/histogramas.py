@@ -1,16 +1,13 @@
 """Intervalos e agregação completa dos histogramas aprovados."""
 
-
 import math
 import sys
-
-from app.schemas.visualizacao import Analise, DadosHistograma, IntervaloHistograma
+from app.schemas import Analise, DadosHistograma, IntervaloHistograma
 from .limites import MAXIMO_INTERVALOS_HISTOGRAMA
-
-from app.core.respostas import MENSAGENS
-
+from app.core import MENSAGENS
 
 def _limite_sql(indice):
+    """Executa a etapa limite sql no escopo de histogramas. Usado por montar_sql_histograma."""
     if indice == 0:
         return "minimo"
     if indice == MAXIMO_INTERVALOS_HISTOGRAMA:

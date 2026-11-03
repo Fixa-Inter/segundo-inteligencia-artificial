@@ -4,13 +4,10 @@ from langchain_core.messages import ToolMessage
 from app.graph import ContextoGrafo
 from app.tools.memoria import buscar_historico
 from app.tools.visualizacoes import FERRAMENTAS_VISUALIZACOES
-from app.schemas.visualizacao import ResultadoConsultaVisualizacao
-from app.services.visualizacoes.limites import MAXIMO_CONSULTAS_POR_EXECUCAO
-
-from app.agents.agentsResult import VisualizacaoResultado
-
-from app.core.respostas import MENSAGENS
-
+from app.schemas import ResultadoConsultaVisualizacao
+from app.services.visualizacoes import MAXIMO_CONSULTAS_POR_EXECUCAO
+from app.schemas.resultados_agentes import VisualizacaoResultado
+from app.core import MENSAGENS
 
 class LimiteConsultasVisualizacao(ToolCallLimitMiddleware):
     """Orçamento compartilhado das seis tools, contado antes do lote executar.
@@ -20,13 +17,16 @@ class LimiteConsultasVisualizacao(ToolCallLimitMiddleware):
     """
 
     def __init__(self):
+        """Inicializa os atributos da instância para as operações da classe. Usado pelo fluxo de agents."""
         super().__init__(run_limit=MAXIMO_CONSULTAS_POR_EXECUCAO, exit_behavior="continue")
         self.ferramentas_analiticas = frozenset(t.name for t in FERRAMENTAS_VISUALIZACOES)
 
     def _matches_tool_filter(self, tool_call):
+        """Executa a etapa matches tool filter no escopo de visualizacao. Usado pelo fluxo de agents."""
         return tool_call["name"] in self.ferramentas_analiticas
 
     def after_model(self, state, runtime):
+        """Executa a etapa after model no escopo de visualizacao. Usado pelo fluxo de agents."""
         atualizacao = super().after_model(state, runtime)
         if atualizacao and atualizacao.get("messages"):
             conteudo = ResultadoConsultaVisualizacao(
@@ -44,6 +44,7 @@ class LimiteConsultasVisualizacao(ToolCallLimitMiddleware):
 
 
 def criar_agente_visualizacao(modelo, instrucao: str, ferramentas=None):
+    """Compõe agente de visualizacao com ferramentas e contrato do perfil. Usado pelo fluxo de agents."""
     ferramentas_por_nome = {}
     for ferramenta in [*FERRAMENTAS_VISUALIZACOES, buscar_historico, *(ferramentas or [])]:
         ferramentas_por_nome.setdefault(ferramenta.name, ferramenta)

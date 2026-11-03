@@ -1,10 +1,9 @@
 from typing import Annotated, Literal, TypedDict
-
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 from app.core import Emocao
 
-
+# EstadoGrafo: contrato/estrutura de estado; usado pelos consumidores desta interface.
 class EstadoGrafo(TypedDict, total=False):
     messages: Annotated[
         list[BaseMessage],
@@ -69,7 +68,7 @@ class EstadoGrafo(TypedDict, total=False):
     resposta_final: str
     emocao: Emocao | str
     saida_bloqueada: bool
-    erro: str | None 
+    erro: str | None
     solicitacao_pendente: dict | None
 
     ocorrencia_pendente: dict | None

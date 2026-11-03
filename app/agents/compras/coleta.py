@@ -1,15 +1,12 @@
 """Extração e validação dos dados declarados na conversa de compra."""
 
 import json
-
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
+from app.agents import llm_especialista
+from app.core.apresentacao import pergunta_opcionais_compra
 
-from app.agents.modelos import llm_especialista
-
-from app.graph.respostas_padrao import pergunta_opcionais_compra
-
-
+# DadosCompra: contrato/estrutura de coleta; usado pelos consumidores desta interface.
 class DadosCompra(BaseModel):
     item: str | None = None
     requisitos_obrigatorios: list[str] | None = None
@@ -26,14 +23,17 @@ class DadosCompra(BaseModel):
 
 
 def dados_persistiveis(dados: DadosCompra) -> dict:
+    """Projeta dados declarados da compra para o rascunho. Usado pelo fluxo de compras."""
     return dados.model_dump(exclude={"recusou_opcionais", "questao_compatibilidade"})
 
 
 def campos_prioritarios_ausentes(dados: DadosCompra) -> list[str]:
+    """Identifica ausência do nome do item, único campo obrigatório. Usado pelo fluxo de compras."""
     return [] if dados.item and dados.item.strip() else ["nome do item"]
 
 
 def opcionais_ausentes(dados: DadosCompra) -> list[str]:
+    """Lista filtros/detalhes opcionais ainda não informados. Usado por pergunta_opcionais."""
     campos = []
     if not dados.loja:
         campos.append("loja")
@@ -51,10 +51,12 @@ def opcionais_ausentes(dados: DadosCompra) -> list[str]:
 
 
 def pergunta_opcionais(dados: DadosCompra) -> str:
+    """Renderiza pergunta opcional de filtros/detalhes da compra. Usado pelo fluxo de compras."""
     return pergunta_opcionais_compra(opcionais_ausentes(dados), dados.questao_compatibilidade)
 
 
 async def extrair(mensagem: str, anterior: dict | None, pergunta_feita: bool) -> DadosCompra:
+    """Extrai DadosCompra da mensagem usando dados anteriores como contexto. Usado pelo fluxo de compras."""
     entrada = {"mensagem_atual": mensagem, "dados_ja_coletados": (anterior or {}).get("dados", {}),
                "pergunta_pendente": (anterior or {}).get("pergunta_pendente"),
                "aguardava_resposta_sobre_opcionais": pergunta_feita}

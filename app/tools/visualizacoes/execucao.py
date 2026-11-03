@@ -1,40 +1,34 @@
 """Adaptação de schemas e execução das tools; regras analíticas ficam nos serviços."""
 
-
 import logging
+from app.tools import ArgumentosComRuntime
 from typing import Literal
-
 from langchain.tools import ToolRuntime, tool
 from pydantic import BaseModel, Field, ValidationError, create_model, model_validator
-
-from app.schemas.visualizacao import (
-    ConsultaVisualizacaoPeriodo, ConsultaVisualizacaoSnapshot, GranularidadeTemporal,
-    PeriodoVisualizacao, ResultadoConsultaVisualizacao, SelecaoFiltro,
+from app.schemas import (
+    ConsultaVisualizacaoPeriodo,
+    ConsultaVisualizacaoSnapshot,
+    GranularidadeTemporal,
+    PeriodoVisualizacao,
+    ResultadoConsultaVisualizacao,
+    SelecaoFiltro,
 )
-from app.services.visualizacoes.captura import CapturaExecucaoVisualizacao
-from app.services.visualizacoes.validacao import validar_resultado_consulta
-from app.observability.metricas import BYTES_VISUALIZACAO
+from app.services.visualizacoes import CapturaExecucaoVisualizacao, validar_resultado_consulta
+from app.observability import BYTES_VISUALIZACAO
 from .contexto import resolver_unidade, validar_acesso
 from .filtros import validar_consulta
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 
-class _RuntimeInjetado(BaseModel):
-    @model_validator(mode="before")
-    @classmethod
-    def separar_runtime(cls, dados):
-        # ToolNode injeta o objeto Python; um runtime recebido como JSON não é
-        # removido e continua sendo um campo extra inválido.
-        if isinstance(dados, dict) and isinstance(dados.get("runtime"), ToolRuntime):
-            return {chave: valor for chave, valor in dados.items() if chave != "runtime"}
-        return dados
+class _RuntimeInjetado(ArgumentosComRuntime):
+    """Argumentos do domínio com runtime confiável separado pela classe base."""
 
 
 def _erro_validacao():
+    """Executa a etapa erro validacao no escopo de execucao. Usado por _executar, _tratar_validacao."""
     return ResultadoConsultaVisualizacao(
         status="ERRO_VALIDACAO", mensagem=MENSAGENS['confira_a_analise_o_periodo_a_granularidade_e_os_filtros_da_ferramenta'],
     )
@@ -42,10 +36,12 @@ def _erro_validacao():
 
 def _tratar_validacao(_erro):
     # ValidationError pode incluir valores recebidos e o contexto injetado.
+    """Executa a etapa tratar validacao no escopo de execucao. Usado pelo fluxo de visualizacoes."""
     return _erro_validacao().model_dump_json()
 
 
 async def _executar(dominio, runtime, dados):
+    """Executa a etapa executar no escopo de execucao. Usado por consultar, criar_tool."""
     negado = validar_acesso(runtime)
     if negado is not None:
         return negado.model_dump(mode="json")
@@ -104,12 +100,14 @@ def criar_tool(dominio):
     )
     if snapshot:
         async def consultar(analise_id: str, runtime: ToolRuntime = None, filtros: dict[str, SelecaoFiltro] | None = None) -> dict:
+            """Executa a etapa consultar no escopo de execucao. Usado pelo fluxo de visualizacoes."""
             return await _executar(dominio, runtime, {"analise_id": analise_id, "filtros": filtros if filtros is not None else {}})
     else:
         async def consultar(
             analise_id: str, periodo: PeriodoVisualizacao, runtime: ToolRuntime = None,
             granularidade: GranularidadeTemporal | None = None, filtros: dict[str, SelecaoFiltro] | None = None,
         ) -> dict:
+            """Executa a etapa consultar no escopo de execucao. Usado pelo fluxo de visualizacoes."""
             return await _executar(dominio, runtime, {
                 "analise_id": analise_id, "periodo": periodo, "granularidade": granularidade,
                 "filtros": filtros if filtros is not None else {},

@@ -1,15 +1,12 @@
 import re
 import uuid
 from typing import Literal
-
 from pydantic import BaseModel, Field
+from app.core.clients import llm_rapido
+from app.core import MENSAGENS, RESPOSTAS_BLOQUEIO
+from app.core.apresentacao import resposta_bloqueio_seguranca
 
-from app.agents.modelos import llm_rapido
-
-from app.core.respostas import MENSAGENS, RESPOSTAS_BLOQUEIO
-from app.graph.respostas_padrao import resposta_bloqueio_seguranca
-
-
+# PII: Recurso compartilhado de pii usado pelas funções deste módulo e pela interface pública.
 PII = [
     (
         "CNPJ",
@@ -35,6 +32,7 @@ PII = [
 ]
 
 
+# PADROES_INJECAO: Recurso compartilhado de padroes injecao usado pelas funções deste módulo e pela interface pública.
 PADROES_INJECAO = [
     r"ignore\s+(as\s+)?instruções",
     r"ignore\s+previous\s+instructions",
@@ -53,6 +51,7 @@ PADROES_INJECAO = [
 ]
 
 
+# PADROES_DADOS_INTERNOS: Recurso compartilhado de padroes dados internos usado pelas funções deste módulo e pela interface pública.
 PADROES_DADOS_INTERNOS = [
     (
         r"(mostre|revele|exiba|informe).{0,40}"
@@ -73,6 +72,7 @@ PADROES_DADOS_INTERNOS = [
 ]
 
 
+# ClassificacaoSeguranca: contrato/estrutura de validacao; usado pelos consumidores desta interface.
 class ClassificacaoSeguranca(BaseModel):
     categoria: Literal[
         "APROVADO",
@@ -85,11 +85,13 @@ class ClassificacaoSeguranca(BaseModel):
     )
 
 
+# classificador_seguranca: Recurso compartilhado de classificador seguranca usado pelas funções deste módulo e pela interface pública.
 classificador_seguranca = llm_rapido.with_structured_output(
     ClassificacaoSeguranca
 )
 
 
+# PROMPT_CLASSIFICADOR: Instrução textual enviada ao modelo; conteúdo preservado para manter comportamento do agente.
 PROMPT_CLASSIFICADOR = """
 Você é um classificador de segurança de uma plataforma de manutenção.
 
@@ -114,6 +116,7 @@ def bloquear(
     motivo: str,
     mensagem: str,
 ) -> dict:
+    """Monta resultado estruturado de entrada bloqueada com motivo/mensagem. Usado por proteger_entrada."""
     return {
         "bloqueado": True,
         "motivo": motivo,
@@ -122,6 +125,7 @@ def bloquear(
 
 
 def aprovar() -> dict:
+    """Monta resultado estruturado de entrada aprovada. Usado por proteger_entrada."""
     return {
         "bloqueado": False,
         "motivo": "aprovado",
@@ -132,6 +136,7 @@ def aprovar() -> dict:
 def anonimizar_entrada(
     texto: str,
 ) -> tuple[str, dict[str, str]]:
+    """Substitui PII por tokens temporários e devolve mapa das substituições. Usado pelo fluxo de guardrails."""
     mapa: dict[str, str] = {}
 
     for tipo, padrao in PII:
@@ -169,6 +174,7 @@ def desanonimizar_saida(
     *,
     restaurar: bool = False,
 ) -> str:
+    """Omite tokens de PII por padrão ou restaura valores quando explicitamente habilitado. Usado por proteger_saida."""
     for token, valor_original in mapa.items():
         if token not in texto:
             continue
@@ -192,6 +198,7 @@ def desanonimizar_saida(
 def remover_dados_pessoais_saida(
     texto: str,
 ) -> str:
+    """Remove padrões de PII ainda presentes no texto de saída. Usado por proteger_saida."""
     for tipo, padrao in PII:
         texto = re.sub(
             padrao,
@@ -206,6 +213,7 @@ def remover_dados_pessoais_saida(
 def proteger_entrada(
     mensagem_anonimizada: str,
 ) -> dict:
+    """Combina regras de injeção/dados internos com classificação de segurança do modelo. Usado pelo fluxo de guardrails."""
     for padrao in PADROES_INJECAO:
         if re.search(
             padrao,
@@ -232,6 +240,7 @@ def proteger_entrada(
                 ),
             )
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         classificacao = classificador_seguranca.invoke(
             PROMPT_CLASSIFICADOR.format(
@@ -256,6 +265,7 @@ def proteger_saida(
     # A resposta aprovada pelo juiz não deve ser reescrita por outro modelo.
     # Na saída, dados anonimizados são sempre omitidos, mesmo que um chamador
     # antigo ainda passe restaurar_pii=True.
+    """Aplica tratamento de tokens e remoção de dados pessoais na resposta. Usado pelo fluxo de guardrails."""
     resposta_segura = desanonimizar_saida(
         resposta,
         mapa_pii,

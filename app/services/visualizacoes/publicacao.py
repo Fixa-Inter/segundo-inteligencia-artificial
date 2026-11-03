@@ -1,27 +1,27 @@
 """Projeção do resultado aprovado para o contrato público e sua validação."""
 
-
 import json
-
 from app.guardrails import proteger_saida
-from app.observability.metricas import BYTES_VISUALIZACAO
-from app.schemas.visualizacao import VisualizacaoPublica
+from app.observability import BYTES_VISUALIZACAO
+from app.schemas import VisualizacaoPublica
 from . import obter_analise
 from .aprovacao import liberar_visualizacao
 from .limites import validar_limites_resultado
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
+# MAXIMO_BYTES_VISUALIZACAO: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 MAXIMO_BYTES_VISUALIZACAO = 256 * 1024
+# MAXIMO_BYTES_CONVERSA_COM_VISUALIZACAO: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 MAXIMO_BYTES_CONVERSA_COM_VISUALIZACAO = 8 * 1024 * 1024
 
 
+# LimiteVisualizacaoExcedido: contrato/estrutura de publicacao; usado pelos consumidores desta interface.
 class LimiteVisualizacaoExcedido(ValueError):
     pass
 
 
 def validar_visualizacao_publica(dados) -> VisualizacaoPublica:
+    """Valida contrato, limites analíticos e tamanho UTF-8 do payload público. Usado por publicar_visualizacao."""
     if isinstance(dados, VisualizacaoPublica):
         dados = dados.model_dump(warnings="error")
     visualizacao = VisualizacaoPublica.model_validate(dados)
@@ -33,6 +33,7 @@ def validar_visualizacao_publica(dados) -> VisualizacaoPublica:
 
 
 def publicar_visualizacao(estado, contexto) -> VisualizacaoPublica | None:
+    """Projeta captura aprovada para payload público, protegendo texto e verificando limites. Usado pelo fluxo de visualizacoes."""
     if estado.get("visualizacao_aprovada") is None and estado.get("visualizacao_candidata") is None:
         return None
     aprovado = liberar_visualizacao(estado, contexto)

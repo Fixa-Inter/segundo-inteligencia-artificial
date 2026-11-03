@@ -1,21 +1,17 @@
 from fastapi import HTTPException, status
-
-from app.graph.fluxo import grafo
-from app.memory.persistencia.sessoes import (
-    encerrar_sessao,
-)
-from app.schemas import UsuarioContexto
-from app.schemas import EncerrarSessaoSaida
-
-from app.core.respostas import MENSAGENS
-
+from app.graph import grafo
+from app.memory.persistencia.sessoes import encerrar_sessao
+from app.schemas import UsuarioContexto, EncerrarSessaoSaida
+from app.core import MENSAGENS
 
 async def finalizar_sessao_chat(
     thread_id: str,
     usuario: UsuarioContexto,
 ) -> EncerrarSessaoSaida:
+    """Encerra persistência da sessão própria e remove seu checkpoint quando disponível. Usado pelo fluxo de services."""
     thread_id = thread_id.strip()
 
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if not thread_id:
         raise ValueError(
             MENSAGENS['o_thread_id_nao_pode_estar_vazio']

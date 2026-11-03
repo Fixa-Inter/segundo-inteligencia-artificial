@@ -1,3 +1,4 @@
+# AJUDA_GERAL_INSTRUCAO: Instrução textual enviada ao modelo; conteúdo preservado para manter comportamento do agente.
 AJUDA_GERAL_INSTRUCAO = """
 ## Papel do agente ajuda_geral
 
@@ -83,6 +84,7 @@ quando presente. Não repita essa orientação nem a use para erro de consulta.
 """
 
 
+# AJUDA_GERAL_INSTRUCAO_SOLICITANTE_TECNICO: Valor de referência de ajuda geral instrucao solicitante tecnico usado neste módulo e por seus consumidores.
 AJUDA_GERAL_INSTRUCAO_SOLICITANTE_TECNICO = """
 ## Consulta de solicitações próprias
 
@@ -93,6 +95,7 @@ AJUDA_GERAL_INSTRUCAO_SOLICITANTE_TECNICO = """
 """
 
 
+# AJUDA_GERAL_INSTRUCAO_TECNICO_GESTOR: Valor de referência de ajuda geral instrucao tecnico gestor usado neste módulo e por seus consumidores.
 AJUDA_GERAL_INSTRUCAO_TECNICO_GESTOR = """
 ## Ferramentas adicionais de técnico e gestor
 
@@ -147,6 +150,7 @@ código ou data. Use busca semântica para localizar descrições por significad
 """
 
 
+# AJUDA_GERAL_INSTRUCAO_GESTOR: Valor de referência de ajuda geral instrucao gestor usado neste módulo e por seus consumidores.
 AJUDA_GERAL_INSTRUCAO_GESTOR = """
 ## Consultas adicionais de gestor
 

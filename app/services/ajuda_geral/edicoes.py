@@ -1,22 +1,20 @@
 """Consultas e mutações SQL com escopo do usuário autenticado."""
 
-
 from sqlalchemy import text
-
-from app.core.clients.postgres import executar_consulta, obter_motor
-from app.schemas import UsuarioContexto
-from app.schemas.imagem import LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem
+from app.core.clients import executar_consulta, obter_motor
+from app.schemas import UsuarioContexto, LIMITE_IMAGENS_POR_MENSAGEM, validar_url_imagem
 from app.services.gerais import obter_unidade_id
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
+# CAMPOS_EDITAVEIS: Recurso compartilhado de campos editaveis usado pelas funções deste módulo e pela interface pública.
 CAMPOS_EDITAVEIS = {
     "titulo": 100,
     "descricao_problema": 255,
     "descricao_local": 255,
 }
+# CAMPOS_RELACIONAIS: Recurso compartilhado de campos relacionais usado pelas funções deste módulo e pela interface pública.
 CAMPOS_RELACIONAIS = {"categoria_equipamento_id", "local_unidade_id"}
+# FKS_FOTO: Recurso compartilhado de fks foto usado pelas funções deste módulo e pela interface pública.
 FKS_FOTO = {
     "solicitacao": "problema_id",
     "ocorrencia": "ocorrencia_id",
@@ -25,11 +23,13 @@ FKS_FOTO = {
 
 
 def _validar_id(registro_id: int) -> None:
+    """Rejeita identificadores de registro incompatíveis com o contrato. Usado por alterar_solicitacao, anexar_fotos, localizar_opcao."""
     if type(registro_id) is not int or registro_id <= 0:
         raise ValueError(MENSAGENS['o_id_do_registro_deve_ser_um_inteiro_positivo'])
 
 
 def _sql_alvo(tipo: str, usuario: UsuarioContexto) -> str:
+    """Seleciona consulta de alvo com autoria, unidade e atividade autorizadas. Usado por alterar_solicitacao, anexar_fotos, localizar_registro."""
     if tipo == "solicitacao":
         return """
             SELECT p.id, p.titulo, p.descricao_problema, p.descricao_local,
@@ -72,6 +72,7 @@ def _sql_alvo(tipo: str, usuario: UsuarioContexto) -> str:
 
 
 async def localizar_registro(usuario: UsuarioContexto, tipo: str, registro_id: int) -> dict | None:
+    """Confere existência e autorização do alvo de edição/anexo. Usado pelo fluxo de ajuda_geral."""
     _validar_id(registro_id)
     unidade_id = await obter_unidade_id(usuario)
     linhas = await executar_consulta(usuario.tipo_acesso, _sql_alvo(tipo, usuario), {
@@ -118,7 +119,9 @@ async def localizar_opcao(
 async def alterar_solicitacao(
     usuario: UsuarioContexto, registro_id: int, campo: str, valor: int | str,
 ) -> dict | None:
+    """Altera um campo permitido de solicitação própria pendente em transação. Usado pelo fluxo de ajuda_geral."""
     _validar_id(registro_id)
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if campo not in CAMPOS_EDITAVEIS and campo not in CAMPOS_RELACIONAIS:
         raise ValueError(MENSAGENS['campo_nao_permitido_para_edicao'])
     if campo in CAMPOS_RELACIONAIS:
@@ -160,6 +163,7 @@ async def alterar_solicitacao(
         "unidade_id": unidade_id,
         "valor": valor if campo in CAMPOS_RELACIONAIS else valor.strip(),
     }
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with obter_motor(usuario.tipo_acesso).begin() as conexao:
         resultado = await conexao.execute(sql, parametros)
         if resultado.first() is None:
@@ -176,6 +180,7 @@ async def alterar_solicitacao(
 async def anexar_fotos(
     usuario: UsuarioContexto, tipo: str, registro_id: int, urls: list[str],
 ) -> list[int] | None:
+    """Insere vínculos de foto após conferir/travar o registro autorizado na transação. Usado pelo fluxo de ajuda_geral."""
     _validar_id(registro_id)
     if tipo not in FKS_FOTO:
         raise ValueError(MENSAGENS['tipo_de_foto_nao_permitido'])

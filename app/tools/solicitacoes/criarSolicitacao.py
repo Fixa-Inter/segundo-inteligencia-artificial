@@ -1,13 +1,17 @@
 import logging
+from app.tools import ArgumentosComRuntime, resolver_rotulos, obter_contexto_cadastro as _contexto
 from typing import Any
-
 from langchain.tools import ToolRuntime, tool
 from pydantic import field_validator, model_validator
-from app.core.propostas import avaliar_confirmacao, metadados_proposta
-from app.tools.propostas import resolver_rotulos
-
-from app.core.clients.qdrant import abrir_cliente_qdrant
-from app.core.configuracao import QDRANT_COLECAO_CATEGORIA, QDRANT_COLECAO_LOCAL
+from app.core import (
+    avaliar_confirmacao,
+    metadados_proposta,
+    QDRANT_COLECAO_CATEGORIA,
+    QDRANT_COLECAO_LOCAL,
+    MENSAGENS,
+    validar_titulo_cadastro,
+)
+from app.core.clients import abrir_cliente_qdrant
 from app.memory.persistencia import (
     atualizar_rascunho_solicitacao,
     obter_rascunho_solicitacao,
@@ -18,45 +22,23 @@ from app.schemas import UsuarioContexto
 from app.services.solicitacoes import adicionar_solicitacao
 from app.services.gerais import obter_unidade_id
 from app.services.operacoes import dados_cadastro, preparar_operacao
-from app.tools.toolsRequest import CriarSolicitacaoEntrada
+from app.schemas.cadastros import CriarSolicitacaoEntrada
 
-from app.core.respostas import MENSAGENS
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 
-class _ArgumentosCriarSolicitacao(CriarSolicitacaoEntrada):
+# _ArgumentosCriarSolicitacao: contrato/estrutura de criarSolicitacao; usado pelos consumidores desta interface.
+class _ArgumentosCriarSolicitacao(CriarSolicitacaoEntrada, ArgumentosComRuntime):
     @field_validator("titulo")
     @classmethod
     def validar_titulo(cls, valor):
-        if len(valor.split()) > 10:
-            raise ValueError(MENSAGENS['o_titulo_deve_conter_no_maximo_10_palavras'])
-        return valor
-
-    @model_validator(mode="before")
-    @classmethod
-    def separar_runtime_injetado(cls, dados):
-        if isinstance(dados, dict) and isinstance(dados.get("runtime"), ToolRuntime):
-            return {chave: valor for chave, valor in dados.items() if chave != "runtime"}
-        return dados
-
-
-def _contexto(runtime: ToolRuntime) -> tuple[dict[str, Any], UsuarioContexto, str]:
-    contexto = runtime.context
-    if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
-        raise ValueError(MENSAGENS['forneca_usuariocontexto_em_context_usuario_2'])
-
-    sessao_id = contexto.get("session_id")
-    if not isinstance(sessao_id, str) or not sessao_id.strip():
-        raise ValueError(MENSAGENS['a_sessao_atual_nao_foi_informada_ao_agente'])
-    if not isinstance(contexto.get("turno_id"), str) or not contexto["turno_id"].strip():
-        raise ValueError(MENSAGENS['o_turno_atual_nao_foi_informado_ao_agente'])
-
-    return contexto, contexto["usuario"], sessao_id
+        """Confere o limite de dez palavras do título da proposta de solicitação. Usado pelo fluxo de solicitacoes."""
+        return validar_titulo_cadastro(valor)
 
 
 def _normalizar_status_backend(status: Any) -> str | None:
+    """Confere status backend conforme o contrato deste domínio. Usado por processar_solicitacao."""
     if not isinstance(status, str) or not status.strip():
         return None
 
@@ -136,6 +118,7 @@ async def criar_solicitacao(runtime: ToolRuntime) -> dict:
 
 
 async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict | None = None) -> dict:
+    """Confere proposta/aceite/anexos e prepara operação, ou envia a operação já aprovada. Usado por criar_solicitacao."""
     contexto, usuario, sessao_id = _contexto(runtime)
     if usuario.tipo_acesso.lower() not in {"tecnico", "solicitante"}:
         return {
@@ -233,6 +216,7 @@ async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict
     if dados_cadastro(rascunho) != operacao_aprovada:
         return {"status": "ERRO_VALIDACAO", "mensagem": MENSAGENS['a_proposta_ou_suas_fotos_mudaram_apos_a_aprovacao_confira_os_dados']}
     unidade_id = await obter_unidade_id(usuario)
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     async with abrir_cliente_qdrant() as cliente:
         await validar_selecao(
             QDRANT_COLECAO_CATEGORIA,
@@ -290,3 +274,6 @@ async def processar_solicitacao(runtime: ToolRuntime, *, operacao_aprovada: dict
     except Exception:
         registrador.exception("Resultado da API recebido sem conseguir atualizar o rascunho")
     return resultado
+
+
+# Compatibilidade para chamadores legados do contexto de cadastro.

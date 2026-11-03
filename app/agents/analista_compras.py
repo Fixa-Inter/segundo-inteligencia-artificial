@@ -1,34 +1,33 @@
 """Coordena a coleta, a consulta de promoções e a persistência da compra."""
 
-
 import json
 import logging
 import re
 from datetime import datetime, timezone
-
-from app.agents.compras.avaliacao import avaliar as _avaliar, normalizar as _normalizar, oferta_sem_avaliacao
-from app.agents.compras.coleta import (
-    DadosCompra, campos_prioritarios_ausentes as _campos_prioritarios_ausentes,
-    dados_persistiveis as _dados_persistiveis, extrair as _extrair, opcionais_ausentes, pergunta_opcionais,
+from app.agents.compras import (
+    avaliar as _avaliar,
+    normalizar as _normalizar,
+    oferta_sem_avaliacao,
+    DadosCompra,
+    campos_prioritarios_ausentes as _campos_prioritarios_ausentes,
+    dados_persistiveis as _dados_persistiveis,
+    extrair as _extrair,
+    opcionais_ausentes,
+    pergunta_opcionais,
+    consultar as consultar_ofertas,
+    resposta_ofertas as _resposta_ofertas,
 )
-from app.agents.compras.consulta import consultar as consultar_ofertas
-from app.agents.compras.respostas import resposta_ofertas as _resposta_ofertas
 from app.mcp.pechincha import ErroPechincha, listar_lojas
-from app.memory.persistencia.analise_compra import (
-    atualizar_analise_compra, obter_analise_compra, salvar_analise_compra,
-)
+from app.memory.persistencia import atualizar_analise_compra, obter_analise_compra, salvar_analise_compra
+from app.core import MENSAGENS
+from app.core.apresentacao import resposta_cobertura_lojas, resposta_busca_compra, resposta_erro_compra
 
-from app.core.respostas import MENSAGENS
-from app.graph.respostas_padrao import (
-    resposta_cobertura_lojas,
-    resposta_busca_compra,
-    resposta_erro_compra,
-)
-
+# LOGGER: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 LOGGER = logging.getLogger(__name__)
 
 
 def _pede_cobertura(mensagem: str) -> bool:
+    """Executa a etapa pede cobertura no escopo de analista_compras. Usado por executar."""
     texto = _normalizar(mensagem)
     return bool(re.search(r"\b(?:quais|que) lojas\b", texto)) and bool(
         "pechincha" in texto or re.search(r"\b(?:cobre|atende)\b", texto)
@@ -36,6 +35,7 @@ def _pede_cobertura(mensagem: str) -> bool:
 
 
 async def _responder_cobertura(estado: dict) -> dict:
+    """Executa a etapa responder cobertura no escopo de analista_compras. Usado por executar."""
     evidencias = list(estado.get("evidencias", []))
     try:
         lojas = await listar_lojas()
@@ -52,6 +52,7 @@ async def _responder_cobertura(estado: dict) -> dict:
 
 
 async def executar(estado: dict, contexto: dict) -> dict:
+    """Coordena pesquisa de lojas/ofertas e atualiza rascunho e evidências da compra. Usado pelo fluxo de agents."""
     usuario = contexto["usuario"]
     if usuario.tipo_acesso.lower() not in {"tecnico", "gestor", "administrador"}:
         return {"resposta_especialista": MENSAGENS['esta_pesquisa_de_compras_esta_disponivel_para_tecnicos_administradores_e_gestores'],
@@ -92,6 +93,7 @@ async def executar(estado: dict, contexto: dict) -> dict:
         return {"analise_compra_pendente": rascunho, "evidencias": evidencias,
                 "resposta_especialista": resposta, "erro": None}
 
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         resultado = await consultar_ofertas(dados)
         produtos = resultado["ofertas"]

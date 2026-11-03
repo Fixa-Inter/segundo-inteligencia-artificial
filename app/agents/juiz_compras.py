@@ -2,14 +2,14 @@
 
 import json
 import logging
+from app.services.gerais import consultar_jev, ler_choice
 
-from app.services.gerais.jev import consultar_jev, ler_choice
-
-
+# LOGGER: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 LOGGER = logging.getLogger(__name__)
 
 
 def _evidencias_compactas(registros: list[str]) -> list[dict]:
+    """Executa a etapa evidencias compactas no escopo de juiz_compras. Usado por julgar_compra."""
     saida = []
     for registro in registros:
         try:
@@ -37,6 +37,7 @@ def _evidencias_compactas(registros: list[str]) -> list[dict]:
 
 
 async def julgar_compra(estado: dict) -> dict:
+    """Avalia resposta de compras contra evidências compactas das promoções. Usado pelo fluxo de agents."""
     if estado.get("erro"):
         return {"veredito": "bloqueado", "feedback_juiz": "O especialista apresentou erro.",
                 "tentativas": estado.get("tentativas", 0)}
@@ -79,6 +80,7 @@ async def julgar_compra(estado: dict) -> dict:
         return {"veredito": "revisar" if tentativas == 1 else "bloqueado",
                 "resposta_candidata": resposta, "feedback_juiz": "Resuma as ofertas sem perder preços, links e ressalvas.",
                 "tentativas": tentativas, "erro": None}
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         resultado = await consultar_jev(contexto, perguntas, operacao="juiz_compras")
         veredito, confianca = ler_choice(resultado["answers"], "veredito", {"aprovado", "revisar", "bloqueado"})

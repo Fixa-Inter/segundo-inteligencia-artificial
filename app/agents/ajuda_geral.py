@@ -1,6 +1,5 @@
 from langchain.agents import create_agent
-
-from app.agents.agentsResult import FAQResultado
+from app.schemas.resultados_agentes import FAQResultado
 from app.graph import ContextoGrafo
 from app.tools.ajuda_geral import (
     buscar_semanticamente,
@@ -13,8 +12,6 @@ from app.tools.ajuda_geral import (
     listar_registros_solicitante,
     buscar_termo_literal_solicitante,
     buscar_textos_semelhantes_solicitante,
-)
-from app.tools.ajuda_geral import (
     buscar_problemas_por_local,
     consultar_situacao_problema,
     consultar_modelos_por_marca_categoria,
@@ -25,19 +22,24 @@ from app.tools.ajuda_geral import (
     listar_tarefas_da_ordem,
     listar_observacoes_da_ordem,
     listar_eventos_por_local_e_periodo,
-)
-from app.tools.ajuda_geral import (
     alterar_informacao_solicitacao,
     anexar_foto_solicitacao,
     anexar_foto_ocorrencia,
     anexar_foto_observacao_conclusao,
 )
 from app.tools.memoria import buscar_historico
-from app.tools.feedback.listarFeedbacks import listar_meus_feedbacks
-from app.tools.solicitacoes.atualizarSolicitacao import buscar_solicitacoes_para_atualizar, atualizar_solicitacao
-from app.tools.solicitacoes import listar_minhas_solicitacoes, listar_todas_solicitacoes_pendentes
-from app.tools.ocorrencias import listar_minhas_ocorrencias
-from app.tools.ocorrencias.atualizarOcorrencia import buscar_ocorrencias_para_atualizar, atualizar_ocorrencia
+from app.tools.feedback import listar_meus_feedbacks
+from app.tools.solicitacoes import (
+    buscar_solicitacoes_para_atualizar,
+    atualizar_solicitacao,
+    listar_minhas_solicitacoes,
+    listar_todas_solicitacoes_pendentes,
+)
+from app.tools.ocorrencias import (
+    listar_minhas_ocorrencias,
+    buscar_ocorrencias_para_atualizar,
+    atualizar_ocorrencia,
+)
 from app.tools.ordensServico import (
     listar_minhas_ordens_servico,
     listar_todas_ordens_servico,
@@ -45,8 +47,9 @@ from app.tools.ordensServico import (
 )
 from app.tools.tecnicos import buscar_tecnicos_disponiveis
 
-
 def criar_agente_ajuda_geral(modelo, instrucao: str, *, perfil: str):
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
+    """Compõe agente de ajuda geral com ferramentas e contrato do perfil. Usado pelo fluxo de agents."""
     if perfil not in {"solicitante", "tecnico", "gestor", "administrador"}:
         raise ValueError("Perfil inválido para o agente ajuda_geral.")
     ferramentas_genericas = [

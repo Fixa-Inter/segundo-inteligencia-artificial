@@ -1,9 +1,8 @@
 """Instruções de consulta direta e seleção de uma análise pelo especialista."""
 
-from app.services.visualizacoes import ANALISES
-from app.services.visualizacoes.limites import MAXIMO_CONSULTAS_POR_EXECUCAO
+from app.services.visualizacoes import ANALISES, MAXIMO_CONSULTAS_POR_EXECUCAO
 
-
+# VISUALIZACOES_INSTRUCAO: Instrução textual enviada ao modelo; conteúdo preservado para manter comportamento do agente.
 VISUALIZACOES_INSTRUCAO = f"""
 ## Papel
 Você é o agente de Visualização gerencial do FIXA. Consulte os dados reais pelas

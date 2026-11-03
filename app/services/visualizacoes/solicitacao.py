@@ -1,14 +1,16 @@
 """Regras e consultas disponíveis de visualização para solicitacao."""
 
 from types import MappingProxyType
-
-from app.schemas.visualizacao import (
-    Analise, ConsultaVisualizacaoPeriodo, ConsultaVisualizacaoSnapshot,
-    Fonte, ResultadoConsultaVisualizacao,
+from app.schemas import (
+    Analise,
+    ConsultaVisualizacaoPeriodo,
+    ConsultaVisualizacaoSnapshot,
+    Fonte,
+    ResultadoConsultaVisualizacao,
 )
 from .consultas import consultar_agregado
 
-
+# FONTE: Definição canônica das análises/filtros desta fonte; não é fornecida pelo modelo.
 FONTE = Fonte(
     id="solicitacao",
     tabela="workspace.fixa_pipeline.gold_dashboard_solicitacao",
@@ -17,6 +19,7 @@ FONTE = Fonte(
     campo_snapshot=None,
 )
 
+# FILTROS: Definição canônica das análises/filtros desta fonte; não é fornecida pelo modelo.
 FILTROS = MappingProxyType({
     "local_id": "BIGINT",
     "nome_local": "STRING",
@@ -27,6 +30,7 @@ FILTROS = MappingProxyType({
     "status_problema": "STRING",
 })
 
+# ANALISES: Definição canônica das análises/filtros desta fonte; não é fornecida pelo modelo.
 ANALISES: tuple[Analise, ...] = (
     Analise(
         "VIS-08", "Solicitações por status", FONTE, "categorias",
@@ -58,6 +62,7 @@ ANALISES: tuple[Analise, ...] = (
 )
 
 
+# ANALISES_IMPLEMENTADAS: Definição canônica das análises/filtros desta fonte; não é fornecida pelo modelo.
 ANALISES_IMPLEMENTADAS = frozenset({"VIS-08", "VIS-09", "VIS-10", "VIS-11", "VIS-23", "VIS-24"})
 
 

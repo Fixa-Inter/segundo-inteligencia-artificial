@@ -1,22 +1,26 @@
 from langchain.agents import create_agent
 from langchain.agents.middleware import ModelFallbackMiddleware
-
-from app.agents.agentsResult import SolicitacaoOcorrenciaResultado
-from app.tools.solicitacoes import buscar_opcoes_solicitacao
+from app.schemas.resultados_agentes import SolicitacaoOcorrenciaResultado
 from app.tools.solicitacoes import (
+    buscar_opcoes_solicitacao,
     criar_solicitacao,
     salvar_rascunho_solicitacao,
+    buscar_solicitacoes_para_atualizar,
+    atualizar_solicitacao,
 )
-from app.tools.ocorrencias import buscar_opcoes_ocorrencia
-from app.tools.ocorrencias import criar_ocorrencia, salvar_rascunho_ocorrencia
-from app.tools.ocorrencias.atualizarOcorrencia import buscar_ocorrencias_para_atualizar, atualizar_ocorrencia
+from app.tools.ocorrencias import (
+    buscar_opcoes_ocorrencia,
+    criar_ocorrencia,
+    salvar_rascunho_ocorrencia,
+    buscar_ocorrencias_para_atualizar,
+    atualizar_ocorrencia,
+)
 from app.tools.memoria import buscar_historico
 from app.tools.eventos import buscar_opcoes_evento, salvar_rascunho_evento, criar_evento
-from app.tools.solicitacoes.atualizarSolicitacao import buscar_solicitacoes_para_atualizar, atualizar_solicitacao
 from app.graph import ContextoGrafo
 
-
 def criar_agente_solicitacoes(modelo, instrucao: str, modelo_alternativo=None, *, gestor: bool = False, tecnico: bool = False, solicitante:bool = False):
+    """Compõe agente de solicitacoes com ferramentas e contrato do perfil. Usado pelo fluxo de agents."""
     ferramentas = [buscar_opcoes_solicitacao, buscar_historico]
     ferramentas.extend([buscar_solicitacoes_para_atualizar, atualizar_solicitacao])
     if gestor or tecnico:

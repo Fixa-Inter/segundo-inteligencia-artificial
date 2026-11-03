@@ -1,39 +1,43 @@
 """Busca registros do Qdrant dentro da unidade autenticada."""
 
-
 import base64
 import binascii
 import json
 import logging
 from uuid import UUID
-
 from qdrant_client import models
-
-from app.core import configuracao
-from app.core.clients.qdrant import abrir_cliente_qdrant
-from app.core.clients.postgres import executar_consulta
+from app.core import configuracao, MENSAGENS
+from app.core.clients import abrir_cliente_qdrant, executar_consulta
 from app.memory.embedding import gerar_vetor_operacional
 from app.schemas import UsuarioContexto
 from app.services.gerais import obter_unidade_id
+from app.core.apresentacao import formatar_resposta
 
-from app.core.respostas import MENSAGENS
-from app.graph.respostas_padrao import formatar_resposta
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
+# COLECOES_PERMITIDAS: Recurso compartilhado de colecoes permitidas usado pelas funções deste módulo e pela interface pública.
 COLECOES_PERMITIDAS = configuracao.QDRANT_COLECOES_OPERACIONAIS
+# COLECOES_SOLICITANTE: Recurso compartilhado de colecoes solicitante usado pelas funções deste módulo e pela interface pública.
 COLECOES_SOLICITANTE = frozenset({
     "problema", configuracao.QDRANT_COLECAO_LOCAL, "modelo_equipamento",
     "categoria_equipamento", "marca_equipamento",
 })
+# COLECAO_GLOBAL: Valor de referência de colecao global usado neste módulo e por seus consumidores.
 COLECAO_GLOBAL = "marca_equipamento"
+# LIMITE_SEMANTICO: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 LIMITE_SEMANTICO = 10
+# LIMITE_MULTIPLAS_COLECOES: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 LIMITE_MULTIPLAS_COLECOES = 5
+# LIMITE_POR_COLECAO: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 LIMITE_POR_COLECAO = 5
+# LIMITE_LISTAGEM: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 LIMITE_LISTAGEM = 20
+# LIMITE_LITERAL: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 LIMITE_LITERAL = 20
+# LIMITE_SEMELHANTES: Limite operacional/contratual usado pela validação e pelo processamento deste módulo.
 LIMITE_SEMELHANTES = 10
+# _CAMPOS_PAYLOAD: Recurso compartilhado de campos payload usado pelas funções deste módulo e pela interface pública.
 _CAMPOS_PAYLOAD = [
     configuracao.QDRANT_CAMPO_ENTIDADE_ID,
     configuracao.QDRANT_CAMPO_TEXTO,
@@ -43,6 +47,7 @@ _CAMPOS_PAYLOAD = [
 
 
 def _validar_colecao(usuario: UsuarioContexto, colecao: str) -> None:
+    """Confere colecao conforme o contrato deste domínio. Usado por buscar_em_multiplas_colecoes, buscar_semanticamente, buscar_termo_literal."""
     if type(colecao) is not str or colecao not in COLECOES_PERMITIDAS:
         raise ValueError(MENSAGENS['collection_nao_permitida'])
     if usuario.tipo_acesso == "solicitante" and colecao not in COLECOES_SOLICITANTE:
@@ -73,17 +78,20 @@ async def _filtro_usuario(usuario: UsuarioContexto, colecao: str, unidade_id: in
 
 
 def _validar_limite(limite: int, maximo: int) -> None:
+    """Confere limite conforme o contrato deste domínio. Usado por buscar_em_multiplas_colecoes, buscar_semanticamente, buscar_termo_literal."""
     if type(limite) is not int or not 1 <= limite <= maximo:
         raise ValueError(formatar_resposta('limite_deve_estar_entre_1_e_valor_1', valor_1=maximo))
 
 
 def _validar_texto(texto: str, maximo: int = 500) -> str:
+    """Confere texto conforme o contrato deste domínio. Usado por buscar_em_multiplas_colecoes, buscar_semanticamente, buscar_termo_literal."""
     if type(texto) is not str or not 1 <= len(texto.strip()) <= maximo:
         raise ValueError(formatar_resposta('informe_texto_entre_1_e_valor_1_caracteres', valor_1=maximo))
     return texto.strip()
 
 
 def _validar_usuario(usuario: UsuarioContexto) -> None:
+    """Confere usuario conforme o contrato deste domínio. Usado por buscar_em_multiplas_colecoes, buscar_semanticamente, buscar_termo_literal."""
     if not isinstance(usuario, UsuarioContexto) or usuario.tipo_acesso not in {
         "solicitante", "tecnico", "gestor", "administrador",
     }:
@@ -91,6 +99,7 @@ def _validar_usuario(usuario: UsuarioContexto) -> None:
 
 
 def _filtro(colecao: str, unidade_id: int, *adicionais) -> models.Filter:
+    """Compõe filtro de unidade/atividade e condições autorizadas da consulta. Usado por buscar_em_multiplas_colecoes, buscar_semanticamente, buscar_termo_literal."""
     condicoes = [models.FieldCondition(
         key=configuracao.QDRANT_CAMPO_ATIVO,
         match=models.MatchValue(value=True),
@@ -105,6 +114,7 @@ def _filtro(colecao: str, unidade_id: int, *adicionais) -> models.Filter:
 
 
 def _registro(colecao: str, ponto, unidade_id: int) -> dict:
+    """Valida e projeta registro recuperado preservando escopo e campos esperados. Usado por buscar_em_multiplas_colecoes, buscar_semanticamente, buscar_termo_literal."""
     conteudo = ponto.payload or {}
     if conteudo.get(configuracao.QDRANT_CAMPO_ATIVO) is not True:
         raise RuntimeError(MENSAGENS['qdrant_retornou_um_registro_inativo'])
@@ -130,6 +140,7 @@ def _registro(colecao: str, ponto, unidade_id: int) -> dict:
 
 
 def _resultado(registros: list[dict], *, cursor: str | None = None) -> dict:
+    """Monta envelope de resultados, preservando lista e paginação quando aplicável. Usado por buscar_em_multiplas_colecoes, buscar_semanticamente, buscar_termo_literal."""
     return {
         "status": "SUCESSO" if registros else "SEM_RESULTADO",
         "resultados": registros,
@@ -138,6 +149,7 @@ def _resultado(registros: list[dict], *, cursor: str | None = None) -> dict:
 
 
 def _erro(erro: Exception) -> dict:
+    """Traduz falha de validação, permissão ou execução para o contrato do domínio. Usado por buscar_em_multiplas_colecoes, buscar_semanticamente, buscar_termo_literal."""
     if isinstance(erro, PermissionError):
         status, mensagem = "ACESSO_NEGADO", str(erro)
     elif isinstance(erro, ValueError):
@@ -149,6 +161,7 @@ def _erro(erro: Exception) -> dict:
 
 
 def _codificar_cursor(colecao: str, unidade_id: int, deslocamento) -> str | None:
+    """Executa a etapa codificar cursor no escopo de consultas. Usado por listar_registros."""
     if deslocamento is None:
         return None
     if type(deslocamento) is not int:
@@ -158,6 +171,7 @@ def _codificar_cursor(colecao: str, unidade_id: int, deslocamento) -> str | None
 
 
 def _decodificar_cursor(cursor: str | None, colecao: str, unidade_id: int):
+    """Executa a etapa decodificar cursor no escopo de consultas. Usado por listar_registros."""
     if cursor is None:
         return None
     if type(cursor) is not str or not 1 <= len(cursor) <= 512:
@@ -180,6 +194,7 @@ def _decodificar_cursor(cursor: str | None, colecao: str, unidade_id: int):
 async def buscar_semanticamente(
     usuario: UsuarioContexto, colecao: str, pergunta: str, limite: int,
 ) -> dict:
+    """Pesquisa textos operacionais por significado dentro das permissões do usuário. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         _validar_colecao(usuario, colecao)
@@ -208,6 +223,7 @@ async def buscar_semanticamente(
 async def buscar_em_multiplas_colecoes(
     usuario: UsuarioContexto, colecoes: list[str], pergunta: str, limite_por_colecao: int,
 ) -> dict:
+    """Pesquisa coleções permitidas e preserva origem/escopo de cada texto. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         if type(colecoes) is not list or not 1 <= len(colecoes) <= LIMITE_MULTIPLAS_COLECOES:
@@ -244,6 +260,7 @@ async def buscar_em_multiplas_colecoes(
 async def listar_registros(
     usuario: UsuarioContexto, colecao: str, cursor_paginacao: str | None, limite: int,
 ) -> dict:
+    """Lista registros ativos com cursor limitado à coleção/unidade. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         _validar_colecao(usuario, colecao)
@@ -271,6 +288,7 @@ async def listar_registros(
 async def buscar_termo_literal(
     usuario: UsuarioContexto, colecao: str, termo: str, limite: int,
 ) -> dict:
+    """Pesquisa termo na ordem escrita, sem inferir relacionamentos. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         _validar_colecao(usuario, colecao)
@@ -300,6 +318,8 @@ async def buscar_termo_literal(
 async def buscar_textos_semelhantes(
     usuario: UsuarioContexto, colecao: str, entidade_id: int, limite: int,
 ) -> dict:
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
+    """Encontra textos semelhantes a registro autorizado sem inventar vínculos. Usado pelo fluxo de ajuda_geral."""
     try:
         _validar_usuario(usuario)
         _validar_colecao(usuario, colecao)

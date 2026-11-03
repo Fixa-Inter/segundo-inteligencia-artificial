@@ -1,13 +1,10 @@
 """Classificação fechada pelo JEV usada pelo endpoint de problemas."""
 
-
-from app.core.configuracao import LIMIAR
-from app.services.gerais.jev import ErroJEV, consultar_jev, ler_choice, ler_noul
-
-from app.core.respostas import MENSAGENS, FRASE_SEGURA
-
+from app.core import LIMIAR, MENSAGENS, FRASE_SEGURA
+from app.services.gerais import ErroJEV, consultar_jev, ler_choice, ler_noul
 
 def _publicar(texto: str, agente: str, rotulo: str) -> dict:
+    """Executa a etapa publicar no escopo de julgar. Usado por julgar_jev."""
     return {
         "messages": [{"role": "assistant", "content": texto.strip()}],
         "agentes_chamados": [f"{agente}:{rotulo}"],
@@ -20,6 +17,7 @@ async def julgar_jev(
     nao_classificavel: str | None = None,
 ) -> dict:
     # chave_texto permanece na assinatura para preservar o contrato do endpoint.
+    """Aplica escolha de categoria e verificações noul para classificação do endpoint de problemas. Usado pelo fluxo de gerais."""
     perguntas = {
         "veredito": {
             "type": "choice", "instructions": instrucao, "criteria": criterio,

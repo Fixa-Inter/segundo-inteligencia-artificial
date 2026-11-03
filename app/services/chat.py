@@ -1,16 +1,7 @@
 import uuid
 import time
-from app.observability.tracing import somente_metricas
-from fastapi import HTTPException, status
-from app.graph.executor import PERFIS_VALIDOS, executar_grafo
-from app.schemas import UsuarioContexto
-from app.schemas import ConversaEntrada, ConversaSaida
-from app.core import Emocao
-from app.services.visualizacoes.publicacao import validar_visualizacao_publica
-from app.services.visualizacoes import PERFIS_VISUALIZACOES
-from app.memory.persistencia.sessoes import iniciar_sessao
-from app.memory.persistencia.utilitarios import sessao_acessivel
-from app.observability.metricas import (
+from app.observability import (
+    somente_metricas,
     DURACAO_RESPOSTA_CONVERSA,
     REQUISICOES_CONVERSA,
     reiniciar_custo_requisicao,
@@ -22,14 +13,20 @@ from app.observability.metricas import (
     reiniciar_resolucoes_pendentes,
     restaurar_resolucoes_pendentes,
 )
-
-from app.core.respostas import MENSAGENS
-
+from fastapi import HTTPException, status
+from app.graph import PERFIS_VALIDOS, executar_grafo
+from app.schemas import UsuarioContexto, ConversaEntrada, ConversaSaida
+from app.core import Emocao, MENSAGENS
+from app.services.visualizacoes import validar_visualizacao_publica, PERFIS_VISUALIZACOES
+from app.memory.persistencia.sessoes import iniciar_sessao
+from app.memory.persistencia import sessao_acessivel
 
 async def _processar_chat(
     dados: ConversaEntrada,
     usuario: UsuarioContexto,
 ) -> ConversaSaida:
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
+    """Executa a etapa processar chat no escopo de chat. Usado por processar_chat."""
     if usuario.tipo_acesso.strip().lower() not in PERFIS_VALIDOS:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -52,7 +49,7 @@ async def _processar_chat(
                 detail=MENSAGENS['conversa_nao_encontrada'],
             )
 
-    
+
     resultado = await executar_grafo(
         mensagem=dados.mensagem,
         usuario=usuario,
@@ -92,6 +89,7 @@ async def processar_chat(
     dados: ConversaEntrada,
     usuario: UsuarioContexto,
 ) -> ConversaSaida:
+    """Coordena chat e isolamento de métricas de resultado/custo/resoluções por requisição. Usado pelo fluxo de services."""
     inicio = time.perf_counter()
     token_custo = reiniciar_custo_requisicao()
     token_resultado = reiniciar_resultado_requisicao()

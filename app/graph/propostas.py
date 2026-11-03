@@ -2,8 +2,8 @@
 
 import json
 
-
 def propostas_resposta(estado: dict) -> list[dict]:
+    """Seleciona propostas verificáveis produzidas pelas ferramentas do turno. Usado por preparar_resposta."""
     propostas = {}
     for evidencia in estado.get("evidencias", []):
         try:

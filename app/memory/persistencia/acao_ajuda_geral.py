@@ -2,17 +2,12 @@
 
 from datetime import datetime, timezone
 from uuid import uuid4
-
-from app.core.clients.mongo import abrir_cliente_mongo
-from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
-from app.memory.persistencia.utilitarios import obter_documento_sessao_id
-
-
-def _agora():
-    return datetime.now(timezone.utc)
-
+from app.core.clients import abrir_cliente_mongo
+from app.core import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES, agora_utc as _agora
+from app.memory.persistencia import obter_documento_sessao_id
 
 async def obter_acao(sessao_id: str, usuario_id: int) -> dict | None:
+    """Lê a proposta de edição/anexo da sessão. Usado pelo fluxo de persistencia."""
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if documento_id is None:
         return None
@@ -26,6 +21,7 @@ async def obter_acao(sessao_id: str, usuario_id: int) -> dict | None:
 
 
 async def salvar_acao(sessao_id: str, usuario_id: int, dados: dict) -> dict:
+    """Persiste proposta de edição/anexo com identificação própria. Usado pelo fluxo de persistencia."""
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if documento_id is None:
         raise ValueError("Sessão não encontrada para confirmar a edição.")
@@ -52,6 +48,7 @@ async def atualizar_acao(
     sessao_id: str, usuario_id: int, acao_id: str, campos: dict,
     *, status: str,
 ) -> bool:
+    """Atualiza campos da proposta ajuda_geral_pendente com condições de escopo. Usado por iniciar_acao."""
     documento_id = await obter_documento_sessao_id(sessao_id, usuario_id)
     if documento_id is None:
         return False
@@ -72,6 +69,7 @@ async def atualizar_acao(
 
 
 async def iniciar_acao(sessao_id: str, usuario_id: int, acao_id: str) -> bool:
+    """Tenta transição condicional da proposta para execução. Usado pelo fluxo de persistencia."""
     return await atualizar_acao(
         sessao_id, usuario_id, acao_id, {"status": "executando"},
         status="aguardando_confirmacao",

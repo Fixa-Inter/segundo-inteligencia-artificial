@@ -1,20 +1,14 @@
 from datetime import date
 from html import escape
-
-from app.services.ordensServico.buscarOrdensServico import chave_ordenacao_status
-
+from app.core import chave_ordenacao_status, escapar_celula, montar_tabela_markdown
 
 def _celula(valor) -> str:
-    if valor is None:
-        return "Não informada"
-    texto = escape(str(valor), quote=False)
-    # Evita que o conteúdo do cadastro crie colunas, linhas, links ou imagens.
-    for caractere in ("\\", "`", "*", "_", "[", "]", "|", "~"):
-        texto = texto.replace(caractere, f"&#{ord(caractere)};")
-    return texto.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "<br>")
+    """Compatibilidade da célula com o texto de ausência deste domínio."""
+    return escapar_celula(valor, ausente='Não informada')
 
 
 def montar_tabelas(ordens: list[dict]) -> str:
+    """Agrupa OS por status e renderiza tabelas seguras, preservando a ordem de cada grupo."""
     colunas = (
         ("Título", "titulo"),
         ("Descrição do problema", "descricaoProblema"),
@@ -40,21 +34,9 @@ def montar_tabelas(ordens: list[dict]) -> str:
         grupo = [ordem for ordem in ordens if ordem["statusOrdemServico"] == status]
         if not grupo:
             continue
-        linhas = [
-            f"### {status}",
-            "",
-            "| " + " | ".join(titulo for titulo, _ in colunas) + " |",
-            "| " + " | ".join("---" for _ in colunas) + " |",
-        ]
-        for ordem in grupo:
-            valores = []
-            for _, campo in colunas:
-                valor = ordem[campo]
-                if campo in {"dataCriacao", "dataPrevista"} and valor is not None:
-                    valor = date.fromisoformat(valor).strftime("%d-%m-%Y")
-                valores.append(_celula(valor))
-            linhas.append("| " + " | ".join(valores) + " |")
-        tabelas.append("\n".join(linhas))
+        tabela = montar_tabela_markdown(
+            grupo, colunas, campos_data=("dataCriacao", "dataPrevista"),
+            ausente="Não informada", datas_nulas=True,
+        )
+        tabelas.append(f"### {status}\n\n{tabela}")
     return "\n\n".join(tabelas)
-
-

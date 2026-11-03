@@ -1,14 +1,10 @@
 import logging
-
 from langchain.tools import ToolRuntime, tool
-
 from app.schemas import UsuarioContexto
-from app.services.solicitacoes import (
-    listar_minhas_solicitacoes as consultar_minhas_solicitacoes,
-)
+from app.services.solicitacoes import listar_minhas_solicitacoes as consultar_minhas_solicitacoes
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 

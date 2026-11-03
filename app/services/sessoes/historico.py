@@ -1,23 +1,20 @@
 from typing import Any
-
 from pymongo.errors import PyMongoError
+from app.core import Emocao, MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES, MENSAGENS
+from app.core.clients import abrir_cliente_mongo
+from app.memory.persistencia import sessoes_ativas
+from app.services.visualizacoes import validar_visualizacao_publica
 
-from app.core import Emocao
-from app.core.clients.mongo import abrir_cliente_mongo
-from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
-from app.memory.persistencia.utilitarios import sessoes_ativas
-from app.services.visualizacoes.publicacao import validar_visualizacao_publica
-
-from app.core.respostas import MENSAGENS
-
-
+# ErroConsultaHistorico: contrato/estrutura de historico; usado pelos consumidores desta interface.
 class ErroConsultaHistorico(Exception):
     def __init__(self, status_code: int, mensagem: str):
+        """Inicializa os atributos da instância para as operações da classe. Usado pelo fluxo de sessoes."""
         self.status_code = status_code
         self.mensagem = mensagem
         super().__init__(mensagem)
 
 
+# _PROJECAO: Recurso compartilhado de projecao usado pelas funções deste módulo e pela interface pública.
 _PROJECAO = {
     "_id": 0,
     "session_id": 1,
@@ -30,6 +27,7 @@ _PROJECAO = {
 
 
 def _formatar_mensagens(mensagens: Any, *, incluir_visualizacoes: bool = False) -> list[dict[str, Any]]:
+    """Executa a etapa formatar mensagens no escopo de historico. Usado por _formatar_conversa."""
     if not isinstance(mensagens, list):
         return []
 
@@ -59,6 +57,7 @@ def _formatar_mensagens(mensagens: Any, *, incluir_visualizacoes: bool = False) 
 
 
 def _formatar_conversa(documento: dict[str, Any], *, incluir_visualizacoes: bool = False) -> dict[str, Any]:
+    """Executa a etapa formatar conversa no escopo de historico. Usado por buscar_conversa, buscar_conversas_usuario."""
     titulo = documento.get("titulo")
     resumo = documento.get("resumo")
     return {
@@ -72,6 +71,7 @@ def _formatar_conversa(documento: dict[str, Any], *, incluir_visualizacoes: bool
 
 
 async def excluir_conversa(session_id: str, usuario_id: int) -> bool:
+    """Oculta conversa própria com exclusão lógica e remove cache da sessão. Usado pelo fluxo de sessoes."""
     try:
         async with abrir_cliente_mongo() as cliente:
             colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
@@ -99,6 +99,7 @@ async def excluir_conversa(session_id: str, usuario_id: int) -> bool:
 
 
 async def buscar_conversas_usuario(usuario_id: int, *, incluir_visualizacoes: bool = False) -> list[dict[str, Any]]:
+    """Consulta conversas ativas do usuário e formata mensagens/payloads históricos. Usado pelo fluxo de sessoes."""
     try:
         async with abrir_cliente_mongo() as cliente:
             colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]
@@ -126,6 +127,7 @@ async def buscar_conversas_usuario(usuario_id: int, *, incluir_visualizacoes: bo
 async def buscar_conversa(
     session_id: str, usuario_id: int, *, incluir_visualizacoes: bool = False,
 ) -> dict[str, Any] | None:
+    """Obtém conversa ativa por proprietário e ID, com visualização quando permitido. Usado pelo fluxo de sessoes."""
     try:
         async with abrir_cliente_mongo() as cliente:
             colecao = cliente[MONGO_BANCO_DADOS][MONGO_COLECAO_SESSOES]

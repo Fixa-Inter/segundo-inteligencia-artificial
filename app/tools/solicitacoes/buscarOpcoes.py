@@ -1,13 +1,10 @@
 import asyncio
-
 from langchain.tools import ToolRuntime, tool
 from app.memory.vectorSearch import buscar_categoria_equipamento, buscar_local_endereco
-from app.core.clients.qdrant import abrir_cliente_qdrant
+from app.core.clients import abrir_cliente_qdrant
 from app.schemas import UsuarioContexto
 from app.services.gerais import obter_unidade_id
-
-from app.core.respostas import MENSAGENS
-
+from app.core import MENSAGENS
 
 @tool
 async def buscar_opcoes_solicitacao(
@@ -32,7 +29,7 @@ async def buscar_opcoes_solicitacao(
             locais = tarefas.create_task(
                 buscar_local_endereco(local, unidade_id, cliente)
             )
-            
+
     return {
         "categoria_equipamento": {str(k): v for k, v in categorias.result().items()},
         "local_endereco": {str(k): v for k, v in locais.result().items()},

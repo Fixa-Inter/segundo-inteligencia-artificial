@@ -1,27 +1,28 @@
 """Prepara gravações e vincula a aprovação aos dados exatos da operação."""
 
-
 import hashlib
 import json
 from datetime import datetime, timezone
-
 from app.schemas import UsuarioContexto
+from app.core import MENSAGENS, dados_cadastro, dados_edicao, dados_atualizacao
 
-from app.core.respostas import MENSAGENS
-
+# TIPOS: Recurso compartilhado de tipos usado pelas funções deste módulo e pela interface pública.
 TIPOS = {"solicitacao", "ocorrencia", "evento", "feedback", "edicao", "atualizacao_solicitacao", "atualizacao_ocorrencia"}
 
 
 def calcular_hash(dados: dict) -> str:
+    """Calcula SHA-256 do JSON canônico dos dados. Usado por aprovacao_operacoes, preparar_operacao."""
     texto = json.dumps(dados, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
     return hashlib.sha256(texto.encode("utf-8")).hexdigest()
 
 
 def resumo(documento: dict) -> dict:
+    """Projeta id, tipo e dados do documento durável para o estado do fluxo. Usado por preparar_operacao."""
     return {"id": documento["_id"], "tipo": documento["tipo"], "dados": documento["dados"]}
 
 
 async def preparar_operacao(contexto: dict, tipo: str, referencia: str, dados: dict) -> dict:
+    """Persiste operação derivada do contexto e a registra para julgamento. Usado pelo fluxo de services."""
     from app.memory.persistencia import operacoes as persistencia
 
     usuario = contexto.get("usuario")
@@ -50,22 +51,9 @@ async def preparar_operacao(contexto: dict, tipo: str, referencia: str, dados: d
 
 
 def aprovacao_operacoes(operacoes: list[dict], contexto: dict) -> dict:
+    """Vincula conjunto de operações ao contexto e ao conteúdo avaliado. Usado pelo fluxo de services."""
     return {"usuario_id": contexto["usuario"].usuario_id, "sessao_id": contexto["session_id"],
             "turno_id": contexto["turno_id"], "conteudo_hash": calcular_hash({"operacoes": operacoes})}
 
 
-def dados_cadastro(rascunho: dict) -> dict:
-    """Inclui os anexos na aprovação, além dos campos e da versão do rascunho."""
-    return {"proposta_id": rascunho["id"], "versao": rascunho["versao"],
-            "dados": rascunho["dados"], "imagens": rascunho.get("imagens", [])}
-
-
-def dados_edicao(acao: dict) -> dict:
-    return {campo: acao.get(campo) for campo in ("id", "tipo", "registro_id", "campo", "novo_valor", "imagens")}
-
-
-def dados_atualizacao(rascunho: dict) -> dict:
-    return {"proposta_id": rascunho["id"], "versao": rascunho["versao"],
-            "registro_id": rascunho["registro_id"], "original": rascunho["original"],
-            "alteracoes": rascunho.get("alteracoes", {}), "imagens": rascunho.get("imagens", []),
-            "acao_fotos": rascunho.get("acao_fotos", "manter")}
+# Compatibilidade dos serviços; projeções não dependem de persistência.

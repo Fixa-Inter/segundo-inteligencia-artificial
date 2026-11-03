@@ -1,16 +1,13 @@
 """Adapta a política gerencial existente ao contrato das visualizações."""
 
-
-from app.schemas import UsuarioContexto
-from app.schemas.visualizacao import ResultadoConsultaVisualizacao
+from app.schemas import UsuarioContexto, ResultadoConsultaVisualizacao
 from app.services.visualizacoes import PERFIS_VISUALIZACOES
 from app.tools.metricas_kpis import contexto as contexto_indicadores
-
-from app.core.respostas import MENSAGENS, MENSAGEM_BLOQUEIO_MOBILE
-from app.graph.respostas_padrao import escolher_resposta
-
+from app.core import MENSAGENS, MENSAGEM_BLOQUEIO_MOBILE
+from app.core.apresentacao import escolher_resposta
 
 def validar_acesso(runtime) -> ResultadoConsultaVisualizacao | None:
+    """Confere acesso gerencial e plataforma autorizada das visualizações. Usado por resolver_unidade."""
     contexto = getattr(runtime, "context", None)
     if isinstance(contexto, dict) and contexto.get("plataforma") == "mobile":
         return ResultadoConsultaVisualizacao(
@@ -35,6 +32,7 @@ def validar_acesso(runtime) -> ResultadoConsultaVisualizacao | None:
 
 
 async def resolver_unidade(runtime) -> int | ResultadoConsultaVisualizacao:
+    """Resolve unidade autorizada para visualização. Usado pelo fluxo de visualizacoes."""
     negado = validar_acesso(runtime)
     if negado is not None:
         return negado

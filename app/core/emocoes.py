@@ -1,6 +1,6 @@
 from enum import Enum
 
-
+# Emocao: contrato/estrutura de emocoes; usado pelos consumidores desta interface.
 class Emocao(str, Enum):
     NEUTRO = "NEUTRO"
     CURIOSO = "CURIOSO"

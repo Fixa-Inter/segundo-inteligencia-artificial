@@ -1,13 +1,11 @@
 """Resolve a unidade do usuário autenticado a partir do banco FIXA."""
 
-
-from app.core.clients.postgres import executar_consulta
+from app.core.clients import executar_consulta
 from app.schemas import UsuarioContexto
-
-from app.core.respostas import MENSAGENS
-
+from app.core import MENSAGENS
 
 async def obter_unidade_id(usuario: UsuarioContexto) -> int:
+    """Resolve e valida a unidade atual do usuário autenticado por consulta PostgreSQL. Usado pelo fluxo de gerais."""
     if not isinstance(usuario, UsuarioContexto) or usuario.usuario_id <= 0:
         raise ValueError(MENSAGENS['usuario_autenticado_invalido'])
     linhas = await executar_consulta(

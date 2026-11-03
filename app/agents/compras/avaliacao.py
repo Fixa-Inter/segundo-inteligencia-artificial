@@ -1,43 +1,42 @@
 """Confere requisitos somente contra o texto das promoções recebidas."""
 
-
 import json
 import re
 import unicodedata
 from urllib.parse import urlparse
-
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
-
-from app.agents.modelos import llm_especialista
-
+from app.agents import llm_especialista
 from .coleta import DadosCompra, dados_persistiveis
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
+# Verificacao: contrato/estrutura de avaliacao; usado pelos consumidores desta interface.
 class Verificacao(BaseModel):
     requisito: str
     trecho_anuncio: str
 
 
+# AvaliacaoOferta: contrato/estrutura de avaliacao; usado pelos consumidores desta interface.
 class AvaliacaoOferta(BaseModel):
     indice: int
     confirmados: list[Verificacao] = Field(default_factory=list)
     incompativeis: list[Verificacao] = Field(default_factory=list)
 
 
+# AvaliacoesOfertas: contrato/estrutura de avaliacao; usado pelos consumidores desta interface.
 class AvaliacoesOfertas(BaseModel):
     ofertas: list[AvaliacaoOferta]
     diferencas: str = ""
 
 
 def normalizar(texto: str) -> str:
+    """Normaliza texto de anúncio/requisito para comparação sem acentos e espaços redundantes. Usado por avaliar, comprovados."""
     sem_acentos = unicodedata.normalize("NFKD", texto)
     return re.sub(r"\s+", " ", "".join(c for c in sem_acentos if not unicodedata.combining(c)).lower()).strip()
 
 
 def url_produto(valor: object) -> str | None:
+    """Aceita link HTTP(S) válido da oferta ou devolve None. Usado por oferta_sem_avaliacao."""
     if not isinstance(valor, str):
         return None
     try:
@@ -48,10 +47,12 @@ def url_produto(valor: object) -> str | None:
 
 
 def texto_curto(valor: object, limite: int) -> str:
+    """Normaliza espaços e limita texto de apresentação da oferta. Usado por oferta_sem_avaliacao."""
     return " ".join(str(valor or "").split())[:limite]
 
 
 def oferta_sem_avaliacao(dados: DadosCompra, produto: dict) -> dict | None:
+    """Projeta campos da oferta recebida sem inventar compatibilidade. Usado por avaliar."""
     url = url_produto(produto.get("url"))
     if not url:
         return None
@@ -63,6 +64,7 @@ def oferta_sem_avaliacao(dados: DadosCompra, produto: dict) -> dict | None:
 
 
 async def avaliar(dados: DadosCompra, produtos: list[dict]) -> tuple[list[dict], str]:
+    """Compara requisitos às ofertas e valida trechos citados contra anúncios recebidos. Usado pelo fluxo de compras."""
     compactos = [{"indice": i, "loja": p.get("store_name"), "descricao": p.get("short_description"),
                  "titulo": p.get("title"), "preco": p.get("price")} for i, p in enumerate(produtos)]
     avaliacao = await llm_especialista.with_structured_output(AvaliacoesOfertas).ainvoke([
@@ -82,6 +84,7 @@ async def avaliar(dados: DadosCompra, produtos: list[dict]) -> tuple[list[dict],
         anuncio = " ".join(str(produto.get(campo) or "") for campo in ("title", "short_description"))
 
         def comprovados(verificacoes: list[Verificacao]) -> list[str]:
+            """Executa a etapa comprovados no escopo de avaliacao. Usado por avaliar."""
             return list(dict.fromkeys(v.requisito for v in verificacoes
                 if v.requisito in requisitos_validos and v.trecho_anuncio.strip()
                 and normalizar(v.trecho_anuncio) in normalizar(anuncio)))

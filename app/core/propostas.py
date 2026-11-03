@@ -1,23 +1,22 @@
 """Regras compartilhadas de apresentação e confirmação dos dados de cadastro."""
 
-
-from app.core.confirmacoes import classificar_manifestacao, aceite_explicito, normalizar_mensagem
-
-from app.core.respostas import MENSAGENS, NOMES_CAMPOS
-
+from app.core import classificar_manifestacao, aceite_explicito, normalizar_mensagem, MENSAGENS, NOMES_CAMPOS
 
 def campos_pendentes(rascunho: dict) -> list[str]:
+    """Lista dados que diferem dos valores já confirmados. Usado por avaliar_confirmacao, solicitar."""
     confirmados = rascunho.get("dados_confirmados", {})
     return [campo for campo, valor in rascunho.get("dados", {}).items()
             if campo not in confirmados or confirmados[campo] != valor]
 
 
 def resumo_confirmacao(rascunho: dict) -> str:
-    from app.graph.respostas_padrao import resumo_confirmacao as renderizar
+    """Renderiza resumo determinístico dos dados/alterações da proposta. Usado por metadados_proposta."""
+    from app.core.apresentacao import resumo_confirmacao as renderizar
     return renderizar(rascunho)
 
 
 def campos_aceite(texto: str, dados: dict, pendentes: list[str]) -> list[str]:
+    """Identifica os campos aos quais o aceite textual se refere. Usado por avaliar_confirmacao."""
     normalizada = normalizar_mensagem(texto)
     alvos = (
         ("categoria do equipamento", ["categoria_equipamento_id"]),
@@ -44,7 +43,9 @@ def campos_aceite(texto: str, dados: dict, pendentes: list[str]) -> list[str]:
 
 
 def avaliar_confirmacao(rascunho: dict, contexto: dict) -> dict | None:
+    """Valida intenção, pausa, turno, versão e dados apresentados; retorna pendência/aceite parcial ou None quando liberado. Usado pelo fluxo de core."""
     def solicitar(mensagem):
+        """Executa a etapa solicitar no escopo de propostas. Usado por avaliar_confirmacao."""
         return {"status": "CONFIRMACAO_NECESSARIA", "mensagem": mensagem,
                 "campos_pendentes": campos_pendentes(rascunho)}
 
@@ -90,8 +91,9 @@ def avaliar_confirmacao(rascunho: dict, contexto: dict) -> dict | None:
 
 
 def metadados_proposta(rascunho: dict) -> dict:
+    """Monta identificação, versão, dados e resumo da proposta. Usado pelo fluxo de core."""
     if rascunho.get("operacao") == "atualizar":
-        from app.services.operacoes import dados_atualizacao
+        from app.core import dados_atualizacao
         return {"tipo": rascunho["tipo"], "proposta_id": rascunho["id"], "versao": rascunho["versao"],
                 "dados": rascunho["dados"], "resumo_confirmacao": resumo_confirmacao(rascunho),
                 "operacao": "atualizar", "etapa": rascunho["etapa"], "atualizacao": dados_atualizacao(rascunho)}

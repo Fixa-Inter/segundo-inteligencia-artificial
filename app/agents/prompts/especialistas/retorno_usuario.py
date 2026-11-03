@@ -1,3 +1,4 @@
+# RETORNO_USUARIO_INSTRUCAO: Instrução textual enviada ao modelo; conteúdo preservado para manter comportamento do agente.
 RETORNO_USUARIO_INSTRUCAO = """
 ## Papel do agente
 

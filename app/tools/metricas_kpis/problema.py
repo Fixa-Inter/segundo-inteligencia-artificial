@@ -2,17 +2,13 @@
 
 from datetime import date
 from typing import Literal
-
 from langchain.tools import ToolRuntime, tool
 from pydantic import Field
-
 from app.services.indicadores import problema as servico
-from app.tools.metricas_kpis.contexto import resolver_unidade_indicadores
-from app.tools.metricas_kpis.ordem_servico import (
-    _ArgumentosPeriodo,
-)
+from app.tools.metricas_kpis import resolver_unidade_indicadores
+from app.tools.metricas_kpis.ordem_servico import _ArgumentosPeriodo
 
-
+# _ArgumentosPeriodoGranularidade: contrato/estrutura de problema; usado pelos consumidores desta interface.
 class _ArgumentosPeriodoGranularidade(_ArgumentosPeriodo):
     granularidade: Literal["dia", "mes", "ano"] = Field(
         description="Agrupamento temporal: dia, mes ou ano.",

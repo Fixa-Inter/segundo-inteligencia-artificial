@@ -1,17 +1,14 @@
 """Executa somente operações que passaram pelo juiz e produz confirmações factuais."""
 
-
 import logging
 from types import SimpleNamespace
-
 from langchain_core.messages import AIMessage
+from app.services import aprovacao_operacoes, resumo
+from app.observability import registrar_operacao
+from app.core import MENSAGENS, RESPOSTA_APROVACAO_INVALIDA
+from app.core.apresentacao import texto_resultados, resultado_indeterminado
 
-from app.services.operacoes import aprovacao_operacoes, resumo
-from app.observability.metricas import registrar_operacao
-
-from app.core.respostas import MENSAGENS, RESPOSTA_APROVACAO_INVALIDA
-from app.graph.respostas_padrao import texto_resultados, resultado_indeterminado
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 
@@ -20,19 +17,19 @@ async def executar_servico(documento: dict, contexto: dict) -> dict:
     tipo, dados = documento["tipo"], documento["dados"]
     runtime = SimpleNamespace(context=contexto)
     if tipo == "atualizacao_ocorrencia":
-        from app.tools.ocorrencias.atualizarOcorrencia import processar_atualizacao
+        from app.tools.ocorrencias import processar_atualizacao
         return await processar_atualizacao(runtime, operacao_aprovada=dados)
     if tipo == "atualizacao_solicitacao":
-        from app.tools.solicitacoes.atualizarSolicitacao import processar_atualizacao
+        from app.tools.solicitacoes import processar_atualizacao
         return await processar_atualizacao(runtime, operacao_aprovada=dados)
     if tipo == "solicitacao":
-        from app.tools.solicitacoes.criarSolicitacao import processar_solicitacao
+        from app.tools.solicitacoes import processar_solicitacao
         return await processar_solicitacao(runtime, operacao_aprovada=dados)
     if tipo == "ocorrencia":
-        from app.tools.ocorrencias.criarOcorrencia import processar_ocorrencia
+        from app.tools.ocorrencias import processar_ocorrencia
         return await processar_ocorrencia(runtime, operacao_aprovada=dados)
     if tipo == "evento":
-        from app.tools.eventos.criarEvento import processar_evento
+        from app.tools.eventos import processar_evento
         return await processar_evento(runtime, operacao_aprovada=dados)
     if tipo == "feedback":
         from app.services.feedback import criar_feedback
@@ -50,6 +47,7 @@ async def executar_servico(documento: dict, contexto: dict) -> dict:
 
 
 def resposta_resultados(resultados: list[dict]) -> dict:
+    """Converte resultados reais de gravação em texto/mensagem do grafo. Usado por executar_operacoes."""
     texto = texto_resultados(resultados)
     return {"resultados_operacoes": resultados, "resposta_especialista": texto,
             "resposta_candidata": texto, "resposta_final": texto,
@@ -58,6 +56,7 @@ def resposta_resultados(resultados: list[dict]) -> dict:
 
 
 async def executar_operacoes(estado: dict, runtime) -> dict:
+    """Confere aprovação e registro durável, executa serviços permitidos e preserva resultado real/incerto sem reenvio automático. Usado pelo fluxo de graph."""
     from app.memory.persistencia import operacoes as persistencia
 
     contexto = runtime.context

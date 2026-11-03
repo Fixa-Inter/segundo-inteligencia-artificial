@@ -1,44 +1,18 @@
 """Continuação, pausa e cancelamento de propostas da sessão."""
 
-
-from app.core.confirmacoes import classificar_manifestacao, normalizar_mensagem
-from app.memory.persistencia import atualizar_acao, atualizar_rascunho_solicitacao
-from app.memory.persistencia.analise_compra import atualizar_analise_compra
-
-from app.core.respostas import MENSAGENS
+from app.core import classificar_manifestacao, normalizar_mensagem, MENSAGENS
+from app.memory.persistencia import atualizar_acao, atualizar_rascunho_solicitacao, atualizar_analise_compra
 from app.graph.respostas_padrao import escolher_resposta, resposta_interrupcao_proposta
-
-STATUS_RASCUNHO = {"coletando_dados", "aguardando_confirmacao", "aguardando_imagem", "erro_api"}
-STATUS_ACAO = {"aguardando_confirmacao", "aguardando_imagem"}
-
-
-def _chave_estado(tipo: str) -> str:
-    return "analise_compra_pendente" if tipo == "analista_compras" else f"{tipo}_pendente"
-
-
-def propostas_pendentes(estado: dict, *, pausadas: bool = False) -> dict[str, dict]:
-    propostas = {}
-    for tipo in ("solicitacao", "ocorrencia", "evento", "ajuda_geral", "analista_compras"):
-        chave = _chave_estado(tipo)
-        proposta = estado.get(chave)
-        if not isinstance(proposta, dict):
-            continue
-        status = proposta.get("status" if tipo == "ajuda_geral" else "status_fluxo")
-        permitidos = STATUS_ACAO if tipo == "ajuda_geral" else (
-            {"coletando_dados", "aguardando_opcionais", "pronto_para_busca", "erro_busca"}
-            if tipo == "analista_compras" else STATUS_RASCUNHO
-        )
-        if status in permitidos and bool(proposta.get("pausado")) == pausadas:
-            propostas[tipo] = proposta
-    return propostas
-
+from app.core.continuacoes import _chave_estado, propostas_pendentes, STATUS_RASCUNHO, STATUS_ACAO
 
 def esclarecer_continuacao(mensagem: str) -> dict:
+    """Monta resposta que pede identificação da proposta a continuar. Usado por tratar_continuacao."""
     return {"intencao": None, "resposta_especialista": mensagem,
             "esclarecimento_roteamento": True, "erro": None}
 
 
 async def alterar_continuacao(tipo: str, proposta: dict, contexto: dict, **campos) -> dict:
+    """Persiste alterações de continuidade no armazenamento do tipo de proposta. Usado por pausar_outros_fluxos, tratar_continuacao."""
     usuario = contexto["usuario"]
     if tipo == "analista_compras":
         return await atualizar_analise_compra(
@@ -63,6 +37,7 @@ async def alterar_continuacao(tipo: str, proposta: dict, contexto: dict, **campo
 
 
 async def tratar_continuacao(estado: dict, contexto: dict, pergunta: str) -> dict | None:
+    """Trata aceite, pausa, cancelamento e retomada das propostas, pedindo esclarecimento quando ambíguo. Usado pelo fluxo de graph."""
     ativos = propostas_pendentes(estado)
     pausados = propostas_pendentes(estado, pausadas=True)
     manifestacao = classificar_manifestacao(pergunta)
@@ -115,8 +90,12 @@ async def tratar_continuacao(estado: dict, contexto: dict, pergunta: str) -> dic
 
 
 async def pausar_outros_fluxos(estado: dict, contexto: dict, escolhido: str | None) -> dict:
+    """Persiste pausa de fluxos ativos diferentes do escolhido. Usado por tratar_continuacao."""
     atualizacoes = {}
     for tipo, proposta in propostas_pendentes(estado).items():
         if tipo != escolhido:
             atualizacoes[_chave_estado(tipo)] = await alterar_continuacao(tipo, proposta, contexto, pausado=True)
     return atualizacoes
+
+
+# O grafo persiste transições; a consulta pura de estado pertence ao core.

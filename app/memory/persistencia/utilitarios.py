@@ -1,13 +1,13 @@
-from app.core.clients.mongo import abrir_cliente_mongo
-from app.core.configuracao import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES
+from app.core.clients import abrir_cliente_mongo
+from app.core import MONGO_BANCO_DADOS, MONGO_COLECAO_SESSOES, agora_utc as agora
 from datetime import datetime, timezone
 
+# sessoes_ativas: Recurso compartilhado de sessoes ativas usado pelas funções deste módulo e pela interface pública.
 sessoes_ativas: dict[tuple[int, str], str] = {}
 
-def agora() -> datetime:
-    return datetime.now(timezone.utc)
 
 async def obter_documento_sessao_id(sessao_id: str, usuario_id: int) -> str | None:
+    """Resolve documento da sessão usando cache e MongoDB. Usado pelo fluxo de persistencia."""
     chave = (usuario_id, sessao_id)
     documento_id = sessoes_ativas.get(chave)
     if documento_id:

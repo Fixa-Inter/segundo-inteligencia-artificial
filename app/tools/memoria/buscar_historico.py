@@ -1,10 +1,8 @@
 from langchain_core.tools import tool
 from langchain.tools import ToolRuntime
 from app.schemas import UsuarioContexto
-
-from app.memory.vectorSearch.recuperar_historico import recuperar_historico
-
-from app.core.respostas import MENSAGENS
+from app.memory.vectorSearch import recuperar_historico
+from app.core import MENSAGENS
 
 @tool
 async def buscar_historico(busca: str, runtime: ToolRuntime) -> str:
@@ -15,10 +13,10 @@ async def buscar_historico(busca: str, runtime: ToolRuntime) -> str:
     consulte as ferramentas de solicitações, ordens de serviço e ocorrências.
     """
     contexto = runtime.context
-    
+
     if not isinstance(contexto, dict) or not isinstance(contexto.get("usuario"), UsuarioContexto):
         raise ValueError(MENSAGENS['forneca_uma_instancia_de_usuariocontexto_em_context_usuario'])
-    
+
     usuario = contexto["usuario"]
 
     usuario_id = usuario.usuario_id
@@ -42,4 +40,5 @@ async def buscar_historico(busca: str, runtime: ToolRuntime) -> str:
     return "\n\n".join(linhas)
 
 
+# FERRAMENTAS_MEMORIA: Registro explícito de recursos disponíveis para seleção por funcionalidade/perfil.
 FERRAMENTAS_MEMORIA = [buscar_historico]

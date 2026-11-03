@@ -1,23 +1,22 @@
 """Normalização estrita dos valores e dimensões publicados pelo Databricks."""
 
-
 import math
 import re
-
-from app.core.respostas import MENSAGENS
-
+from app.core import MENSAGENS
 
 class ErroRespostaDatabricks(RuntimeError):
     """Resultado incompatível com a consulta executada; não é erro do usuário."""
 
 
 def campo(linha, campo):
+    """Exige coluna esperada na linha retornada pelo Databricks. Usado por grupo."""
     if campo not in linha:
         raise ErroRespostaDatabricks(MENSAGENS['coluna_esperada_ausente_na_resposta'])
     return linha[campo]
 
 
 def inteiro(valor, *, nao_negativo=True):
+    """Normaliza inteiro estritamente e verifica sinal quando exigido. Usado por grupo."""
     if type(valor) is int:
         numero = valor
     elif isinstance(valor, str) and re.fullmatch(r"[+-]?\d+", valor.strip()):
@@ -30,6 +29,7 @@ def inteiro(valor, *, nao_negativo=True):
 
 
 def numero(valor):
+    """Normaliza valor numérico finito sem aceitar coerções incompatíveis. Usado pelo fluxo de visualizacoes."""
     if type(valor) not in {int, float, str}:
         raise ErroRespostaDatabricks(MENSAGENS['a_resposta_nao_contem_um_numero_valido'])
     if isinstance(valor, str) and not re.fullmatch(
@@ -43,6 +43,7 @@ def numero(valor):
 
 
 def grupo(analise, linha, filtros_permitidos, *, temporal=False):
+    """Normaliza dimensões autorizadas preservando IDs textuais e valores nulos. Usado pelo fluxo de visualizacoes."""
     grupo = {}
     for dimensao in analise.dimensoes:
         if temporal and dimensao == "data_referencia":

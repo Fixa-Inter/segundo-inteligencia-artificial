@@ -1,13 +1,12 @@
+from app.tools import ArgumentosComRuntime
 from langchain.tools import ToolRuntime, tool
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
 from app.schemas import UsuarioContexto
-from app.services.operacoes import preparar_operacao
+from app.services import preparar_operacao
+from app.core import MENSAGENS
 
-from app.core.respostas import MENSAGENS
-
-
-class _ArgumentosCriarFeedback(BaseModel):
+# _ArgumentosCriarFeedback: contrato/estrutura de criarFeedback; usado pelos consumidores desta interface.
+class _ArgumentosCriarFeedback(ArgumentosComRuntime):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     comentario: str = Field(
@@ -22,13 +21,6 @@ class _ArgumentosCriarFeedback(BaseModel):
             "Categoria e resumo curto do feedback, sem acrescentar fatos que o usuario nao mencionou."
         ),
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def separar_runtime_injetado(cls, dados):
-        if isinstance(dados, dict) and isinstance(dados.get("runtime"), ToolRuntime):
-            return {chave: valor for chave, valor in dados.items() if chave != "runtime"}
-        return dados
 
 
 @tool(args_schema=_ArgumentosCriarFeedback)

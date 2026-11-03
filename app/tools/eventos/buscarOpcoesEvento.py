@@ -1,12 +1,9 @@
 from langchain.tools import ToolRuntime, tool
-
-from app.core.clients.qdrant import abrir_cliente_qdrant
+from app.core.clients import abrir_cliente_qdrant
 from app.memory.vectorSearch import buscar_local_endereco
 from app.services.gerais import obter_unidade_id
-from app.tools.solicitacoes.criarSolicitacao import _contexto
-
-from app.core.respostas import MENSAGENS
-
+from app.tools import obter_contexto_cadastro as _contexto
+from app.core import MENSAGENS
 
 @tool
 async def buscar_opcoes_evento(local: str, runtime: ToolRuntime) -> dict:

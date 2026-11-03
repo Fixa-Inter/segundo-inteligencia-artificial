@@ -1,63 +1,106 @@
-"""Seleção das análises cujas regras são definidas pelos serviços de domínio."""
+"""Interface pública de app/services/visualizacoes; recursos carregados sob demanda."""
+
+from app.core.interfaces import resolver_exportacao as _resolver_exportacao
+
+# Cada nome aponta para seu proprietário; importar o pacote não inicializa clientes/agentes.
+_EXPORTACOES = {
+    'ANALISES': ('.catalogo', 'ANALISES'),
+    'ANALISES_CATALOGO': ('.catalogo', 'ANALISES'),
+    'ANALISES_IMPLEMENTADAS_OCORRENCIA': ('.ocorrencia', 'ANALISES_IMPLEMENTADAS'),
+    'ANALISES_IMPLEMENTADAS_OS_ATUAL': ('.os_atual', 'ANALISES_IMPLEMENTADAS'),
+    'ANALISES_IMPLEMENTADAS_OS_CONCLUSAO': ('.os_conclusao', 'ANALISES_IMPLEMENTADAS'),
+    'ANALISES_IMPLEMENTADAS_OS_CRIACAO': ('.os_criacao', 'ANALISES_IMPLEMENTADAS'),
+    'ANALISES_IMPLEMENTADAS_RECORRENCIA': ('.recorrencia', 'ANALISES_IMPLEMENTADAS'),
+    'ANALISES_IMPLEMENTADAS_SOLICITACAO': ('.solicitacao', 'ANALISES_IMPLEMENTADAS'),
+    'ANALISES_OCORRENCIA': ('.ocorrencia', 'ANALISES'),
+    'ANALISES_OS_ATUAL': ('.os_atual', 'ANALISES'),
+    'ANALISES_OS_CONCLUSAO': ('.os_conclusao', 'ANALISES'),
+    'ANALISES_OS_CRIACAO': ('.os_criacao', 'ANALISES'),
+    'ANALISES_RECORRENCIA': ('.recorrencia', 'ANALISES'),
+    'ANALISES_SOLICITACAO': ('.solicitacao', 'ANALISES'),
+    'Analise': ('app.schemas.visualizacao', 'Analise'),
+    'CapturaExecucaoVisualizacao': ('.captura', 'CapturaExecucaoVisualizacao'),
+    'ErroRespostaDatabricks': ('.normalizacao', 'ErroRespostaDatabricks'),
+    'FILTROS_OCORRENCIA': ('.ocorrencia', 'FILTROS'),
+    'FILTROS_OS_ATUAL': ('.os_atual', 'FILTROS'),
+    'FILTROS_OS_CONCLUSAO': ('.os_conclusao', 'FILTROS'),
+    'FILTROS_OS_CRIACAO': ('.os_criacao', 'FILTROS'),
+    'FILTROS_POR_FONTE': ('.catalogo', 'FILTROS_POR_FONTE'),
+    'FILTROS_RECORRENCIA': ('.recorrencia', 'FILTROS'),
+    'FILTROS_SOLICITACAO': ('.solicitacao', 'FILTROS'),
+    'FONTES': ('.catalogo', 'FONTES'),
+    'FONTE_OCORRENCIA': ('.ocorrencia', 'FONTE'),
+    'FONTE_OS_ATUAL': ('.os_atual', 'FONTE'),
+    'FONTE_OS_CONCLUSAO': ('.os_conclusao', 'FONTE'),
+    'FONTE_OS_CRIACAO': ('.os_criacao', 'FONTE'),
+    'FONTE_RECORRENCIA': ('.recorrencia', 'FONTE'),
+    'FONTE_SOLICITACAO': ('.solicitacao', 'FONTE'),
+    'Fonte': ('app.schemas.visualizacao', 'Fonte'),
+    'LimiteBoxplotExcedido': ('.boxplots', 'LimiteBoxplotExcedido'),
+    'LimiteVisualizacaoExcedido': ('.publicacao', 'LimiteVisualizacaoExcedido'),
+    'MAXIMO_BYTES_CONVERSA_COM_VISUALIZACAO': ('.publicacao', 'MAXIMO_BYTES_CONVERSA_COM_VISUALIZACAO'),
+    'MAXIMO_BYTES_VISUALIZACAO': ('.publicacao', 'MAXIMO_BYTES_VISUALIZACAO'),
+    'MAXIMO_CONSULTAS_POR_EXECUCAO': ('.limites', 'MAXIMO_CONSULTAS_POR_EXECUCAO'),
+    'MAXIMO_DIAS_PERIODO': ('.limites', 'MAXIMO_DIAS_PERIODO'),
+    'MAXIMO_EXTREMOS_POR_GRAFICO': ('.limites', 'MAXIMO_EXTREMOS_POR_GRAFICO'),
+    'MAXIMO_EXTREMOS_POR_GRUPO': ('.limites', 'MAXIMO_EXTREMOS_POR_GRUPO'),
+    'MAXIMO_GRUPOS': ('.limites', 'MAXIMO_GRUPOS'),
+    'MAXIMO_INTERVALOS_HISTOGRAMA': ('.limites', 'MAXIMO_INTERVALOS_HISTOGRAMA'),
+    'MAXIMO_PONTOS_SERIE': ('.limites', 'MAXIMO_PONTOS_SERIE'),
+    'MAXIMO_VALORES_POR_FILTRO': ('.validacao', 'MAXIMO_VALORES_POR_FILTRO'),
+    'MENSAGENS': ('app.core.respostas', 'MENSAGENS'),
+    'MINIMO_REGISTROS_BOXPLOT': ('.resumos', 'MINIMO_REGISTROS_BOXPLOT'),
+    'PERFIS_VISUALIZACOES': ('.catalogo', 'PERFIS_VISUALIZACOES'),
+    '_DOMINIOS': ('.catalogo', '_DOMINIOS'),
+    'calendario_consulta': ('.temporais', 'calendario_consulta'),
+    'campo': ('.normalizacao', 'campo'),
+    'construir_histograma': ('.histogramas', 'construir_histograma'),
+    'consultar_OCORRENCIA': ('.ocorrencia', 'consultar'),
+    'consultar_OS_ATUAL': ('.os_atual', 'consultar'),
+    'consultar_OS_CONCLUSAO': ('.os_conclusao', 'consultar'),
+    'consultar_OS_CRIACAO': ('.os_criacao', 'consultar'),
+    'consultar_RECORRENCIA': ('.recorrencia', 'consultar'),
+    'consultar_SOLICITACAO': ('.solicitacao', 'consultar'),
+    'consultar_agregado': ('.consultas', 'consultar_agregado'),
+    'contexto_julgamento': ('.aprovacao', 'contexto_julgamento'),
+    'criar_aprovacao': ('.aprovacao', 'criar_aprovacao'),
+    'expressao_periodo_sql': ('.temporais', 'expressao_periodo_sql'),
+    'grupo': ('.normalizacao', 'grupo'),
+    'inicio_periodo': ('.temporais', 'inicio_periodo'),
+    'inteiro': ('.normalizacao', 'inteiro'),
+    'liberar_visualizacao': ('.aprovacao', 'liberar_visualizacao'),
+    'montar_sql_boxplot': ('.boxplots', 'montar_sql_boxplot'),
+    'montar_sql_histograma': ('.histogramas', 'montar_sql_histograma'),
+    'normalizar_boxplot': ('.boxplots', 'normalizar_boxplot'),
+    'numero': ('.normalizacao', 'numero'),
+    'obter_analise': ('.catalogo', 'obter_analise'),
+    'ocorrencia': ('.ocorrencia', None),
+    'os_atual': ('.os_atual', None),
+    'os_conclusao': ('.os_conclusao', None),
+    'os_criacao': ('.os_criacao', None),
+    'possui_visualizacao': ('.aprovacao', 'possui_visualizacao'),
+    'proximo_periodo': ('.temporais', 'proximo_periodo'),
+    'publicar_visualizacao': ('.publicacao', 'publicar_visualizacao'),
+    'recorrencia': ('.recorrencia', None),
+    'resumir_grupo_pequeno': ('.resumos', 'resumir_grupo_pequeno'),
+    'solicitacao': ('.solicitacao', None),
+    'validar_argumentos_analise': ('.validacao', 'validar_argumentos_analise'),
+    'validar_candidata': ('.aprovacao', 'validar_candidata'),
+    'validar_limites_resultado': ('.limites', 'validar_limites_resultado'),
+    'validar_periodo_consulta': ('.limites', 'validar_periodo_consulta'),
+    'validar_resultado_consulta': ('.validacao', 'validar_resultado_consulta'),
+    'validar_visualizacao_publica': ('.publicacao', 'validar_visualizacao_publica'),
+}
+
+# Lista explícita para descoberta por IDEs, agentes e importações públicas.
+__all__ = list(_EXPORTACOES)
 
 
-from collections.abc import Mapping
-from types import MappingProxyType
-
-from app.schemas.visualizacao import Analise, Fonte
-from .resumos import resumir_grupo_pequeno
-from .limites import validar_limites_resultado
-from . import (
-    ocorrencia,
-    os_atual,
-    os_conclusao,
-    os_criacao,
-    recorrencia,
-    solicitacao,
-)
-
-from app.core.respostas import MENSAGENS
+def __getattr__(nome):
+    """Resolve somente recursos da interface, preservando sua identidade original."""
+    return _resolver_exportacao(nome, __name__, _EXPORTACOES, globals())
 
 
-PERFIS_VISUALIZACOES = frozenset({"gestor", "administrador"})
-
-
-_DOMINIOS = (os_criacao, os_conclusao, os_atual, solicitacao, recorrencia, ocorrencia)
-
-
-def _reunir_analises() -> Mapping[str, Analise]:
-    analises = {}
-    for dominio in _DOMINIOS:
-        for analise in dominio.ANALISES:
-            if analise.id in analises:
-                raise ValueError(MENSAGENS['identificador_de_analise_duplicado_nos_servicos'])
-            if analise.fonte is not dominio.FONTE:
-                raise ValueError(MENSAGENS['a_analise_nao_pertence_a_fonte_do_servico'])
-            analises[analise.id] = analise
-    return MappingProxyType(analises)
-
-
-FONTES: Mapping[str, Fonte] = MappingProxyType({
-    dominio.FONTE.id: dominio.FONTE for dominio in _DOMINIOS
-})
-FILTROS_POR_FONTE: Mapping[str, Mapping[str, str]] = MappingProxyType({
-    dominio.FONTE.id: dominio.FILTROS for dominio in _DOMINIOS
-})
-ANALISES: Mapping[str, Analise] = _reunir_analises()
-
-
-def obter_analise(analise_id: str, *, fonte_id: str | None = None) -> Analise:
-    """Seleciona uma análise conhecida, opcionalmente restrita à fonte de uma tool."""
-    if not isinstance(analise_id, str) or analise_id not in ANALISES:
-        raise ValueError(MENSAGENS['analise_de_visualizacao_nao_cadastrada'])
-    analise = ANALISES[analise_id]
-    if fonte_id is not None and analise.fonte.id != fonte_id:
-        raise ValueError(MENSAGENS['a_analise_nao_pertence_a_fonte_desta_ferramenta'])
-    return analise
-
-
-__all__ = [
-    "ANALISES", "FONTES", "obter_analise", "resumir_grupo_pequeno",
-    "validar_limites_resultado",
-    "FILTROS_POR_FONTE",
-]
+def __dir__():
+    """Expõe os recursos disponíveis sem executar importações de domínios."""
+    return sorted(set(globals()) | set(__all__))

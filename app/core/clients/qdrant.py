@@ -1,11 +1,9 @@
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
-
 from qdrant_client import AsyncQdrantClient
-
 from app.core import configuracao
 
-
+# _CLIENTE_QDRANT: Recurso compartilhado de cliente qdrant usado pelas funções deste módulo e pela interface pública.
 _CLIENTE_QDRANT: AsyncQdrantClient | None = None
 
 

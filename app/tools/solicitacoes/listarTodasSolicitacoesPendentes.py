@@ -1,10 +1,7 @@
 from langchain.tools import ToolRuntime, tool
-
 from app.schemas import UsuarioContexto
 from app.services.solicitacoes import listar_solicitacoes_pendentes
-
-from app.core.respostas import MENSAGENS
-
+from app.core import MENSAGENS
 
 @tool
 async def listar_todas_solicitacoes_pendentes(runtime: ToolRuntime) -> dict:

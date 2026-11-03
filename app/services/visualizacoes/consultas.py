@@ -4,38 +4,45 @@ As análises e os tipos de filtros são fornecidos pelos módulos de domínio, n
 pela conversa. A unidade deve ser resolvida pelo servidor antes desta chamada.
 """
 
-
+import logging
 from collections.abc import Mapping
 from datetime import date, datetime
-import logging
 from uuid import uuid4
-
 from pydantic import ValidationError
-
-from app.core.tempo import agora_local
-from app.schemas.visualizacao import (
-    Analise, BaseCalculoVisualizacao, ConsultaVisualizacaoPeriodo, ConsultaVisualizacaoSnapshot,
-    DadosCategorias, DadosSerieTemporal, MetadadosConsultaVisualizacao,
-    PontoCategoria, PontoSerieTemporal, ResultadoConsultaVisualizacao,
+from app.core import agora_local, MENSAGENS
+from app.schemas import (
+    Analise,
+    BaseCalculoVisualizacao,
+    ConsultaVisualizacaoPeriodo,
+    ConsultaVisualizacaoSnapshot,
+    DadosCategorias,
+    DadosSerieTemporal,
+    MetadadosConsultaVisualizacao,
+    PontoCategoria,
+    PontoSerieTemporal,
+    ResultadoConsultaVisualizacao,
 )
-from app.services.indicadores.gerais import databricks
-from app.services.indicadores.gerais.unidade import validar_unidade_id
+from app.services.indicadores.gerais import databricks, validar_unidade_id
 from .boxplots import LimiteBoxplotExcedido, montar_sql_boxplot, normalizar_boxplot
 from .histogramas import construir_histograma, montar_sql_histograma
 from .limites import (
-    MAXIMO_GRUPOS, MAXIMO_INTERVALOS_HISTOGRAMA, MAXIMO_PONTOS_SERIE, validar_limites_resultado,
+    MAXIMO_GRUPOS,
+    MAXIMO_INTERVALOS_HISTOGRAMA,
+    MAXIMO_PONTOS_SERIE,
+    validar_limites_resultado,
 )
 from .normalizacao import (
     ErroRespostaDatabricks as _ErroRespostaDatabricks,
-    campo as _campo, grupo as _grupo, inteiro as _inteiro, numero as _numero,
+    campo as _campo,
+    grupo as _grupo,
+    inteiro as _inteiro,
+    numero as _numero,
 )
 from .temporais import calendario_consulta, expressao_periodo_sql
 from .validacao import validar_argumentos_analise
+from app.core.apresentacao import _avisos_base, resposta_consulta_visualizacao, formatar_resposta
 
-from app.core.respostas import MENSAGENS
-from app.graph.respostas_padrao import _avisos_base, resposta_consulta_visualizacao, formatar_resposta
-
-
+# registrador: Logger deste módulo; registra falhas sem publicar credenciais na resposta.
 registrador = logging.getLogger(__name__)
 
 
@@ -44,10 +51,12 @@ class _LimiteSerieExcedido(ValueError):
 
 
 def _erro(status, mensagem):
+    """Traduz falha de validação, permissão ou execução para o contrato do domínio. Usado por _consultar_agregado."""
     return ResultadoConsultaVisualizacao(status=status, mensagem=mensagem)
 
 
 def _montar_escopo(analise, consulta, unidade_id, filtros_permitidos):
+    """Executa a etapa montar escopo no escopo de consultas. Usado por _montar_sql."""
     parametros = {"unidade_id": unidade_id}
     tipos = {"unidade_id": "BIGINT"}
     condicoes = ["unidade_id = :unidade_id"]
@@ -84,6 +93,7 @@ def _montar_escopo(analise, consulta, unidade_id, filtros_permitidos):
 
 
 def _montar_sql(analise, consulta, unidade_id, filtros_permitidos):
+    """Executa a etapa montar sql no escopo de consultas. Usado por _consultar_agregado."""
     condicoes, populacao, parametros, tipos = _montar_escopo(
         analise, consulta, unidade_id, filtros_permitidos,
     )
@@ -140,6 +150,7 @@ def _montar_sql(analise, consulta, unidade_id, filtros_permitidos):
 
 
 def _data(valor):
+    """Executa a etapa data no escopo de consultas. Usado por _serie_temporal."""
     if type(valor) is date:
         return valor
     if isinstance(valor, str) and len(valor) == 10:
@@ -151,6 +162,7 @@ def _data(valor):
 
 
 def _medida(analise, linha):
+    """Executa a etapa medida no escopo de consultas. Usado por _categorias, _serie_temporal."""
     quantidade = _inteiro(_campo(linha, "qtd_registros"))
     valor = _campo(linha, "valor")
     if analise.agregacao != "AVG":
@@ -178,6 +190,7 @@ def _medida(analise, linha):
 
 
 def _instante(valor):
+    """Executa a etapa instante no escopo de consultas. Usado por _categorias."""
     if valor is None or isinstance(valor, datetime):
         return valor
     if isinstance(valor, str):
@@ -189,6 +202,7 @@ def _instante(valor):
 
 
 def _categorias(analise, linhas, filtros_permitidos):
+    """Executa a etapa categorias no escopo de consultas. Usado por _consultar_agregado."""
     pontos = []
     instantes = []
     grupos_vistos = set()
@@ -207,6 +221,7 @@ def _categorias(analise, linhas, filtros_permitidos):
 
 
 def _serie_temporal(analise, linhas, filtros_permitidos, calendario):
+    """Executa a etapa serie temporal no escopo de consultas. Usado por _consultar_agregado."""
     por_data_grupo = {}
     grupos = {}
     for linha in linhas:
@@ -222,6 +237,7 @@ def _serie_temporal(analise, linhas, filtros_permitidos, calendario):
         por_data_grupo[chave_ponto] = PontoSerieTemporal(
             data_referencia=referencia, periodo=calendario[referencia], grupo=grupo, **_medida(analise, linha),
         )
+    # Validação: rejeita entrada/contexto incompatível antes de prosseguir.
     if len(grupos) > MAXIMO_GRUPOS:
         raise _LimiteSerieExcedido(MENSAGENS['a_serie_excede_50_grupos_refine_os_filtros'])
     if len(calendario) * len(grupos) > MAXIMO_PONTOS_SERIE:
@@ -250,6 +266,7 @@ def _serie_temporal(analise, linhas, filtros_permitidos, calendario):
 
 
 def _metadados(analise, consulta, unidade_id, quantidade, instante_snapshot=None, base_calculo=None):
+    """Executa a etapa metadados no escopo de consultas. Usado por _consultar_agregado."""
     aplicados = {**consulta.filtros, "unidade_id": unidade_id}
     aplicados.update({filtro.campo: filtro.valor for filtro in analise.filtros_obrigatorios})
     historica = isinstance(consulta, ConsultaVisualizacaoPeriodo)
@@ -269,6 +286,7 @@ def _metadados(analise, consulta, unidade_id, quantidade, instante_snapshot=None
 
 
 def _base_total(dados):
+    """Executa a etapa base total no escopo de consultas. Usado por _consultar_agregado."""
     return BaseCalculoVisualizacao(
         qtd_registros_total=sum(p.base_calculo.qtd_registros_total for p in dados.pontos),
         qtd_registros_elegiveis=sum(p.qtd_registros for p in dados.pontos),
@@ -279,6 +297,7 @@ def _base_total(dados):
 
 
 def _histograma(analise, linhas):
+    """Executa a etapa histograma no escopo de consultas. Usado por _consultar_agregado."""
     if len(linhas) != 1:
         raise _ErroRespostaDatabricks(MENSAGENS['o_agregado_do_histograma_exige_uma_linha'])
     linha = linhas[0]
@@ -313,8 +332,9 @@ async def consultar_agregado(
     filtros_permitidos: Mapping[str, str],
     implementadas: frozenset[str],
 ) -> ResultadoConsultaVisualizacao:
+    """Instrumenta execução analítica e delega validação, SQL, normalização e limites. Usado pelo fluxo de visualizacoes."""
     from time import perf_counter
-    from app.observability.metricas import CONSULTAS_VISUALIZACAO, DURACAO_CONSULTAS_VISUALIZACAO
+    from app.observability import CONSULTAS_VISUALIZACAO, DURACAO_CONSULTAS_VISUALIZACAO
 
     inicio = perf_counter()
     identificador = getattr(consulta, "analise_id", None)
@@ -343,6 +363,7 @@ async def _consultar_agregado(
     """Executa análise registrada pelo domínio, com validação antes da consulta."""
     if validar_unidade_id(unidade_id):
         return _erro("ERRO_VALIDACAO", MENSAGENS['unidade_invalida_para_consultar_visualizacoes'])
+    # Lógica: executa esta etapa e preserva o tratamento de falhas do domínio.
     try:
         if not isinstance(consulta, (ConsultaVisualizacaoPeriodo, ConsultaVisualizacaoSnapshot)):
             raise ValueError(MENSAGENS['informe_uma_consulta_de_visualizacao_valida'])
