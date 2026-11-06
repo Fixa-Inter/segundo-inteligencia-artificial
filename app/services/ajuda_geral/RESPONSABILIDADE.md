@@ -12,6 +12,10 @@ Buscas Qdrant, relações SQL verificadas e mutações transacionais.
 
 Valida unidade, coleção e perfil. Marcas têm tratamento global; problemas de solicitante exigem autoria. Consultas relacionais exigem ponto ativo Qdrant para publicar descrições.
 
+`contagens.py` conta registros próprios por SQL parametrizado no PostgreSQL, sem limite
+de listagem ou dependência de Qdrant. Aplica usuário, unidade, atividade, situação válida
+e período de criação [início, fim) quando solicitado. Não publica zero em falha de consulta.
+
 Módulo pai: [app/services](../RESPONSABILIDADE.md).
 
 ## Funcionalidades disponíveis e arquivos

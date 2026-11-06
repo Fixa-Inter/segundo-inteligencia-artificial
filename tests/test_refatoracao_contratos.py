@@ -1,4 +1,4 @@
-"""Compara contratos públicos com capturas feitas antes da refatoração."""
+"""Compara contratos aprovados; contagens pessoais atualizam seis prompts e uma tool."""
 
 import importlib
 import json

@@ -2,6 +2,7 @@ from langchain.agents import create_agent
 from app.schemas.resultados_agentes import FAQResultado
 from app.graph import ContextoGrafo
 from app.tools.ajuda_geral import (
+    contar_meus_registros,
     buscar_semanticamente,
     buscar_em_multiplas_colecoes,
     listar_registros,
@@ -66,6 +67,7 @@ def criar_agente_ajuda_geral(modelo, instrucao: str, *, perfil: str):
         buscar_textos_semelhantes,
     ]
     ferramentas = ferramentas_genericas + [
+        contar_meus_registros,
         listar_meus_feedbacks, buscar_solicitacoes_para_atualizar, atualizar_solicitacao,
         buscar_historico,
         buscar_problemas_por_local,
