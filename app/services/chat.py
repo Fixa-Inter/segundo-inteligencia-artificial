@@ -34,6 +34,7 @@ async def _processar_chat(
         )
 
     if dados.thread_id is None:
+        #Caso não exista thread_id, quer dizer que o usúario quer começar um novo chat.
         sessao_id = str(uuid.uuid4())
         dados.thread_id = sessao_id
         await iniciar_sessao(sessao_id=sessao_id,usuario_id=usuario.usuario_id)
@@ -59,12 +60,15 @@ async def _processar_chat(
     )
 
     resposta = resultado.get("resposta_final")
+
+    # Validação: valida se a resposta não é nula ou vazia.
     if not isinstance(resposta, str) or not resposta.strip():
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=MENSAGENS['a_manu_nao_conseguiu_gerar_uma_resposta_sua_mensagem_foi_preservada_na'],
         )
 
+    # Parei aqui
     visualizacao = resultado.get("visualizacao_publica")
     if visualizacao is not None:
         if (

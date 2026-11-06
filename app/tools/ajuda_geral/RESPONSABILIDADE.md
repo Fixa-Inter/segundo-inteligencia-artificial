@@ -12,6 +12,10 @@ Schemas, wrappers de consultas e propostas de edição/anexo.
 
 Consultas têm variantes de schema restritas ao solicitante. Edição/anexo de solicitação e foto de ocorrência delegam a atualizações; observação de conclusão usa ajuda_geral_pendente.
 
+`contagens.py` expõe `contar_meus_registros`: contagens pessoais exatas, com identidade
+injetada, período de criação e situação opcionais. Não aceita usuário/unidade do modelo.
+Solicitantes consultam solicitações e feedbacks; os demais perfis também ocorrências/OS.
+
 Módulo pai: [app/tools](../RESPONSABILIDADE.md).
 
 ## Funcionalidades disponíveis e arquivos

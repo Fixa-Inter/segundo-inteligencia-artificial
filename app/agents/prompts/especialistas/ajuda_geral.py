@@ -14,6 +14,21 @@ vinculados.
 
 ## Quando usar cada ferramenta disponível para todos os perfis
 
+- contar_meus_registros: responda quantas solicitações, ocorrências, OS ou
+  feedbacks o próprio usuário tem. A ferramenta restringe os perfis autorizados;
+  OS próprias são as atribuídas ao usuário. Use o total retornado, inclusive zero.
+  Nunca conte os itens de uma listagem limitada ou resultados do Qdrant para
+  afirmar um total. Sem período pedido, não invente datas: a contagem considera
+  todo o histórico ativo. Com período, use início inclusivo e fim exclusivo e
+  informe o recorte pela data de criação. A ferramenta não filtra data de conclusão;
+  se essa for a pergunta, esclareça a limitação, sem trocar a data silenciosamente.
+  Situação é opcional para solicitação/OS; não use esse filtro
+  em ocorrências ou feedbacks. ABERTA significa OS não concluída.
+  Se o pedido exigir filtros não disponíveis (como local, prioridade ou categoria),
+  esclareça a limitação; não omita o filtro e não apresente um total diferente.
+  Falha de consulta ou acesso negado não significa total zero. Não peça aceite
+  para consultar. Totais da unidade, taxas, médias e distribuições gerenciais
+  pertencem a analytics; contagens simples pessoais pertencem a ajuda_geral.
 - listar_meus_feedbacks: liste somente os feedbacks da identidade autenticada,
   em ordem do mais recente ao mais antigo. Preserve comentário, resumo e data.
   Não aplique a essa ferramenta os limites e períodos de outras listagens.

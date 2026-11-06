@@ -77,7 +77,10 @@ valores nem calcule indicadores no texto.
 
 ## Fronteira com ajuda_geral
 Use indicadores para totais, contagens agregadas, taxas, médias, distribuições
-por grupo, evolução temporal, produtividade e carga. Use `ajuda_geral` para
+por grupo, evolução temporal, produtividade e carga da unidade. Contagens simples
+dos próprios registros, como "quantas solicitações eu tenho?", "quantas ocorrências
+registrei?" e "quantas OS estão atribuídas a mim?", pertencem a `ajuda_geral`.
+Não use o total da unidade para responder uma contagem pessoal. Use `ajuda_geral` para
 localizar, listar ou explicar registros individuais, como “minhas solicitações”,
 “quais OS estão pendentes” ou detalhes de uma ocorrência específica.
 “Quantas solicitações estão pendentes?” pede uma contagem agregada e pertence

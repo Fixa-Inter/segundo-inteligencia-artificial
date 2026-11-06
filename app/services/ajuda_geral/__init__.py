@@ -4,6 +4,7 @@ from app.core.interfaces import resolver_exportacao as _resolver_exportacao
 
 # Cada nome aponta para seu proprietário; importar o pacote não inicializa clientes/agentes.
 _EXPORTACOES = {
+    'contar_meus_registros': ('.contagens', 'contar_meus_registros'),
     'CAMPOS_EDITAVEIS': ('.edicoes', 'CAMPOS_EDITAVEIS'),
     'CAMPOS_RELACIONAIS': ('.edicoes', 'CAMPOS_RELACIONAIS'),
     'COLECAO_GLOBAL': ('.consultas', 'COLECAO_GLOBAL'),
