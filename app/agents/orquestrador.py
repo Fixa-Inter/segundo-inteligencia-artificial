@@ -72,8 +72,36 @@ def _resumir_propostas(estado: dict, *, pausadas: bool = False) -> dict:
     }
 
 
+def pedido_contagem_pessoal(pergunta: str) -> bool:
+    """Reconhece contagens pessoais explícitas, sem antecipar gráficos ou ações mistas."""
+    texto = "".join(
+        caractere for caractere in unicodedata.normalize("NFKD", pergunta.lower())
+        if not unicodedata.combining(caractere)
+    )
+    if re.search(
+        r"\b(?:grafico\w*|visualiza\w*|taxa\w*|percentua\w*|porcentagem|media|mediana|"
+        r"compar\w*|evolu\w*|distribui\w*|unidade|equipe|setor|outros?|usuarios?|"
+        r"como|onde|posso|limite\w*|permitid\w*|crie|criar|cadastre|cadastrar|registre|registrar|"
+        r"altere|alterar|atualize|atualizar|exclua|excluir|cancele|cancelar)\b"
+        r"|\bpor (?:dia|semana|mes|ano|local|categoria|tecnico)\b|\bpor que\b",
+        texto,
+    ):
+        return False
+    return all(re.search(padrao, texto) for padrao in (
+        r"\b(?:quant[oa]s?|quantidade|total|numero|conte|contar|contagem)\b",
+        r"\b(?:solicitacoes|solicitacao|chamados?|ocorrencias?|(?:ordem|ordens) de servico|os|feedbacks?)\b",
+        r"\b(?:minhas?|meus?|tenho|possuo|abri|criei|registrei|enviei)\b|\b(?:para|por|a) mim\b",
+    ))
+
+
 async def rotear_orquestrador(estado: dict, pergunta: str) -> DecisaoRoteamento:
     """Produz decisão estruturada de intenção, continuidade e operação, usando conversa/propostas. Usado pelo fluxo de agents."""
+    if pedido_contagem_pessoal(pergunta):
+        return DecisaoRoteamento(
+            intencao="ajuda_geral", continua_pendente=False,
+            cadastro_em_andamento=False,
+            justificativa="Contagem explícita dos próprios registros, com autorização na ferramenta.",
+        )
     if pedido_compra_explicito(pergunta) and "analista_compras" not in propostas_pendentes(estado):
         return DecisaoRoteamento(
             intencao="analista_compras", continua_pendente=False,
@@ -81,6 +109,7 @@ async def rotear_orquestrador(estado: dict, pergunta: str) -> DecisaoRoteamento:
             justificativa="Pedido explícito de pesquisa ou comparação de compra.",
         )
     contexto = {
+        "perfil": estado.get("perfil"),
         "mensagem_atual": pergunta,
         "historico": [
             {"papel": mensagem.type, "conteudo": str(mensagem.content)}
@@ -132,15 +161,28 @@ Uma nova pergunta, uma recusa ou mudança de assunto não registra feedback.
 Analise a mensagem atual, a pergunta anterior do assistente, o histórico e os
 rascunhos do MongoDB.
 
+Contagens simples dos próprios registros pertencem a ajuda_geral, inclusive
+"quantas solicitações eu tenho?", "quantas das minhas solicitações estão pendentes?",
+"quantas ocorrências registrei?", "quantas OS estão atribuídas a mim?" e
+"qual o total dos meus feedbacks?". Isso vale também com período ou situação.
+Uma contagem pessoal não é um indicador gerencial da unidade. Use o histórico
+para resolver referências como "e quantas estão pendentes?" após uma consulta
+das próprias solicitações. Não declare cadastro_em_andamento nem continua_pendente
+por causa de uma consulta de contagem. A ferramenta verificará o acesso por perfil.
+Perguntas sobre limites de cadastros ou como consultar continuam sendo faq;
+gráficos continuam sendo visualizacao, mesmo quando usam registros pessoais.
+Não reduza pedidos mistos, taxas, médias ou distribuições a uma contagem simples.
+
 Distinga consultas de registros de perguntas analiticas. Perguntas por totais,
 contagens agregadas, taxas, medias, distribuicoes por unidade/local/categoria,
-evolucao temporal, carga ou produtividade pertencem a analytics. Isso inclui
+evolucao temporal, carga ou produtividade pertencem a analytics, exceto as
+contagens pessoais simples descritas acima. Isso inclui
 "quantas solicitacoes estao pendentes?", "qual a taxa de aprovacao?" e
 "quantas OS foram finalizadas em outubro?".
 Pedidos para localizar, listar ou explicar registros individuais existentes
 pertencem a ajuda_geral. Isso inclui "quais solicitacoes estao pendentes?",
 "minhas ocorrencias", "liste as OS abertas" e detalhes de uma OS especifica.
-Em resumo, perguntas sobre agregados sao analytics; pedidos de registros
+Em resumo, agregados gerenciais sao analytics; contagens pessoais e registros
 individuais sao ajuda_geral. A mesma entidade (solicitacao, ocorrencia ou OS)
 pode seguir qualquer caminho, conforme o tipo de resposta pedida.
 

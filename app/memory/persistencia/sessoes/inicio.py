@@ -8,6 +8,7 @@ async def iniciar_sessao(
         usuario_id: int
 ) -> None:
     """Cria documento da conversa e registra seu ID no cache local. Usado pelo fluxo de sessoes."""
+    # Validação: Caso haja um documento na sessão interna da aplicação com esse sessao_id e usuario_id, não cria um novo documento (pois a conversa está ativa).
     if await obter_documento_sessao_id(sessao_id, usuario_id):
         return
 
@@ -35,4 +36,5 @@ async def iniciar_sessao(
             "ocorrencias": [],
             "eventos": [],
         })
+        # Registra a sessão criada como ativa no cache local.
         sessoes_ativas[(usuario_id, sessao_id)] = documento_id
