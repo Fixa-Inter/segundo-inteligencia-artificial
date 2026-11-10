@@ -68,7 +68,6 @@ async def _processar_chat(
             detail=MENSAGENS['a_manu_nao_conseguiu_gerar_uma_resposta_sua_mensagem_foi_preservada_na'],
         )
 
-    # Parei aqui
     visualizacao = resultado.get("visualizacao_publica")
     if visualizacao is not None:
         if (
